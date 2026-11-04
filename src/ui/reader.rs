@@ -178,7 +178,7 @@ pub fn draw(frame: &mut Frame, area: Rect, app: &mut App) {
     let toc_width = if show_toc { TOC_COLUMN } else { 0 };
     let gap = u16::from(show_toc);
 
-    // Contents on the left, reading measure on the right, centred as one block.
+    // Reading measure on the left, contents on the right of it, centred as one block.
     let block = (layout::READING_WIDTH + toc_width + gap).min(area.width);
     let x = area.x + area.width.saturating_sub(block) / 2;
     let text_width = block.saturating_sub(toc_width + gap);
@@ -190,7 +190,7 @@ pub fn draw(frame: &mut Frame, area: Rect, app: &mut App) {
         height: 1,
     };
     let body = Rect {
-        x: x + toc_width + gap,
+        x,
         y: rows[1].y,
         width: text_width,
         height: rows[1].height,
@@ -244,7 +244,7 @@ pub fn draw(frame: &mut Frame, area: Rect, app: &mut App) {
 
     if show_toc {
         let toc = Rect {
-            x,
+            x: body.x + body.width + gap,
             y: rows[1].y,
             width: toc_width,
             height: rows[1].height,
@@ -281,7 +281,7 @@ pub fn draw(frame: &mut Frame, area: Rect, app: &mut App) {
     }
 
     let keys = if show_toc {
-        "↑↓ scroll · ⇥ sections · g/G top/bottom · q back"
+        "↑↓ scroll · ⇥/→ sections · g/G top/bottom · q back"
     } else {
         "↑↓ scroll · g/G top/bottom · q back"
     };

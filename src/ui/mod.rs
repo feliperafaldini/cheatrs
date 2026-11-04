@@ -165,7 +165,16 @@ impl App {
                 _ => {}
             },
             Screen::Reader => match key.code {
-                KeyCode::Char('q') | KeyCode::Left => self.screen = Screen::Home,
+                KeyCode::Char('q') => self.screen = Screen::Home,
+                // The index sits to the right of the text, so the arrow that walks right
+                // is the one that reaches it.
+                KeyCode::Right => {
+                    if !self.sections.is_empty() {
+                        self.toc_focus = true;
+                    }
+                }
+                KeyCode::Left if self.toc_focus => self.toc_focus = false,
+                KeyCode::Left => self.screen = Screen::Home,
                 KeyCode::Esc if self.toc_focus => self.toc_focus = false,
                 KeyCode::Esc => self.screen = Screen::Home,
                 KeyCode::Tab => {

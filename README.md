@@ -102,10 +102,11 @@ thing properly, not grep for one flag.
 | Key | Does |
 |---|---|
 | `j` `k` or `↓` `↑` | move in the focused column; scroll the document |
-| `l` `→` `Tab` | next column: groups → topics → preview → document |
+| `l` `→` `Tab` | next column: groups → topics → preview |
 | `h` `←` `Esc` | previous column, on the home screen |
 | `Enter` | in groups: step into the list; in topics and preview: open the document |
-| `Tab` | inside the reader: focus the section list; `Enter` or `Esc` leaves it |
+| `→` `Tab` | inside the reader: focus the section list, on the right of the text |
+| `←` `Enter` `Esc` | inside the section list: hand the focus back to the text |
 | `g` `G` | first and last line, inside the reader |
 | `/` | search |
 | `M` | toggle mouse capture |

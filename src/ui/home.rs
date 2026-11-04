@@ -59,7 +59,7 @@ fn preview_measure(width: u16) -> usize {
 }
 
 /// The preview is a fourth surface, not a decoration: it appears only when the width pays for it.
-/// Inside it, contents on the left and the same document the reader shows on the right.
+/// Inside it, the same document the reader shows on the left, contents on the right.
 fn with_preview(frame: &mut Frame, area: Rect, app: &mut App) {
     let cols = Layout::horizontal([
         Constraint::Length(layout::GROUP_COLUMN),
@@ -79,18 +79,18 @@ fn with_preview(frame: &mut Frame, area: Rect, app: &mut App) {
     rule(frame, cols[3]);
 
     let inner = Layout::horizontal([
-        Constraint::Length(layout::PREVIEW_CONTENTS),
-        Constraint::Length(layout::GUTTER),
         Constraint::Min(20),
+        Constraint::Length(layout::GUTTER),
+        Constraint::Length(layout::PREVIEW_CONTENTS),
     ])
     .split(cols[4]);
 
-    let contents_rect = inner[0];
-    let preview = inner[2];
+    let preview = inner[0];
+    let contents_rect = inner[2];
     app.preview_rect = Rect {
-        x: contents_rect.x,
+        x: cols[4].x,
         width: cols[4].width,
-        ..contents_rect
+        ..preview
     };
 
     let accent = app

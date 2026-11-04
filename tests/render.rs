@@ -591,21 +591,76 @@ fn reading_measure_stays_under_a_hundred_columns() {
 }
 
 #[test]
-fn contents_sits_left_of_the_text() {
+fn contents_sits_right_of_the_text() {
     let mut app = ui::App::new(data::load());
     open_topic(&mut app, "python");
-    let heading = app.sections[0].0.clone();
+    let heading = app
+        .sections
+        .iter()
+        .map(|(title, _)| title.clone())
+        .find(|title| title.len() <= 14)
+        .expect("a short section title");
 
     let screen = render(&mut app, 140, 30);
-    let first = screen.find(&heading).expect("contents entry");
-    let body = screen.rfind(&heading).expect("document heading");
-    assert!(first < body, "contents must come before the text");
+    let column = screen
+        .lines()
+        .find_map(|line| line.find(&heading).filter(|col| *col > 100))
+        .unwrap_or_else(|| panic!("contents column must sit on the right:\n{screen}"));
+    assert!(column > 100, "index at column {column}");
+}
 
-    let line_start = screen[..first].rfind('\n').map(|i| i + 1).unwrap_or(0);
+#[test]
+fn arrow_right_moves_the_focus_to_the_contents() {
+    let mut app = ui::App::new(data::load());
+    open_topic(&mut app, "python");
+    render(&mut app, 140, 30);
+    assert!(!app.toc_focus, "the text starts focused");
+
+    app.on_key(key(KeyCode::Right));
     assert!(
-        first - line_start < 40,
-        "contents column must sit on the left, at column {}",
-        first - line_start
+        app.toc_focus,
+        "the arrow that walks right reaches the index"
+    );
+    assert_eq!(app.screen, ui::Screen::Reader, "and it stays in the reader");
+
+    let deep = app.scroll;
+    app.on_key(key(KeyCode::Char('j')));
+    assert!(
+        app.scroll > deep,
+        "j inside the index steps a section: {} > {}",
+        app.scroll,
+        deep
+    );
+
+    app.on_key(key(KeyCode::Left));
+    assert!(!app.toc_focus, "left hands the focus back to the text");
+    assert_eq!(
+        app.screen,
+        ui::Screen::Reader,
+        "and does not leave the reader"
+    );
+}
+
+#[test]
+fn preview_draws_the_contents_right_of_its_text() {
+    let mut app = ui::App::new(data::load());
+    let heading = app
+        .current()
+        .expect("a topic is selected")
+        .sections
+        .iter()
+        .map(|section| section.title.clone())
+        .find(|title| title.len() <= 14)
+        .expect("a short section title");
+    let screen = render(&mut app, 140, 30);
+
+    // The preview index owns the rightmost 16 cells of its column, so a title
+    // starting past column 120 can only be that column and not the document.
+    assert!(
+        screen
+            .lines()
+            .any(|line| line.find(&heading).is_some_and(|col| col >= 120)),
+        "preview index must sit on the right:\n{screen}"
     );
 }
 
