@@ -931,3 +931,34 @@ fn a_terminal_that_shrank_shows_the_minimum_size_warning() {
     assert!(large.contains("LANGUAGES"), "{large}");
     assert_eq!(app.screen, ui::Screen::Home, "no mode was introduced");
 }
+
+#[test]
+fn a_mistyped_title_still_finds_the_topic() {
+    let mut app = ui::App::new(data::load());
+    render(&mut app, 140, 30);
+    app.on_key(key(KeyCode::Char('/')));
+    for character in "pstgrs".chars() {
+        app.on_key(key(KeyCode::Char(character)));
+    }
+    assert!(!app.results.is_empty(), "a subsequence must match");
+    let first = &app.index.entries[app.results[0].entry];
+    let slug = &app.lib.topics[first.topic].slug;
+    assert_eq!(
+        slug, "postgresql",
+        "letters in order must reach the topic, got {} ({slug})",
+        first.title
+    );
+}
+
+#[test]
+fn an_exact_prefix_still_beats_a_loose_subsequence() {
+    let mut app = ui::App::new(data::load());
+    render(&mut app, 140, 30);
+    app.on_key(key(KeyCode::Char('/')));
+    for character in "post".chars() {
+        app.on_key(key(KeyCode::Char(character)));
+    }
+    let top = &app.index.entries[app.results[0].entry];
+    let slug = &app.lib.topics[top.topic].slug;
+    assert_eq!(slug, "postgresql", "prefix wins, got {}", top.title);
+}
