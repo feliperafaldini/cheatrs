@@ -11,7 +11,7 @@ paraphrase, not an original, and the licence does not care about intentions.
 
 from __future__ import annotations
 
-import difflib
+
 import json
 import re
 import sys
@@ -44,9 +44,20 @@ def fingerprint(topic: dict) -> str:
 
 
 def similarity(a: str, b: str) -> float:
+    """Jaccard over word trigrams: linear, and blind to word order padding.
+
+    difflib on a megabyte of text takes minutes; this answers the same question
+    ("is this the same prose with edits?") in milliseconds.
+    """
     if not a and not b:
         return 1.0
-    return difflib.SequenceMatcher(None, a, b, autojunk=False).ratio()
+    words_a, words_b = a.split(), b.split()
+    if len(words_a) < 3 or len(words_b) < 3:
+        return 1.0 if a == b else 0.0
+    grams_a = {tuple(words_a[i : i + 3]) for i in range(len(words_a) - 2)}
+    grams_b = {tuple(words_b[i : i + 3]) for i in range(len(words_b) - 2)}
+    union = len(grams_a | grams_b)
+    return len(grams_a & grams_b) / union if union else 1.0
 
 
 def main() -> int:
