@@ -983,3 +983,35 @@ fn a_topic_from_the_future_is_refused_with_a_reason() {
     );
     std::fs::remove_dir_all(&dir).ok();
 }
+
+#[test]
+fn question_mark_opens_the_key_map_and_closes_it() {
+    let mut app = ui::App::new(data::load());
+    render(&mut app, 120, 30);
+    app.on_key(key(KeyCode::Char('?')));
+    assert!(app.help);
+    let screen = render(&mut app, 120, 30);
+    assert!(screen.contains("keys"), "the panel names itself: {screen}");
+    assert!(
+        screen.contains("groups · topics · text · sections"),
+        "and explains the four columns"
+    );
+
+    app.on_key(key(KeyCode::Esc));
+    assert!(!app.help);
+    let screen = render(&mut app, 120, 30);
+    assert!(!screen.contains("groups · topics · text · sections"));
+}
+
+#[test]
+fn question_mark_inside_search_is_a_character_not_a_dialog() {
+    let mut app = ui::App::new(data::load());
+    render(&mut app, 120, 30);
+    app.on_key(key(KeyCode::Char('/')));
+    app.on_key(key(KeyCode::Char('?')));
+    assert!(
+        !app.help,
+        "typing ? in the search box must not open the panel"
+    );
+    assert_eq!(app.query, "?");
+}

@@ -3,6 +3,21 @@
 Newest first. The format follows [Keep a Changelog](https://keepachangelog.com/);
 versions follow [semantic versioning](https://semver.org/).
 
+## 1.0.0
+
+First stable release. The topic format and the command line are frozen: schema 1
+and the flags `--help`, `--version`, `--validate` will not change meaning.
+
+### Added
+
+- `?` opens a key map inside the app, explaining the four columns and the keys the
+  footer does not have room for.
+- `packaging/`: PKGBUILD for Arch, building from the tagged source.
+
+### Changed
+
+- Nothing that breaks 0.2.0. A topic written for 0.2.0 loads unchanged.
+
 ## 0.2.0
 
 ### Added

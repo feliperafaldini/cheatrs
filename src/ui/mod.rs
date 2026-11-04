@@ -1,3 +1,4 @@
+pub mod help;
 pub mod home;
 pub mod layout;
 pub mod reader;
@@ -60,6 +61,8 @@ pub struct App {
     pub topics_rect: Rect,
     pub groups_offset: u16,
     pub topics_offset: u16,
+    /// `?` puts the key map on top of the screen.
+    pub help: bool,
     /// Search: one index over topics and sections, opened as a modal.
     pub index: SearchIndex,
     pub searching: bool,
@@ -102,6 +105,7 @@ impl App {
             group_width,
             topics_width,
             preview_contents: layout::PREVIEW_CONTENTS_MIN,
+            help: false,
             searching: false,
             query: String::new(),
             results: Vec::new(),
@@ -175,13 +179,27 @@ impl App {
             Screen::Home => home::draw(frame, frame.area(), self),
             Screen::Reader => reader::draw(frame, frame.area(), self),
         }
-        // The modal sits on top of whatever screen is behind it.
+        // Modals sit on top of whatever screen is behind them.
         search::draw(frame, frame.area(), self);
+        help::draw(frame, frame.area(), self);
     }
 
     pub fn on_key(&mut self, key: KeyEvent) {
+        if self.help {
+            if matches!(
+                key.code,
+                KeyCode::Char('?') | KeyCode::Esc | KeyCode::Char('q')
+            ) {
+                self.help = false;
+            }
+            return;
+        }
         if self.searching {
             self.on_search_key(key);
+            return;
+        }
+        if key.code == KeyCode::Char('?') {
+            self.help = true;
             return;
         }
         match self.screen {

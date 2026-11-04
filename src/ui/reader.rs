@@ -281,9 +281,9 @@ pub fn draw(frame: &mut Frame, area: Rect, app: &mut App) {
     }
 
     let keys = if show_toc {
-        "↑↓ scroll · ⇥/→ sections · g/G top/bottom · q back"
+        "↑↓ scroll · ⇥/→ sections · g/G top/bottom · ? help · q back"
     } else {
-        "↑↓ scroll · g/G top/bottom · q back"
+        "↑↓ scroll · g/G top/bottom · ? help · q back"
     };
     let footer_line = Line::from(vec![Span::styled(keys, Style::new().fg(theme::fg_faint()))]);
     frame.render_widget(Paragraph::new(footer_line), footer);

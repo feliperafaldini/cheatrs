@@ -298,16 +298,18 @@ fn footer(frame: &mut Frame, area: Rect, app: &App) {
     let mouse = if app.mouse { "on" } else { "off" };
     let keys = match app.focus {
         Focus::Groups => format!(
-            "hjkl/←→↑↓ move · ⇥/l column · ↵ open list · / search · M mouse {mouse} · q quit"
+            "hjkl/←→↑↓ move · ⇥/l column · ↵ open list · / search · M mouse {mouse} · ? help · q quit"
         ),
         Focus::Preview => format!(
-            "hjkl/←→↑↓ scroll preview · ⇥/l sections · ↵ read · / search · M mouse {mouse} · q quit"
+            "hjkl/←→↑↓ scroll preview · ⇥/l sections · ↵ read · / search · M mouse {mouse} · ? help · q quit"
         ),
         Focus::Contents => {
-            format!("↑↓ section · ↵ read · ⇥/h text · / search · M mouse {mouse} · q quit")
+            format!("↑↓ section · ↵ read · ⇥/h text · / search · M mouse {mouse} · ? help · q quit")
         }
         Focus::Topics => {
-            format!("hjkl/←→↑↓ move · ⇥/l preview · ↵ read · / search · M mouse {mouse} · q quit")
+            format!(
+                "hjkl/←→↑↓ move · ⇥/l preview · ↵ read · / search · M mouse {mouse} · ? help · q quit"
+            )
         }
     };
     let line = Line::from(vec![
