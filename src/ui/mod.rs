@@ -1,6 +1,7 @@
 pub mod home;
 pub mod layout;
 pub mod reader;
+pub mod search;
 
 use crossterm::event::{
     DisableMouseCapture, EnableMouseCapture, KeyCode, KeyEvent, MouseButton, MouseEvent,
@@ -13,14 +14,16 @@ use ratatui::text::Line;
 
 use crate::data::Library;
 use crate::model::Topic;
+use crate::search::Index as SearchIndex;
 
-#[derive(Clone, Copy, PartialEq, Eq)]
+#[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub enum Focus {
     Groups,
     Topics,
+    Preview,
 }
 
-#[derive(Clone, Copy, PartialEq, Eq)]
+#[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub enum Screen {
     Home,
     Reader,
@@ -36,19 +39,41 @@ pub struct App {
     pub mouse: bool,
     pub quit: bool,
     pub lines: Vec<Line<'static>>,
+    /// Contents of the open topic: title and first line of each section.
+    pub sections: Vec<(String, u16)>,
+    pub toc_index: usize,
+    pub toc_focus: bool,
     /// Preview of the selected topic: built once per selection, never per frame.
     pub preview: Vec<Line<'static>>,
     pub preview_topic: Option<usize>,
+    pub preview_scroll: u16,
+    pub preview_rect: Rect,
+    pub preview_visible: bool,
+    /// Contents of the previewed topic and the measure it was folded to.
+    pub preview_sections: Vec<(String, u16)>,
+    pub preview_measure: usize,
     pub groups_rect: Rect,
     pub topics_rect: Rect,
     pub groups_offset: u16,
     pub topics_offset: u16,
+    /// Search: one index over topics and sections, opened as a modal.
+    pub index: SearchIndex,
+    pub searching: bool,
+    pub query: String,
+    pub results: Vec<usize>,
+    pub cursor: usize,
 }
 
 impl App {
     pub fn new(lib: Library) -> Self {
+        let index = SearchIndex::build(&lib);
         Self {
             lib,
+            index,
+            searching: false,
+            query: String::new(),
+            results: Vec::new(),
+            cursor: 0,
             focus: Focus::Groups,
             group: 0,
             topic: 0,
@@ -57,8 +82,16 @@ impl App {
             mouse: false,
             quit: false,
             lines: Vec::new(),
+            sections: Vec::new(),
+            toc_index: 0,
+            toc_focus: false,
             preview: Vec::new(),
             preview_topic: None,
+            preview_scroll: 0,
+            preview_rect: Rect::default(),
+            preview_visible: false,
+            preview_sections: Vec::new(),
+            preview_measure: 0,
             groups_rect: Rect::default(),
             topics_rect: Rect::default(),
             groups_offset: 0,
@@ -76,18 +109,24 @@ impl App {
             .map(|index| &self.lib.topics[*index])
     }
 
-    /// Rebuild the preview only when the selection actually moved.
-    pub fn sync_preview(&mut self) {
+    /// Rebuild the preview only when the selection or the measure actually moved.
+    pub fn sync_preview(&mut self, measure: usize) {
         let index = self.group_topics().get(self.topic).copied();
-        if index == self.preview_topic {
+        if index == self.preview_topic && self.preview_measure == measure {
             return;
         }
-        let lines = match index {
-            Some(i) => reader::build_capped(&self.lib.topics[i], 240),
-            None => Vec::new(),
+        let document = match index {
+            Some(i) => reader::build_document(&self.lib.topics[i], 400, measure),
+            None => reader::Document {
+                lines: Vec::new(),
+                sections: Vec::new(),
+            },
         };
-        self.preview = lines;
+        self.preview = document.lines;
+        self.preview_sections = document.sections;
         self.preview_topic = index;
+        self.preview_measure = measure;
+        self.preview_scroll = 0;
     }
 
     pub fn draw(&mut self, frame: &mut Frame) {
@@ -95,29 +134,128 @@ impl App {
             Screen::Home => home::draw(frame, frame.area(), self),
             Screen::Reader => reader::draw(frame, frame.area(), self),
         }
+        // The modal sits on top of whatever screen is behind it.
+        search::draw(frame, frame.area(), self);
     }
 
     pub fn on_key(&mut self, key: KeyEvent) {
+        if self.searching {
+            self.on_search_key(key);
+            return;
+        }
         match self.screen {
             Screen::Home => match key.code {
                 KeyCode::Char('q') => self.quit = true,
                 KeyCode::Char('j') | KeyCode::Down => self.move_down(),
                 KeyCode::Char('k') | KeyCode::Up => self.move_up(),
-                KeyCode::Tab | KeyCode::Right | KeyCode::Char('l') => self.focus = Focus::Topics,
-                KeyCode::Left | KeyCode::Char('h') | KeyCode::Esc => self.focus = Focus::Groups,
-                KeyCode::Enter => self.open(),
+                KeyCode::Tab | KeyCode::Right | KeyCode::Char('l') => self.focus_next(),
+                KeyCode::Left | KeyCode::Char('h') | KeyCode::Esc => self.focus_prev(),
+                KeyCode::Enter => match self.focus {
+                    // Enter picks the group and steps into its list, so the arrows walk topics next.
+                    Focus::Groups => self.focus = Focus::Topics,
+                    Focus::Topics | Focus::Preview => self.open(),
+                },
                 KeyCode::Char('M') => self.toggle_mouse(),
+                KeyCode::Char('/') => self.start_search(),
                 _ => {}
             },
             Screen::Reader => match key.code {
-                KeyCode::Char('q') | KeyCode::Esc | KeyCode::Left => self.screen = Screen::Home,
+                KeyCode::Char('q') | KeyCode::Left => self.screen = Screen::Home,
+                KeyCode::Esc if self.toc_focus => self.toc_focus = false,
+                KeyCode::Esc => self.screen = Screen::Home,
+                KeyCode::Tab => {
+                    if !self.sections.is_empty() {
+                        self.toc_focus = !self.toc_focus;
+                    }
+                }
+                KeyCode::Enter if self.toc_focus => self.toc_focus = false,
+                KeyCode::Char('j') | KeyCode::Down if self.toc_focus => self.step_section(1),
+                KeyCode::Char('k') | KeyCode::Up if self.toc_focus => self.step_section(-1),
                 KeyCode::Char('j') | KeyCode::Down => self.scroll = self.scroll.saturating_add(1),
                 KeyCode::Char('k') | KeyCode::Up => self.scroll = self.scroll.saturating_sub(1),
                 KeyCode::Char('g') => self.scroll = 0,
                 KeyCode::Char('G') => self.scroll = u16::MAX,
                 KeyCode::Char('M') => self.toggle_mouse(),
+                KeyCode::Char('/') => self.start_search(),
                 _ => {}
             },
+        }
+    }
+
+    fn start_search(&mut self) {
+        self.searching = true;
+        self.query.clear();
+        self.results.clear();
+        self.cursor = 0;
+    }
+
+    fn on_search_key(&mut self, key: KeyEvent) {
+        match key.code {
+            KeyCode::Esc => {
+                self.searching = false;
+                self.query.clear();
+                self.results.clear();
+            }
+            KeyCode::Enter => self.commit_search(),
+            KeyCode::Backspace => {
+                self.query.pop();
+                self.refresh_results();
+            }
+            KeyCode::Up => self.cursor = self.cursor.saturating_sub(1),
+            KeyCode::Down => {
+                if self.cursor + 1 < self.results.len() {
+                    self.cursor += 1;
+                }
+            }
+            KeyCode::Char(character) => {
+                self.query.push(character);
+                self.refresh_results();
+            }
+            _ => {}
+        }
+    }
+
+    fn refresh_results(&mut self) {
+        self.results = self.index.query(&self.query);
+        self.cursor = 0;
+    }
+
+    /// A result is a destination: select the topic, open it, and land on the section if there is one.
+    fn commit_search(&mut self) {
+        let Some(entry_index) = self.results.get(self.cursor).copied() else {
+            self.searching = false;
+            return;
+        };
+        let entry = &self.index.entries[entry_index];
+        let (topic_index, section) = (entry.topic, entry.section);
+
+        if let Some((group, position)) =
+            self.lib
+                .groups
+                .iter()
+                .enumerate()
+                .find_map(|(group, item)| {
+                    item.topics
+                        .iter()
+                        .position(|topic| *topic == topic_index)
+                        .map(|position| (group, position))
+                })
+        {
+            self.group = group;
+            self.topic = position;
+            self.focus = Focus::Topics;
+        }
+
+        self.searching = false;
+        self.query.clear();
+        self.results.clear();
+        self.open();
+
+        if let Some(section) = section
+            && let Some((_, start)) = self.sections.get(section)
+        {
+            self.scroll = *start;
+            self.toc_index = section;
         }
     }
 
@@ -156,6 +294,9 @@ impl App {
                         self.topic = row;
                         self.focus = Focus::Topics;
                     }
+                } else if self.preview_visible && inside(self.preview_rect, event.column, event.row)
+                {
+                    self.focus = Focus::Preview;
                 }
             }
             _ => {}
@@ -175,6 +316,7 @@ impl App {
                     self.topic += 1;
                 }
             }
+            Focus::Preview => self.preview_scroll = self.preview_scroll.saturating_add(1),
         }
     }
 
@@ -189,13 +331,45 @@ impl App {
             Focus::Topics => {
                 self.topic = self.topic.saturating_sub(1);
             }
+            Focus::Preview => self.preview_scroll = self.preview_scroll.saturating_sub(1),
         }
     }
 
+    /// Columns read left to right; the preview only joins when the width pays for it.
+    fn focus_next(&mut self) {
+        self.focus = match self.focus {
+            Focus::Groups => Focus::Topics,
+            Focus::Topics if self.preview_visible => Focus::Preview,
+            Focus::Topics | Focus::Preview => self.focus,
+        };
+    }
+
+    fn focus_prev(&mut self) {
+        self.focus = match self.focus {
+            Focus::Groups => Focus::Groups,
+            Focus::Topics => Focus::Groups,
+            Focus::Preview => Focus::Topics,
+        };
+    }
+
+    /// Move the contents selection and take the document with it.
+    fn step_section(&mut self, delta: i32) {
+        if self.sections.is_empty() {
+            return;
+        }
+        let next = self.toc_index as i32 + delta;
+        let last = self.sections.len() as i32 - 1;
+        self.toc_index = next.clamp(0, last) as usize;
+        self.scroll = self.sections[self.toc_index].1;
+    }
+
     fn open(&mut self) {
-        let lines = self.current().map(reader::build);
-        if let Some(lines) = lines {
-            self.lines = lines;
+        let doc = self.current().map(reader::build);
+        if let Some(doc) = doc {
+            self.lines = doc.lines;
+            self.sections = doc.sections;
+            self.toc_index = 0;
+            self.toc_focus = false;
             self.scroll = 0;
             self.screen = Screen::Reader;
         }

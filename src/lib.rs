@@ -1,5 +1,6 @@
 pub mod data;
 pub mod model;
+pub mod search;
 pub mod theme;
 pub mod ui;
 

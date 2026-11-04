@@ -2,7 +2,9 @@ use ratatui::Frame;
 use ratatui::layout::{Constraint, Layout, Rect};
 use ratatui::style::{Modifier, Style};
 use ratatui::text::{Line, Span};
-use ratatui::widgets::{Block, Borders, Paragraph};
+use ratatui::widgets::{
+    Block, Borders, Paragraph, Scrollbar, ScrollbarOrientation, ScrollbarState,
+};
 
 use crate::data::{group_label, monogram};
 use crate::theme;
@@ -17,9 +19,15 @@ pub fn draw(frame: &mut Frame, area: Rect, app: &mut App) {
     ])
     .split(area);
 
-    app.sync_preview();
+    let measure = preview_measure(area.width);
+    app.preview_visible = area.width >= layout::PREVIEW_THRESHOLD;
+    app.sync_preview(measure);
+    app.preview_visible = app.preview_visible && !app.preview.is_empty();
+    if !app.preview_visible && app.focus == Focus::Preview {
+        app.focus = Focus::Topics;
+    }
     header(frame, rows[0], app);
-    if area.width >= layout::PREVIEW_THRESHOLD {
+    if app.preview_visible {
         with_preview(frame, rows[1], app);
     } else {
         let cols = Layout::horizontal([
@@ -39,7 +47,19 @@ pub fn draw(frame: &mut Frame, area: Rect, app: &mut App) {
     footer(frame, rows[2], app);
 }
 
+/// Text measure available to the preview, once the other columns and its contents have taken theirs.
+fn preview_measure(width: u16) -> usize {
+    let taken = layout::GROUP_COLUMN
+        + layout::GUTTER
+        + layout::TOPICS_COLUMN
+        + layout::GUTTER
+        + layout::PREVIEW_CONTENTS
+        + layout::GUTTER;
+    width.saturating_sub(taken).saturating_sub(1) as usize
+}
+
 /// The preview is a fourth surface, not a decoration: it appears only when the width pays for it.
+/// Inside it, contents on the left and the same document the reader shows on the right.
 fn with_preview(frame: &mut Frame, area: Rect, app: &mut App) {
     let cols = Layout::horizontal([
         Constraint::Length(layout::GROUP_COLUMN),
@@ -57,13 +77,65 @@ fn with_preview(frame: &mut Frame, area: Rect, app: &mut App) {
     rule(frame, cols[1]);
     topics(frame, cols[2], app);
     rule(frame, cols[3]);
-    // One column of breathing room, same as everywhere else.
-    let preview = Rect {
-        x: cols[4].x + 1,
-        width: cols[4].width.saturating_sub(1),
-        ..cols[4]
+
+    let inner = Layout::horizontal([
+        Constraint::Length(layout::PREVIEW_CONTENTS),
+        Constraint::Length(layout::GUTTER),
+        Constraint::Min(20),
+    ])
+    .split(cols[4]);
+
+    let contents_rect = inner[0];
+    let preview = inner[2];
+    app.preview_rect = Rect {
+        x: contents_rect.x,
+        width: cols[4].width,
+        ..contents_rect
     };
-    frame.render_widget(Paragraph::new(app.preview.clone()), preview);
+
+    let accent = app
+        .current()
+        .map_or(theme::FG_DIM, |t| theme::accent(&t.color));
+    let selected = crate::ui::reader::section_at(&app.preview_sections, app.preview_scroll);
+    crate::ui::reader::contents(
+        frame,
+        contents_rect,
+        &app.preview_sections,
+        selected,
+        app.focus == Focus::Preview,
+        accent,
+    );
+
+    let max = app.preview.len().saturating_sub(preview.height as usize) as u16;
+    if app.preview_scroll > max {
+        app.preview_scroll = max;
+    }
+    frame.render_widget(
+        Paragraph::new(app.preview.clone()).scroll((app.preview_scroll, 0)),
+        preview,
+    );
+
+    // The column only advertises its scroll when it has the focus.
+    if app.focus == Focus::Preview && max > 0 {
+        let mut state = ScrollbarState::new(max as usize).position(app.preview_scroll as usize);
+        let rail = Rect {
+            x: preview.x + preview.width - 1,
+            y: preview.y,
+            width: 1,
+            height: preview.height,
+        };
+        frame.render_stateful_widget(
+            Scrollbar::new(ScrollbarOrientation::VerticalRight)
+                .begin_symbol(None)
+                .end_symbol(None)
+                .track_symbol(Some("▏"))
+                .thumb_symbol("█")
+                .track_style(Style::new().fg(theme::RULE))
+                .thumb_style(Style::new().fg(theme::FG_DIM)),
+            rail,
+            &mut state,
+        );
+    }
 }
 
 fn rule(frame: &mut Frame, area: Rect) {
@@ -168,10 +240,17 @@ fn topics(frame: &mut Frame, area: Rect, app: &mut App) {
 }
 
 fn footer(frame: &mut Frame, area: Rect, app: &App) {
-    let keys = if app.mouse {
-        "↑↓ move · ⇥ column · ↵ open · M mouse on · q quit"
-    } else {
-        "↑↓ move · ⇥ column · ↵ open · M mouse off · q quit"
+    let mouse = if app.mouse { "on" } else { "off" };
+    let keys = match app.focus {
+        Focus::Groups => format!(
+            "hjkl/←→↑↓ move · ⇥/l column · ↵ open list · / search · M mouse {mouse} · q quit"
+        ),
+        Focus::Preview => format!(
+            "hjkl/←→↑↓ scroll preview · ⇥/h back · ↵ read · / search · M mouse {mouse} · q quit"
+        ),
+        Focus::Topics => {
+            format!("hjkl/←→↑↓ move · ⇥/l preview · ↵ read · / search · M mouse {mouse} · q quit")
+        }
     };
     let line = Line::from(vec![
         Span::styled(keys, Style::new().fg(theme::FG_FAINT)),

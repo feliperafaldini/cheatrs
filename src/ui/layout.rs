@@ -7,6 +7,8 @@ pub const TOPICS_COLUMN: u16 = 30;
 /// Column 3 (preview) only earns its place when the terminal can pay for it.
 pub const PREVIEW_COLUMN: u16 = 40;
 pub const PREVIEW_THRESHOLD: u16 = 110;
+/// Contents list that lives inside the preview, left of its text.
+pub const PREVIEW_CONTENTS: u16 = 16;
 /// Single-cell rule between the columns.
 pub const GUTTER: u16 = 1;
 /// Reading measure. A 200-column line is not read, it is scanned.
