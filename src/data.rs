@@ -207,7 +207,7 @@ pub fn group_label(name: &str) -> String {
 
 /// Two or three letters per topic. Explicit table: language acronyms are not guessable.
 pub fn monogram(slug: &str, title: &str) -> String {
-    const TABLE: [(&str, &str); 48] = [
+    const TABLE: [(&str, &str); 52] = [
         ("angular", "NG"),
         ("bash", "SH"),
         ("bootstrap", "BS"),
@@ -222,6 +222,7 @@ pub fn monogram(slug: &str, title: &str) -> String {
         ("fastapi", "FA"),
         ("flask", "FL"),
         ("git", "GIT"),
+        ("github-actions", "GHA"),
         ("go", "GO"),
         ("html", "HT"),
         ("htmx", "HTX"),
@@ -229,6 +230,7 @@ pub fn monogram(slug: &str, title: &str) -> String {
         ("js", "JS"),
         ("jquery", "JQ"),
         ("kotlin", "KT"),
+        ("kubernetes", "K8S"),
         ("laravel", "LV"),
         ("linux-commands", "LX"),
         ("lua", "LUA"),
@@ -236,6 +238,7 @@ pub fn monogram(slug: &str, title: &str) -> String {
         ("motion", "MO"),
         ("mysql", "MY"),
         ("next", "NX"),
+        ("nginx", "NGX"),
         ("nodejs", "ND"),
         ("numpy", "NP"),
         ("pandas", "PD"),
@@ -249,6 +252,7 @@ pub fn monogram(slug: &str, title: &str) -> String {
         ("rust", "RS"),
         ("springboot", "SB"),
         ("swift", "SW"),
+        ("sql", "SQL"),
         ("tailwind", "TW"),
         ("turbo", "TB"),
         ("typescript", "TS"),

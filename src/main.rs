@@ -1,3 +1,5 @@
+use std::io::IsTerminal;
+
 use cheatrs::ui;
 use crossterm::event::{self, Event, KeyEventKind};
 use ratatui::DefaultTerminal;
@@ -5,10 +7,16 @@ use ratatui::DefaultTerminal;
 fn main() -> std::io::Result<()> {
     let args: Vec<String> = std::env::args().skip(1).collect();
 
+    if args.iter().any(|arg| arg == "--version" || arg == "-V") {
+        println!("cheatrs {}", env!("CARGO_PKG_VERSION"));
+        return Ok(());
+    }
+
     if args.iter().any(|arg| arg == "--help" || arg == "-h") {
         println!(
             "cheatrs — terminal browser for programming cheatsheets\n\n\
              usage:\n  cheatrs                  open the browser\n  \
+             cheatrs --version        print the version and exit\n  \
              cheatrs --validate       check every topic the binary can see\n  \
              cheatrs --validate FILE  check a single topic file\n\n\
              keys: hjkl/arrows move · tab or left/right change column · enter open · \
@@ -24,6 +32,12 @@ fn main() -> std::io::Result<()> {
         return Ok(());
     }
 
+    // Drawing into anything but a terminal is a crash, not a degraded mode: say so and leave.
+    if !std::io::stdin().is_terminal() || !std::io::stdout().is_terminal() {
+        eprintln!("cheatrs: needs a terminal, this is a pipe or a file");
+        std::process::exit(1);
+    }
+
     let library = cheatrs::data::load();
     if library.groups.is_empty() {
         eprintln!("cheatrs: no topics loaded");
@@ -32,11 +46,7 @@ fn main() -> std::io::Result<()> {
 
     let (cols, rows) = crossterm::terminal::size()?;
     if !cheatrs::fits(cols, rows) {
-        eprintln!(
-            "cheatrs needs at least {}x{} (terminal is {cols}x{rows})",
-            cheatrs::MIN_WIDTH,
-            cheatrs::MIN_HEIGHT
-        );
+        eprintln!("{}", cheatrs::size_warning(cols, rows));
         return Ok(());
     }
 
@@ -91,11 +101,32 @@ fn run(terminal: &mut DefaultTerminal, library: cheatrs::data::Library) -> std::
         let pending = app.flash_until.is_some();
         if pending {
             if event::poll(std::time::Duration::from_millis(40))? {
-                handle(&mut app, event::read()?);
+                step(&mut app)?;
             }
         } else {
-            handle(&mut app, event::read()?);
+            step(&mut app)?;
         }
+    }
+    Ok(())
+}
+
+/// One event. The terminal's size is read by the next `draw`, which resizes its
+/// buffers and repaints whole — so a resize only has to let the loop turn: the
+/// screen is laid out again, or shows the minimum-size warning if it no longer fits.
+/// Below the minimum the screen is wiped first, because ratatui only erases on a
+/// horizontal shrink and the warning must not sit on top of the layout it replaced.
+/// `Terminal::clear` is avoided on purpose: it asks the terminal where the cursor is
+/// and blocks until answered.
+fn step(app: &mut ui::App) -> std::io::Result<()> {
+    match event::read()? {
+        Event::Resize(cols, rows) if !cheatrs::fits(cols, rows) => {
+            crossterm::execute!(
+                std::io::stdout(),
+                crossterm::terminal::Clear(crossterm::terminal::ClearType::All)
+            )?;
+        }
+        Event::Resize(..) => {}
+        other => handle(app, other),
     }
     Ok(())
 }

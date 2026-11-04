@@ -9,8 +9,10 @@ use crossterm::event::{
 };
 use crossterm::execute;
 use ratatui::Frame;
-use ratatui::layout::Rect;
-use ratatui::text::Line;
+use ratatui::layout::{Alignment, Rect};
+use ratatui::style::Style;
+use ratatui::text::{Line, Span};
+use ratatui::widgets::{Clear, Paragraph, Wrap};
 
 use crate::data::Library;
 use crate::model::Topic;
@@ -162,6 +164,13 @@ impl App {
     }
 
     pub fn draw(&mut self, frame: &mut Frame) {
+        let area = frame.area();
+        // A terminal that shrank mid-session gets the same sentence the boot check
+        // prints, centred, instead of a layout squeezed past the point it works.
+        if !crate::fits(area.width, area.height) {
+            size_warning(frame, area);
+            return;
+        }
         match self.screen {
             Screen::Home => home::draw(frame, frame.area(), self),
             Screen::Reader => reader::draw(frame, frame.area(), self),
@@ -465,4 +474,33 @@ impl App {
             execute!(out, DisableMouseCapture)
         };
     }
+}
+
+/// The minimum-size refusal, drawn in the middle of whatever room is left.
+fn size_warning(frame: &mut Frame, area: Rect) {
+    let text = crate::size_warning(area.width, area.height);
+    // One line when it fits; otherwise three so the wrap has somewhere to land.
+    let want = if text.chars().count() as u16 <= area.width {
+        1
+    } else {
+        3
+    };
+    let height = want.min(area.height);
+    let block = Rect {
+        y: area.y + area.height.saturating_sub(height) / 2,
+        height,
+        ..area
+    };
+    // After a shrink the frame's own cells still hold the bigger layout: blank them,
+    // or the diff re-emits the old screen around the warning.
+    frame.render_widget(Clear, area);
+    frame.render_widget(
+        Paragraph::new(Line::from(Span::styled(
+            text,
+            Style::new().fg(crate::theme::fg_dim()),
+        )))
+        .alignment(Alignment::Center)
+        .wrap(Wrap { trim: true }),
+        block,
+    );
 }

@@ -1,0 +1,252 @@
+{
+ "slug": "github-actions",
+ "title": "GitHub Actions",
+ "label": "GHA",
+ "group": "Tool",
+ "color": "#2088FF",
+ "desc": "Automate builds, tests and deploys with workflows that run on GitHub's runners.",
+ "sections": [
+  {
+   "id": "setup",
+   "title": "Setup",
+   "description": "Authenticate the CLI, check the token scopes and list what runs in the repository.",
+   "snippets": [
+    {
+     "language": "bash",
+     "code": "# Log in against github.com; the web flow stores a token for the CLI\ngh auth login --hostname github.com --git-protocol ssh --web\n\n# Confirm which account is active and which scopes the token carries\ngh auth status\n\n# Every workflow file GitHub found, including disabled ones\ngh workflow list --all"
+    },
+    {
+     "language": "bash",
+     "code": "# The last ten runs of the current repository\ngh run list --limit 10\n\n# Follow a run live, then read only the failing step's log\ngh run watch\ngh run view --log-failed\n\n# Re-run the failed jobs without pushing again\ngh run rerun --failed"
+    }
+   ]
+  },
+  {
+   "id": "workflow",
+   "title": "Workflow File",
+   "description": "One file per pipeline under .github/workflows, with triggers, jobs and steps.",
+   "snippets": [
+    {
+     "language": "yaml",
+     "code": "name: CI\n\n# on holds the triggers; push and pull_request are the common pair\non:\n  push:\n    branches: [main]\n  pull_request:\n\n# Jobs run in parallel unless they declare needs\njobs:\n  test:\n    runs-on: ubuntu-24.04\n    steps:\n      - uses: actions/checkout@v4\n      - uses: actions/setup-node@v4\n        with:\n          node-version: 22\n          cache: npm\n      - run: npm ci\n      - run: npm test"
+    },
+    {
+     "language": "bash",
+     "code": "# Workflows are only read from this directory at the repository root\nls .github/workflows\n\n# Catch syntax and expression mistakes before pushing\nactionlint .github/workflows/ci.yml\n\n# Start a manual run of a workflow that declares workflow_dispatch\ngh workflow run deploy.yml"
+    }
+   ]
+  },
+  {
+   "id": "triggers",
+   "title": "Triggers",
+   "description": "Choose what starts a run: pushes, pull requests, schedules or manual dispatch.",
+   "snippets": [
+    {
+     "language": "yaml",
+     "code": "on:\n  push:\n    branches: [main, release/**]\n    paths:\n      - \"src/**\"\n      - \"Cargo.toml\"\n    tags: [\"v*\"]\n  pull_request:\n    branches: [main]\n    types: [opened, synchronize, reopened]"
+    },
+    {
+     "language": "yaml",
+     "code": "on:\n  # Five fields, UTC, so 03:30 every weekday\n  schedule:\n    - cron: \"30 3 * * 1-5\"\n\n  # Manual runs can carry typed inputs\n  workflow_dispatch:\n    inputs:\n      environment:\n        description: Target environment\n        type: choice\n        options: [staging, production]\n        default: staging\n      dry_run:\n        type: boolean\n        default: false"
+    },
+    {
+     "language": "yaml",
+     "code": "# One block may hold several triggers; they are OR-ed\non:\n  # After another workflow finishes, regardless of success\n  workflow_run:\n    workflows: [CI]\n    types: [completed]\n\n  # On a published release, and on a tag push\n  release:\n    types: [published]\n  push:\n    tags: [\"v*\"]"
+    }
+   ]
+  },
+  {
+   "id": "jobs",
+   "title": "Jobs",
+   "description": "Group steps into jobs, chain them with needs and pass values between them.",
+   "snippets": [
+    {
+     "language": "yaml",
+     "code": "jobs:\n  build:\n    runs-on: ubuntu-24.04\n    timeout-minutes: 20\n    outputs:\n      version: ${{ steps.meta.outputs.version }}\n    steps:\n      - uses: actions/checkout@v4\n      - id: meta\n        run: echo \"version=$(git describe --tags --always)\" >> \"$GITHUB_OUTPUT\"\n\n  deploy:\n    # Waits for build; outputs are read from the needs context\n    needs: build\n    runs-on: ubuntu-24.04\n    environment: production\n    steps:\n      - run: echo \"Deploying ${{ needs.build.outputs.version }}\""
+    },
+    {
+     "language": "yaml",
+     "code": "jobs:\n  test:\n    # GitHub-hosted labels are ubuntu-24.04, macos-14, windows-2022\n    runs-on: ubuntu-24.04\n\n  gpu:\n    # Labels set on a self-hosted runner\n    runs-on: [self-hosted, linux, gpu]\n\n  in-container:\n    runs-on: ubuntu-24.04\n    container:\n      image: node:22-bookworm\n      options: --cpus 2\n    steps:\n      - run: node --version"
+    },
+    {
+     "language": "yaml",
+     "code": "# Top-level: one run per branch, and a new push cancels the running one\nconcurrency:\n  group: ${{ github.workflow }}-${{ github.ref }}\n  cancel-in-progress: true\n\n# Or per job, when only the deploy must not overlap\njobs:\n  deploy:\n    runs-on: ubuntu-24.04\n    concurrency:\n      group: deploy-production\n      cancel-in-progress: false"
+    }
+   ]
+  },
+  {
+   "id": "steps",
+   "title": "Steps",
+   "description": "Single units of work: shell commands, actions from the marketplace or your own repo.",
+   "snippets": [
+    {
+     "language": "yaml",
+     "code": "steps:\n  - name: Run the tests\n    working-directory: ./app\n    env:\n      RUST_LOG: debug\n    run: cargo test --all-features\n\n  # A step can take several commands; the shell is bash on Linux and macOS\n  - name: Build the front end\n    shell: bash\n    run: |\n      set -euo pipefail\n      npm ci\n      npm run build"
+    },
+    {
+     "language": "yaml",
+     "code": "steps:\n  - uses: actions/checkout@v4\n    with:\n      fetch-depth: 0\n\n  - uses: actions/setup-python@v5\n    with:\n      python-version: \"3.13\"\n\n  - uses: docker/build-push-action@v6\n    with:\n      context: .\n      push: false\n      tags: cheatrs-api:ci"
+    },
+    {
+     "language": "yaml",
+     "code": "steps:\n  - id: check\n    run: echo \"changed=true\" >> \"$GITHUB_OUTPUT\"\n\n  # Runs only when the previous step reported a change\n  - if: steps.check.outputs.changed == 'true'\n    run: ./scripts/deploy.sh\n\n  # A failing step does not stop the job, but the job still fails at the end\n  - continue-on-error: true\n    run: ./scripts/flaky-report.sh"
+    }
+   ]
+  },
+  {
+   "id": "matrix",
+   "title": "Matrix",
+   "description": "Run one job many times over a set of values, with additions and exclusions.",
+   "snippets": [
+    {
+     "language": "yaml",
+     "code": "jobs:\n  test:\n    runs-on: ${{ matrix.os }}\n    strategy:\n      fail-fast: false\n      matrix:\n        os: [ubuntu-24.04, macos-14]\n        node: [20, 22]\n        exclude:\n          - os: macos-14\n            node: 20\n        include:\n          # Adds a third variable to existing combinations only\n          - node: 22\n            coverage: true\n    steps:\n      - uses: actions/checkout@v4\n      - uses: actions/setup-node@v4\n        with:\n          node-version: ${{ matrix.node }}\n      - run: npm test"
+    },
+    {
+     "language": "yaml",
+     "code": "jobs:\n  list:\n    runs-on: ubuntu-24.04\n    outputs:\n      targets: ${{ steps.set.outputs.targets }}\n    steps:\n      - id: set\n        run: echo 'targets=[\"api\",\"worker\"]' >> \"$GITHUB_OUTPUT\"\n\n  build:\n    needs: list\n    runs-on: ubuntu-24.04\n    strategy:\n      matrix:\n        # Reads a JSON array produced by the previous job\n        target: ${{ fromJSON(needs.list.outputs.targets) }}\n    steps:\n      - run: echo \"Building ${{ matrix.target }}\""
+    }
+   ]
+  },
+  {
+   "id": "secrets",
+   "title": "Secrets and Env",
+   "description": "Pass credentials and configuration without writing them into the repository.",
+   "snippets": [
+    {
+     "language": "yaml",
+     "code": "env:\n  APP_ENV: production\n\njobs:\n  deploy:\n    runs-on: ubuntu-24.04\n    env:\n      # Repository or organization secret; never available in forks\n      API_TOKEN: ${{ secrets.API_TOKEN }}\n    steps:\n      - env:\n          STEP_ONLY: value\n        run: ./scripts/deploy.sh\n\n      # Secrets are masked in logs but not in files you upload\n      - run: echo \"${{ secrets.API_TOKEN }}\" | docker login ghcr.io -u felipe --password-stdin"
+    },
+    {
+     "language": "yaml",
+     "code": "jobs:\n  release:\n    runs-on: ubuntu-24.04\n    steps:\n      # GITHUB_TOKEN is minted per run and expires with it\n      - uses: actions/checkout@v4\n        with:\n          token: ${{ secrets.GITHUB_TOKEN }}\n\n      # Built-in variables are already in the environment\n      - run: |\n          echo \"commit $GITHUB_SHA on $GITHUB_REF\"\n          echo \"run $GITHUB_RUN_ID attempt $GITHUB_RUN_ATTEMPT\""
+    },
+    {
+     "language": "bash",
+     "code": "# Store a secret, then read back only the name and update time\ngh secret set API_TOKEN --body \"$(op read op://ci/api/token)\"\ngh secret list\n\n# Environment secrets are scoped to a deployment target\ngh secret set DB_URL --env production --body \"postgres://db.internal/app\"\n\n# Repository variables are plain config, visible in the UI\ngh variable set REGISTRY --body ghcr.io/felipe"
+    }
+   ]
+  },
+  {
+   "id": "caching",
+   "title": "Caching",
+   "description": "Reuse downloaded dependencies between runs; keys decide when a cache is valid.",
+   "snippets": [
+    {
+     "language": "yaml",
+     "code": "steps:\n  - uses: actions/cache@v4\n    with:\n      path: |\n        ~/.cargo/registry\n        ~/.cargo/git\n        target\n      # Busted whenever the lockfile changes\n      key: cargo-${{ runner.os }}-${{ hashFiles('**/Cargo.lock') }}\n      restore-keys: |\n        cargo-${{ runner.os }}-"
+    },
+    {
+     "language": "yaml",
+     "code": "steps:\n  # setup-node handles the cache directory and the key for you\n  - uses: actions/setup-node@v4\n    with:\n      node-version: 22\n      cache: npm\n\n  - uses: actions/setup-python@v5\n    with:\n      python-version: \"3.13\"\n      cache: pip\n      cache-dependency-path: requirements*.txt"
+    },
+    {
+     "language": "yaml",
+     "code": "steps:\n  - uses: docker/setup-buildx-action@v3\n\n  # Layer cache lives in the Actions cache backend, no registry needed\n  - uses: docker/build-push-action@v6\n    with:\n      context: .\n      push: true\n      tags: ghcr.io/felipe/cheatrs-api:latest\n      cache-from: type=gha\n      cache-to: type=gha,mode=max"
+    }
+   ]
+  },
+  {
+   "id": "artifacts",
+   "title": "Artifacts",
+   "description": "Keep files produced by a job and hand them to later jobs or to the run page.",
+   "snippets": [
+    {
+     "language": "yaml",
+     "code": "steps:\n  - run: npm run build\n\n  # v4 requires a distinct name per job; files are zipped on upload\n  - uses: actions/upload-artifact@v4\n    with:\n      name: dist\n      path: dist/\n      retention-days: 7\n      if-no-files-found: error"
+    },
+    {
+     "language": "yaml",
+     "code": "jobs:\n  build:\n    runs-on: ubuntu-24.04\n    steps:\n      - uses: actions/upload-artifact@v4\n        with:\n          name: coverage\n          path: coverage/lcov.info\n\n  report:\n    needs: build\n    runs-on: ubuntu-24.04\n    steps:\n      - uses: actions/download-artifact@v4\n        with:\n          name: coverage\n          path: coverage\n      - run: npx codecov --file coverage/lcov.info"
+    },
+    {
+     "language": "bash",
+     "code": "# List artifacts of the newest run\ngh run view --json artifacts\n\n# Download one artifact of a specific run into a folder\ngh run download 1234567890 -n dist -D ./dist"
+    }
+   ]
+  },
+  {
+   "id": "services",
+   "title": "Services",
+   "description": "Run databases and brokers as sidecar containers next to the job.",
+   "snippets": [
+    {
+     "language": "yaml",
+     "code": "jobs:\n  test:\n    runs-on: ubuntu-24.04\n    services:\n      postgres:\n        image: postgres:17\n        env:\n          POSTGRES_USER: app\n          POSTGRES_PASSWORD: app\n          POSTGRES_DB: app_test\n        ports:\n          - 5432:5432\n        # The job waits for this to pass before running steps\n        options: >-\n          --health-cmd \"pg_isready -U app\"\n          --health-interval 10s\n          --health-timeout 5s\n          --health-retries 5\n    steps:\n      - run: psql \"postgres://app:app@localhost:5432/app_test\" -c \"select 1\""
+    },
+    {
+     "language": "yaml",
+     "code": "services:\n  redis:\n    image: redis:7-alpine\n    ports:\n      - 6379:6379\n    options: >-\n      --health-cmd \"redis-cli ping\"\n      --health-interval 5s\n      --health-retries 10\n\nsteps:\n  - run: redis-cli -h localhost -p 6379 ping\n\n  # Containers on the job network are reachable by service name too\n  - run: curl -fsS http://localhost:8080/health"
+    }
+   ]
+  },
+  {
+   "id": "conditions",
+   "title": "Conditions",
+   "description": "Gate jobs and steps with expressions over events, branches and previous results.",
+   "snippets": [
+    {
+     "language": "yaml",
+     "code": "steps:\n  - id: tests\n    run: npm test\n\n  # Runs only on pushes to main\n  - if: github.ref == 'refs/heads/main' && github.event_name == 'push'\n    run: ./scripts/deploy.sh\n\n  # Always runs, even after a failure, for cleanup and reports\n  - if: always()\n    run: ./scripts/upload-report.sh\n\n  # Skips when nothing failed so far\n  - if: success()\n    run: ./scripts/next.sh"
+    },
+    {
+     "language": "yaml",
+     "code": "jobs:\n  preview:\n    # Label check on pull requests; quotes keep the expression a string\n    if: >\n      github.event_name == 'pull_request' &&\n      contains(github.event.pull_request.labels.*.name, 'deploy-preview')\n    runs-on: ubuntu-24.04\n    steps:\n      - run: echo \"preview for ${{ github.head_ref }}\""
+    }
+   ]
+  },
+  {
+   "id": "permissions",
+   "title": "Permissions",
+   "description": "Scope GITHUB_TOKEN per workflow or job; anything not listed is denied.",
+   "snippets": [
+    {
+     "language": "yaml",
+     "code": "# Workflow default: read the code, write packages\npermissions:\n  contents: read\n  packages: write\n\njobs:\n  publish:\n    runs-on: ubuntu-24.04\n    # Job level replaces, not merges, the workflow default\n    permissions:\n      contents: read\n      packages: write\n      id-token: write\n    steps:\n      - uses: actions/checkout@v4\n      - run: echo \"${{ secrets.GITHUB_TOKEN }}\" | docker login ghcr.io -u \"${{ github.actor }}\" --password-stdin"
+    },
+    {
+     "language": "yaml",
+     "code": "# Deny everything, then grant the minimum per job\npermissions: {}\n\njobs:\n  comment:\n    runs-on: ubuntu-24.04\n    permissions:\n      pull-requests: write\n    steps:\n      - uses: actions/github-script@v7\n        with:\n          script: |\n            await github.rest.issues.createComment({\n              ...context.repo,\n              issue_number: context.issue.number,\n              body: \"Checks finished.\"\n            })"
+    },
+    {
+     "language": "bash",
+     "code": "# What the default token can do in this repository\ngh api repos/{owner}/{repo} --jq '.permissions'\n\n# Change the repository-wide default to read-only\ngh api -X PUT repos/{owner}/{repo}/actions/permissions/workflow   -f default_workflow_permissions=read"
+    }
+   ]
+  },
+  {
+   "id": "reusable",
+   "title": "Reusable Workflows",
+   "description": "Call one workflow from another, with typed inputs and explicit secret passing.",
+   "snippets": [
+    {
+     "language": "yaml",
+     "code": "# .github/workflows/test.yml — the callee\non:\n  workflow_call:\n    inputs:\n      node_version:\n        type: string\n        default: \"22\"\n    secrets:\n      npm_token:\n        required: false\n    outputs:\n      status:\n        value: ${{ jobs.test.outputs.status }}\n\njobs:\n  test:\n    runs-on: ubuntu-24.04\n    outputs:\n      status: ${{ steps.run.outputs.status }}\n    steps:\n      - uses: actions/checkout@v4\n      - uses: actions/setup-node@v4\n        with:\n          node-version: ${{ inputs.node_version }}\n      - id: run\n        run: |\n          npm ci && npm test\n          echo \"status=passed\" >> \"$GITHUB_OUTPUT\""
+    },
+    {
+     "language": "yaml",
+     "code": "jobs:\n  unit:\n    # Local path, or owner/repo/.github/workflows/file.yml@v1\n    uses: ./.github/workflows/test.yml\n    with:\n      node_version: \"20\"\n    secrets:\n      npm_token: ${{ secrets.NPM_TOKEN }}\n\n  e2e:\n    needs: unit\n    uses: felipe/ci-workflows/.github/workflows/e2e.yml@v2\n    # Forwards every secret of the caller\n    secrets: inherit\n    with:\n      browser: chromium"
+    }
+   ]
+  },
+  {
+   "id": "common-errors",
+   "title": "Common Errors",
+   "description": "The failures that show up most often, and the setting that actually fixes each one.",
+   "snippets": [
+    {
+     "language": "yaml",
+     "code": "# Symptom: \"Resource not accessible by integration\" when the job tries to write\n# Cause: the default token is read-only on new repositories\npermissions:\n  contents: read\n  pull-requests: write\n  issues: write"
+    },
+    {
+     "language": "yaml",
+     "code": "# Symptom: artifact upload fails with \"Conflict: an artifact with this name already exists\"\n# Cause: v4 needs a unique name per job, and v3 is shut down\n- uses: actions/upload-artifact@v4\n  with:\n    name: coverage-${{ matrix.node }}\n    path: coverage/"
+    },
+    {
+     "language": "bash",
+     "code": "# Symptom: the workflow never starts\n# Cause: the file is not under .github/workflows, or a branch/path filter excludes it\ngit ls-files .github/workflows\ngh workflow list --all\n\n# Symptom: \"Bad credentials\" on checkout\n# Cause: the token lacks contents:read, or a fork PR cannot read secrets\ngh auth status"
+    }
+   ]
+  }
+ ]
+}

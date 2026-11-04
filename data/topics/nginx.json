@@ -1,0 +1,221 @@
+{
+ "slug": "nginx",
+ "title": "Nginx",
+ "label": "Nginx",
+ "group": "Tool",
+ "color": "#009639",
+ "desc": "Serve static files and proxy HTTP traffic with a config built from server blocks and locations.",
+ "sections": [
+  {
+   "id": "setup",
+   "title": "Setup",
+   "description": "Install the package, test the config and reload without dropping connections.",
+   "snippets": [
+    {
+     "language": "bash",
+     "code": "# Debian and Ubuntu ship nginx in the main repository\nsudo apt update\nsudo apt install -y nginx\nsudo systemctl enable --now nginx\n\n# Fedora and Arch use the same binary and unit names\nsudo dnf install -y nginx\nsudo pacman -S --noconfirm nginx"
+    },
+    {
+     "language": "bash",
+     "code": "# Version and compile-time flags; modules are baked in, not loaded at runtime\nnginx -v\nnginx -V\n\n# Test the whole config, then reload gracefully; restart only for a new binary\nsudo nginx -t\nsudo nginx -s reload\n\n# Stop accepting new connections and finish the current ones\nsudo nginx -s quit"
+    }
+   ]
+  },
+  {
+   "id": "config",
+   "title": "Configuration",
+   "description": "The main file: global settings, the events block and one http block that includes sites.",
+   "snippets": [
+    {
+     "language": "nginx",
+     "code": "# /etc/nginx/nginx.conf — main context\nuser www-data;\nworker_processes auto;\npid /run/nginx.pid;\n\nevents {\n    worker_connections 1024;\n    multi_accept on;\n}\n\nhttp {\n    include /etc/nginx/mime.types;\n    default_type application/octet-stream;\n\n    sendfile on;\n    tcp_nopush on;\n    keepalive_timeout 65;\n\n    gzip on;\n    gzip_min_length 1024;\n    gzip_types text/css application/javascript application/json image/svg+xml;\n\n    include /etc/nginx/conf.d/*.conf;\n    include /etc/nginx/sites-enabled/*;\n}"
+    },
+    {
+     "language": "bash",
+     "code": "# Every file the running config pulls in, in load order\nsudo nginx -T | grep -E '^# configuration file'\n\n# sites-enabled normally holds symlinks into sites-available\nls -l /etc/nginx/sites-enabled/\n\n# Enable a site, then drop it without deleting the original\nsudo ln -s /etc/nginx/sites-available/app /etc/nginx/sites-enabled/app\nsudo rm /etc/nginx/sites-enabled/app"
+    }
+   ]
+  },
+  {
+   "id": "server-blocks",
+   "title": "Server Blocks",
+   "description": "One block per hostname: listen address, names it answers to and the default catch-all.",
+   "snippets": [
+    {
+     "language": "nginx",
+     "code": "# Plain HTTP: redirect everything to the canonical https host\nserver {\n    listen 80;\n    listen [::]:80;\n    server_name example.com www.example.com;\n\n    return 301 https://example.com$request_uri;\n}\n\nserver {\n    listen 443 ssl;\n    http2 on;\n    server_name example.com;\n\n    ssl_certificate     /etc/letsencrypt/live/example.com/fullchain.pem;\n    ssl_certificate_key /etc/letsencrypt/live/example.com/privkey.pem;\n\n    root /var/www/example;\n    index index.html;\n}"
+    },
+    {
+     "language": "nginx",
+     "code": "# First block for a listen address is the default; be explicit about it\nserver {\n    listen 80 default_server;\n    server_name _;\n\n    # Drops requests whose Host header matches no real site\n    return 444;\n}\n\n# test.example.com serves the same app from a different root\nserver {\n    listen 80;\n    server_name test.example.com;\n    root /var/www/example-test;\n}"
+    }
+   ]
+  },
+  {
+   "id": "static",
+   "title": "Static Files",
+   "description": "Point root at a directory and let try_files decide between files, fallbacks and 404.",
+   "snippets": [
+    {
+     "language": "nginx",
+     "code": "server {\n    listen 80;\n    server_name static.example.com;\n\n    root /var/www/cheatrs/dist;\n    index index.html;\n\n    location / {\n        # File, then directory, then 404; no directory listing\n        try_files $uri $uri/ =404;\n    }\n\n    location /assets/ {\n        # Fingerprinted files never change, so cache them for a year\n        expires 1y;\n        add_header Cache-Control \"public, immutable\";\n    }\n}"
+    },
+    {
+     "language": "nginx",
+     "code": "location / {\n    # Single-page app: unknown paths return index.html, not 404\n    try_files $uri /index.html;\n}\n\n# Never serve dotfiles such as .env or .git\nlocation ~ /\\. {\n    deny all;\n    access_log off;\n}\n\n# Serve pre-compressed files when the client accepts them\nlocation ~* \\.(css|js)$ {\n    gzip_static on;\n    expires 7d;\n}"
+    }
+   ]
+  },
+  {
+   "id": "proxy",
+   "title": "Reverse Proxy",
+   "description": "Forward to an upstream app while preserving the client's host, IP and protocol.",
+   "snippets": [
+    {
+     "language": "nginx",
+     "code": "location /api/ {\n    # Trailing slash strips /api/ before the request reaches the app\n    proxy_pass http://127.0.0.1:8080/;\n\n    proxy_http_version 1.1;\n    proxy_set_header Host $host;\n    proxy_set_header X-Real-IP $remote_addr;\n    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;\n    proxy_set_header X-Forwarded-Proto $scheme;\n\n    proxy_connect_timeout 5s;\n    proxy_read_timeout 60s;\n    proxy_send_timeout 60s;\n}"
+    },
+    {
+     "language": "nginx",
+     "code": "# WebSockets need the upgrade headers and a long read timeout\nlocation /ws {\n    proxy_pass http://127.0.0.1:3000;\n    proxy_http_version 1.1;\n    proxy_set_header Upgrade $http_upgrade;\n    proxy_set_header Connection \"upgrade\";\n    proxy_read_timeout 3600s;\n}"
+    },
+    {
+     "language": "nginx",
+     "code": "location /upload {\n    # Stream the body to the app instead of buffering it on disk\n    proxy_request_buffering off;\n    client_max_body_size 512m;\n    proxy_pass http://127.0.0.1:8080;\n}\n\nlocation /api/ {\n    proxy_buffering on;\n    proxy_buffers 16 16k;\n    proxy_busy_buffers_size 32k;\n    proxy_pass http://127.0.0.1:8080;\n}"
+    }
+   ]
+  },
+  {
+   "id": "headers",
+   "title": "Headers",
+   "description": "Add security and CORS headers, hide upstream ones and cap request bodies.",
+   "snippets": [
+    {
+     "language": "nginx",
+     "code": "# add_header is inherited only if the child block declares none of its own\nadd_header X-Content-Type-Options \"nosniff\" always;\nadd_header X-Frame-Options \"SAMEORIGIN\" always;\nadd_header Referrer-Policy \"strict-origin-when-cross-origin\" always;\nadd_header Content-Security-Policy \"default-src 'self'; img-src 'self' data:\" always;\n\n# HSTS only after every subdomain works over https\nadd_header Strict-Transport-Security \"max-age=31536000; includeSubDomains\" always;"
+    },
+    {
+     "language": "nginx",
+     "code": "location /api/ {\n    # CORS for one trusted origin, with the preflight answered by nginx\n    add_header Access-Control-Allow-Origin \"https://app.example.com\" always;\n    add_header Access-Control-Allow-Methods \"GET, POST, OPTIONS\" always;\n    add_header Access-Control-Allow-Headers \"Authorization, Content-Type\" always;\n\n    if ($request_method = OPTIONS) {\n        return 204;\n    }\n\n    # Strip the header the upstream sets before adding our own\n    proxy_hide_header X-Powered-By;\n    proxy_pass http://127.0.0.1:8080;\n}"
+    },
+    {
+     "language": "nginx",
+     "code": "# Limit the request body per location, and per virtual host\nclient_max_body_size 8m;\nclient_body_timeout 12s;\nclient_header_timeout 12s;\n\nlocation /files/ {\n    client_max_body_size 256m;\n}"
+    }
+   ]
+  },
+  {
+   "id": "tls",
+   "title": "TLS",
+   "description": "Terminate HTTPS with a modern protocol set and automate renewal with certbot.",
+   "snippets": [
+    {
+     "language": "nginx",
+     "code": "server {\n    listen 443 ssl;\n    http2 on;\n    server_name example.com;\n\n    ssl_certificate     /etc/letsencrypt/live/example.com/fullchain.pem;\n    ssl_certificate_key /etc/letsencrypt/live/example.com/privkey.pem;\n\n    ssl_protocols TLSv1.2 TLSv1.3;\n    ssl_ciphers HIGH:!aNULL:!MD5;\n    ssl_prefer_server_ciphers off;\n\n    ssl_session_cache shared:SSL:10m;\n    ssl_session_timeout 1d;\n    ssl_session_tickets off;\n\n    ssl_stapling on;\n    ssl_stapling_verify on;\n}"
+    },
+    {
+     "language": "bash",
+     "code": "# Certbot edits the server block, adds the redirect and installs the cert\nsudo certbot --nginx -d example.com -d www.example.com\n\n# Renewal runs from a systemd timer; a dry run proves it still works\nsudo certbot renew --dry-run\nsystemctl list-timers | grep certbot\n\n# Reload nginx after a manual renewal\nsudo systemctl reload nginx"
+    }
+   ]
+  },
+  {
+   "id": "locations",
+   "title": "Location Matching",
+   "description": "Exact, preferential prefix and regex blocks, evaluated in a fixed order.",
+   "snippets": [
+    {
+     "language": "nginx",
+     "code": "# 1. Exact match, highest priority\nlocation = /health {\n    access_log off;\n    return 200 \"ok\\n\";\n}\n\n# 2. Prefix with ^~ stops regex evaluation\nlocation ^~ /static/ {\n    root /var/www;\n}\n\n# 3. Case-sensitive regex, first match in file order wins\nlocation ~ \\.php$ {\n    include snippets/fastcgi-php.conf;\n    fastcgi_pass unix:/run/php/php8.3-fpm.sock;\n}\n\n# 4. Plain prefix, longest match wins, regexes still get a chance\nlocation / {\n    try_files $uri $uri/ =404;\n}"
+    },
+    {
+     "language": "nginx",
+     "code": "# Named location used as an error fallback\nlocation /api/ {\n    proxy_pass http://127.0.0.1:8080;\n    error_page 502 503 504 = @maintenance;\n}\n\nlocation @maintenance {\n    default_type text/html;\n    return 503 \"<h1>Back in a minute</h1>\";\n}\n\n# Nested location narrows the parent prefix\nlocation /app/ {\n    location ~* \\.(png|jpg|svg)$ {\n        expires 30d;\n    }\n}"
+    }
+   ]
+  },
+  {
+   "id": "rewrite",
+   "title": "Rewrites",
+   "description": "Redirect old paths, keep slugs with captures and rewrite internally before proxying.",
+   "snippets": [
+    {
+     "language": "nginx",
+     "code": "# return is cheaper than rewrite for a plain redirect\nlocation /old-blog/ {\n    return 301 /blog/;\n}\n\n# Capture groups carry the slug into the new path\nrewrite ^/post/([0-9]+)$ /articles/$1 permanent;\n\n# break rewrites and keeps the request in this block\nlocation /app/ {\n    rewrite ^/app/(.*)$ /$1 break;\n    proxy_pass http://127.0.0.1:3000;\n}"
+    },
+    {
+     "language": "nginx",
+     "code": "# Canonical host: www to apex, keeping the path and query\nserver {\n    listen 80;\n    server_name www.example.com;\n    return 301 https://example.com$request_uri;\n}\n\n# Force the trailing slash for a directory-style URL\nlocation = /docs {\n    return 301 /docs/;\n}"
+    }
+   ]
+  },
+  {
+   "id": "load-balancing",
+   "title": "Load Balancing",
+   "description": "Define an upstream group, pick a method and keep connections alive to the backends.",
+   "snippets": [
+    {
+     "language": "nginx",
+     "code": "upstream backend {\n    # Fewest active connections; round-robin is the default\n    least_conn;\n    server 10.0.0.11:8080 max_fails=3 fail_timeout=10s;\n    server 10.0.0.12:8080 max_fails=3 fail_timeout=10s;\n    server 10.0.0.13:8080 backup;\n\n    # Reuse upstream connections instead of opening one per request\n    keepalive 32;\n}\n\nserver {\n    location / {\n        proxy_pass http://backend;\n        proxy_http_version 1.1;\n        proxy_set_header Connection \"\";\n    }\n}"
+    },
+    {
+     "language": "nginx",
+     "code": "# Sticky by client address instead of by cookie\nupstream app {\n    ip_hash;\n    server 10.0.0.21:3000;\n    server 10.0.0.22:3000;\n}\n\n# Weighted split, useful while draining an old box\nupstream canary {\n    server 10.0.0.31:3000 weight=9;\n    server 10.0.0.32:3000 weight=1;\n}"
+    }
+   ]
+  },
+  {
+   "id": "caching",
+   "title": "Caching",
+   "description": "Cache upstream responses on disk with a key, a TTL and stale fallbacks.",
+   "snippets": [
+    {
+     "language": "nginx",
+     "code": "# levels and keys_zone size the on-disk cache; inactive evicts unused entries\nproxy_cache_path /var/cache/nginx levels=1:2 keys_zone=api_cache:10m\n                 max_size=1g inactive=60m use_temp_path=off;\n\nserver {\n    location /api/public/ {\n        proxy_cache api_cache;\n        proxy_cache_key \"$scheme$request_method$host$request_uri\";\n        proxy_cache_valid 200 5m;\n        proxy_cache_valid 404 1m;\n        proxy_cache_use_stale error timeout updating http_502 http_503 http_504;\n        proxy_cache_background_update on;\n        add_header X-Cache-Status $upstream_cache_status;\n        proxy_pass http://127.0.0.1:8080;\n    }\n}"
+    },
+    {
+     "language": "nginx",
+     "code": "# One second of cache absorbs bursts without serving stale data for long\nproxy_cache_path /var/cache/nginx/micro levels=1:2 keys_zone=micro:10m max_size=256m inactive=10m;\n\nlocation / {\n    proxy_cache micro;\n    proxy_cache_valid 200 1s;\n    # A single request fills the cache; the rest wait for it\n    proxy_cache_lock on;\n    proxy_cache_lock_timeout 5s;\n    # Never cache a request that carries a session cookie\n    proxy_no_cache $cookie_session;\n    proxy_pass http://127.0.0.1:3000;\n}"
+    },
+    {
+     "language": "bash",
+     "code": "# How much disk the cache is using, and what is in the zone\ndu -sh /var/cache/nginx\nsudo nginx -T | grep -A1 proxy_cache_path\n\n# Confirm a hit on the second request\ncurl -sI https://example.com/api/public/status | grep -i x-cache-status"
+    }
+   ]
+  },
+  {
+   "id": "logs",
+   "title": "Logs",
+   "description": "Shape the access log, split it per site and count what the traffic actually is.",
+   "snippets": [
+    {
+     "language": "nginx",
+     "code": "# Custom format with upstream timings; request_time is in seconds\nlog_format main '$remote_addr - $remote_user [$time_local] \"$request\" '\n                '$status $body_bytes_sent \"$http_referer\" \"$http_user_agent\" '\n                'rt=$request_time uct=$upstream_connect_time urt=$upstream_response_time';\n\naccess_log /var/log/nginx/access.log main buffer=32k flush=5s;\nerror_log  /var/log/nginx/error.log warn;"
+    },
+    {
+     "language": "bash",
+     "code": "# Top ten client addresses in today's access log\nsudo awk '{print $1}' /var/log/nginx/access.log | sort | uniq -c | sort -rn | head -10\n\n# Requests by status code\nsudo awk '{print $9}' /var/log/nginx/access.log | sort | uniq -c | sort -rn\n\n# Only errors, without blocking the terminal\nsudo tail -f /var/log/nginx/error.log\n\n# Log rotation is a logrotate hook that reopens the files\nsudo logrotate -d /etc/logrotate.d/nginx"
+    }
+   ]
+  },
+  {
+   "id": "troubleshooting",
+   "title": "Troubleshooting",
+   "description": "Read the config test, find the process holding a port and tell 502 from 504.",
+   "snippets": [
+    {
+     "language": "bash",
+     "code": "# The line number in the error points at the offending file\nsudo nginx -t\n\n# Who owns the ports, and whether the config was reloaded\nsudo ss -tlnp | grep -E ':80|:443'\nsystemctl status nginx --no-pager\nsudo journalctl -u nginx -n 50 --no-pager"
+    },
+    {
+     "language": "nginx",
+     "code": "# 502: the upstream refused the connection (wrong port, app down, SELinux)\n# 504: it accepted but answered late, so raise proxy_read_timeout\nlocation /api/ {\n    proxy_pass http://127.0.0.1:8080;\n    proxy_connect_timeout 5s;\n    proxy_read_timeout 120s;\n    proxy_next_upstream error timeout http_502;\n    proxy_intercept_errors on;\n    error_page 502 504 /50x.html;\n}\n\nlocation = /50x.html {\n    root /usr/share/nginx/html;\n}"
+    },
+    {
+     "language": "bash",
+     "code": "# Bypass DNS and the edge to test this server block directly\ncurl -sI --resolve example.com:443:127.0.0.1 https://example.com/\n\n# A 413 means the body exceeded client_max_body_size\ncurl -s -o /dev/null -w '%{http_code}\\n' -X POST --data-binary @big.iso https://example.com/upload\n\n# Too many open files shows up as \"worker_connections are not enough\"\nulimit -n"
+    }
+   ]
+  }
+ ]
+}

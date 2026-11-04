@@ -1,0 +1,325 @@
+{
+ "slug": "sql",
+ "title": "SQL",
+ "label": "SQL",
+ "group": "Database",
+ "color": "#0064A5",
+ "desc": "The standard query language for relational databases: filtering, joins, aggregation, windows and DDL.",
+ "sections": [
+  {
+   "id": "setup",
+   "title": "Setup",
+   "description": "Install a client and connect to PostgreSQL, MySQL or a SQLite file.",
+   "snippets": [
+    {
+     "language": "bash",
+     "code": "# Clients on Debian or Ubuntu; sqlite3 is a single binary\nsudo apt install -y postgresql-client mysql-client sqlite3\n\n# Connect over TCP, password prompt kept interactive\npsql \"host=127.0.0.1 port=5432 dbname=inventory user=app_user\"\nmysql -h 127.0.0.1 -P 3306 -u app_user -p inventory\n\n# SQLite has no server: the file is the database\nsqlite3 inventory.db"
+    },
+    {
+     "language": "bash",
+     "code": "# PostgreSQL 17 in a container, data on a named volume\ndocker run --name pg17 -e POSTGRES_PASSWORD=devsecret -e POSTGRES_DB=inventory \\\n  -p 5432:5432 -v pg17-data:/var/lib/postgresql/data -d postgres:17\n\n# MySQL 8.4 needs a root password and creates the database on first boot\ndocker run --name mysql84 -e MYSQL_ROOT_PASSWORD=devsecret -e MYSQL_DATABASE=inventory \\\n  -p 3306:3306 -d mysql:8.4\n\n# MariaDB is the fork most distributions ship instead of MySQL\ndocker run --name mariadb11 -e MARIADB_ROOT_PASSWORD=devsecret -p 3307:3306 -d mariadb:11"
+    }
+   ]
+  },
+  {
+   "id": "syntax",
+   "title": "Syntax",
+   "description": "Statements, comments, literal quoting and the rules that trip people up.",
+   "snippets": [
+    {
+     "language": "sql",
+     "code": "-- One statement is a clause chain that ends with a semicolon\nSELECT id, email        -- projection: what comes back\nFROM customers          -- source relation\nWHERE active = TRUE     -- row filter, before grouping\nORDER BY created_at DESC;  -- final ordering\n\n/* Block comments\n   span lines and nest in PostgreSQL */"
+    },
+    {
+     "language": "sql",
+     "code": "-- Double quotes are identifiers, single quotes are string literals\nSELECT \"order\", 'pending' FROM \"order\";\n\n-- MySQL and MariaDB spell identifiers with backticks by default\nSELECT `order`, 'pending' FROM `order`;\n\n-- SQL Server brackets the same idea, and doubles a quote to escape it\nSELECT [order], 'it''s pending' FROM [order];\n\n-- Keywords are case insensitive, string comparisons are not\nselect id from customers where email = 'Ana@Example.com';"
+    }
+   ]
+  },
+  {
+   "id": "select",
+   "title": "Selecting",
+   "description": "Project columns, alias them, remove duplicates and page through results.",
+   "snippets": [
+    {
+     "language": "sql",
+     "code": "-- SELECT * is fine at a prompt, list the columns in application code\nSELECT * FROM products;\nSELECT id, name, price_cents FROM products;\n\n-- Aliases rename the output column and shorten the table reference\nSELECT p.name AS product, p.price_cents / 100.0 AS price\nFROM products AS p;\n\n-- DISTINCT removes duplicate rows after projection\nSELECT DISTINCT country FROM customers;"
+    },
+    {
+     "language": "sql",
+     "code": "-- LIMIT and OFFSET are the PostgreSQL, MySQL, SQLite and MariaDB form\nSELECT id, name FROM products ORDER BY name LIMIT 20 OFFSET 40;\n\n-- Paging needs a tiebreaker or rows repeat between pages\nSELECT id, name FROM products ORDER BY name, id LIMIT 20 OFFSET 40;"
+    },
+    {
+     "language": "sql",
+     "code": "-- Computed columns are evaluated per row and never stored\nSELECT name,\n       price_cents / 100.0 AS price,\n       ROUND(price_cents * 0.9 / 100.0, 2) AS sale_price,\n       COALESCE(discount_pct, 0) AS discount\nFROM products;"
+    }
+   ]
+  },
+  {
+   "id": "filtering",
+   "title": "Filtering and Sorting",
+   "description": "Narrow rows with predicates, then order the result deterministically.",
+   "snippets": [
+    {
+     "language": "sql",
+     "code": "-- Comparison, range, set membership and pattern in one predicate list\nSELECT id, name, price_cents\nFROM products\nWHERE price_cents BETWEEN 1000 AND 5000\n  AND category IN ('books', 'music')\n  AND name LIKE 'The %'\n  AND discontinued_at IS NULL;"
+    },
+    {
+     "language": "sql",
+     "code": "-- DESC puts the newest first; NULLS LAST keeps missing dates at the end\nSELECT id, shipped_at FROM orders\nWHERE status = 'shipped'\nORDER BY shipped_at DESC NULLS LAST, id DESC;\n\n-- MySQL has no NULLS LAST: sort on the null flag first\nSELECT id, shipped_at FROM orders\nWHERE status = 'shipped'\nORDER BY shipped_at IS NULL, shipped_at DESC, id DESC;"
+    },
+    {
+     "language": "sql",
+     "code": "-- CASE builds a label; it stops at the first matching branch\nSELECT id, total_cents,\n       CASE\n         WHEN total_cents >= 10000 THEN 'large'\n         WHEN total_cents >= 2500 THEN 'medium'\n         ELSE 'small'\n       END AS bucket\nFROM orders\nWHERE NOT (status = 'cancelled' OR status = 'refunded');"
+    }
+   ]
+  },
+  {
+   "id": "joins",
+   "title": "Joins",
+   "description": "Combine relations by key, keeping unmatched rows when the question needs them.",
+   "snippets": [
+    {
+     "language": "sql",
+     "code": "-- INNER JOIN keeps only rows that match on both sides\nSELECT o.id, o.total_cents, c.email\nFROM orders AS o\nJOIN customers AS c ON c.id = o.customer_id;\n\n-- LEFT JOIN keeps every order, matched or not\nSELECT o.id, s.carrier, s.tracking_code\nFROM orders AS o\nLEFT JOIN shipments AS s ON s.order_id = o.id;"
+    },
+    {
+     "language": "sql",
+     "code": "-- Anti-join: orders that have no shipment row yet\nSELECT o.id\nFROM orders AS o\nLEFT JOIN shipments AS s ON s.order_id = o.id\nWHERE s.order_id IS NULL;\n\n-- The same question with NOT EXISTS, usually the better plan\nSELECT o.id FROM orders AS o\nWHERE NOT EXISTS (SELECT 1 FROM shipments AS s WHERE s.order_id = o.id);"
+    },
+    {
+     "language": "sql",
+     "code": "-- Self join: employee to manager, LEFT so the top of the tree survives\nSELECT e.name AS employee, m.name AS manager\nFROM employees AS e\nLEFT JOIN employees AS m ON m.id = e.manager_id;\n\n-- FULL OUTER JOIN keeps unmatched rows from both sides, MySQL lacks it\nSELECT c.id AS customer_id, o.id AS order_id\nFROM customers AS c\nFULL OUTER JOIN orders AS o ON o.customer_id = c.id\nWHERE c.id IS NULL OR o.id IS NULL;"
+    }
+   ]
+  },
+  {
+   "id": "aggregation",
+   "title": "Aggregation",
+   "description": "Collapse rows into groups and filter the groups afterwards.",
+   "snippets": [
+    {
+     "language": "sql",
+     "code": "SELECT customer_id,\n       COUNT(*) AS orders,\n       SUM(total_cents) AS revenue_cents,\n       ROUND(AVG(total_cents), 2) AS average_ticket,\n       MIN(created_at) AS first_order,\n       MAX(created_at) AS last_order\nFROM orders\nGROUP BY customer_id;"
+    },
+    {
+     "language": "sql",
+     "code": "-- WHERE filters rows before grouping, HAVING filters groups after it\nSELECT customer_id, COUNT(*) AS orders\nFROM orders\nWHERE created_at >= DATE '2026-01-01'\nGROUP BY customer_id\nHAVING COUNT(*) >= 3\nORDER BY orders DESC;"
+    },
+    {
+     "language": "sql",
+     "code": "-- COUNT(*) counts rows, COUNT(column) skips NULLs\nSELECT COUNT(*) AS all_rows,\n       COUNT(shipped_at) AS shipped_rows,\n       COUNT(DISTINCT customer_id) AS customers\nFROM orders;\n\n-- PostgreSQL and SQLite: string_agg; MySQL and MariaDB: GROUP_CONCAT\nSELECT customer_id, string_agg(status, ', ' ORDER BY created_at) AS statuses\nFROM orders\nGROUP BY customer_id;"
+    }
+   ]
+  },
+  {
+   "id": "subqueries",
+   "title": "Subqueries",
+   "description": "Use a query as a value, a set or a derived table.",
+   "snippets": [
+    {
+     "language": "sql",
+     "code": "-- Scalar subquery in the select list: one value, repeated per row\nSELECT id, total_cents,\n       (SELECT AVG(total_cents) FROM orders) AS overall_average\nFROM orders;\n\n-- Subquery in a predicate: customers that ordered this year\nSELECT id, email FROM customers\nWHERE id IN (SELECT customer_id FROM orders WHERE created_at >= DATE '2026-01-01');"
+    },
+    {
+     "language": "sql",
+     "code": "-- Correlated: the inner query runs per outer row and reads o.total_cents\nSELECT o.id, o.total_cents\nFROM orders AS o\nWHERE o.total_cents > (\n  SELECT AVG(i.total_cents)\n  FROM orders AS i\n  WHERE i.customer_id = o.customer_id\n);"
+    },
+    {
+     "language": "sql",
+     "code": "-- Derived table: an unnamed subquery in FROM, it must carry an alias\nSELECT bucket.customer_id, bucket.revenue_cents\nFROM (\n  SELECT customer_id, SUM(total_cents) AS revenue_cents\n  FROM orders\n  GROUP BY customer_id\n) AS bucket\nWHERE bucket.revenue_cents > 50000;"
+    }
+   ]
+  },
+  {
+   "id": "cte",
+   "title": "Common Table Expressions",
+   "description": "Name intermediate results, including recursive walks of a tree.",
+   "snippets": [
+    {
+     "language": "sql",
+     "code": "-- A CTE is a named subquery scoped to one statement\nWITH recent AS (\n  SELECT id, customer_id, total_cents\n  FROM orders\n  WHERE created_at >= DATE '2026-01-01'\n)\nSELECT customer_id, SUM(total_cents) AS revenue_cents\nFROM recent\nGROUP BY customer_id;"
+    },
+    {
+     "language": "sql",
+     "code": "-- Several CTEs chain in order and can reference the earlier ones\nWITH paid AS (\n  SELECT * FROM orders WHERE status = 'paid'\n),\ntotals AS (\n  SELECT customer_id, SUM(total_cents) AS revenue_cents FROM paid GROUP BY customer_id\n)\nSELECT c.email, t.revenue_cents\nFROM totals AS t\nJOIN customers AS c ON c.id = t.customer_id\nORDER BY t.revenue_cents DESC;"
+    },
+    {
+     "language": "sql",
+     "code": "-- Recursive CTE: walk the category tree from the roots down\nWITH RECURSIVE tree AS (\n  SELECT id, name, parent_id, 0 AS depth\n  FROM categories\n  WHERE parent_id IS NULL\n  UNION ALL\n  SELECT c.id, c.name, c.parent_id, t.depth + 1\n  FROM categories AS c\n  JOIN tree AS t ON c.parent_id = t.id\n)\nSELECT id, name, depth FROM tree ORDER BY depth, name;"
+    }
+   ]
+  },
+  {
+   "id": "window-functions",
+   "title": "Window Functions",
+   "description": "Compute per-row values over a partition without collapsing the rows.",
+   "snippets": [
+    {
+     "language": "sql",
+     "code": "-- ROW_NUMBER is unique per row, RANK repeats on ties and then skips\nSELECT id, customer_id, total_cents,\n       ROW_NUMBER() OVER (PARTITION BY customer_id ORDER BY total_cents DESC) AS position,\n       RANK() OVER (PARTITION BY customer_id ORDER BY total_cents DESC) AS ranking\nFROM orders;"
+    },
+    {
+     "language": "sql",
+     "code": "-- Running total and the previous row, all in one pass over the partition\nSELECT id, created_at, total_cents,\n       SUM(total_cents) OVER (ORDER BY created_at, id) AS running_total,\n       LAG(total_cents) OVER (ORDER BY created_at, id) AS previous_total,\n       total_cents - LAG(total_cents) OVER (ORDER BY created_at, id) AS delta\nFROM orders\nWHERE customer_id = 42;"
+    },
+    {
+     "language": "sql",
+     "code": "-- Windows cannot go in WHERE: rank in a subquery, filter outside it\nSELECT customer_id, id, total_cents\nFROM (\n  SELECT customer_id, id, total_cents,\n         ROW_NUMBER() OVER (PARTITION BY customer_id ORDER BY total_cents DESC) AS position\n  FROM orders\n) AS ranked\nWHERE position <= 2;"
+    }
+   ]
+  },
+  {
+   "id": "insert",
+   "title": "Insert",
+   "description": "Add rows, copy query results and resolve conflicts without a second round trip.",
+   "snippets": [
+    {
+     "language": "sql",
+     "code": "INSERT INTO customers (email, name, country)\nVALUES ('ana@example.com', 'Ana Ribeiro', 'BR'),\n       ('joao@example.com', 'Joao Silva', 'BR');\n\n-- Insert the result of a query instead of literals\nINSERT INTO customers_archive (id, email, deleted_at)\nSELECT id, email, NOW() FROM customers WHERE deleted_at IS NOT NULL;"
+    },
+    {
+     "language": "sql",
+     "code": "-- PostgreSQL and SQLite: ON CONFLICT needs a unique index on email\nINSERT INTO customers (email, name)\nVALUES ('ana@example.com', 'Ana Ribeiro')\nON CONFLICT (email) DO UPDATE SET name = EXCLUDED.name;\n\n-- MySQL 8.0.19 and later use a row alias for the incoming values\nINSERT INTO customers (email, name)\nVALUES ('ana@example.com', 'Ana Ribeiro') AS incoming\nON DUPLICATE KEY UPDATE name = incoming.name;"
+    },
+    {
+     "language": "sql",
+     "code": "-- RETURNING hands back generated keys in the same statement\nINSERT INTO orders (customer_id, total_cents)\nVALUES (42, 12990)\nRETURNING id, created_at;\n\n-- MySQL has no RETURNING: read LAST_INSERT_ID() in the same session\nINSERT INTO orders (customer_id, total_cents) VALUES (42, 12990);\nSELECT LAST_INSERT_ID();"
+    }
+   ]
+  },
+  {
+   "id": "update-delete",
+   "title": "Update and Delete",
+   "description": "Change and remove rows, with the predicate you tested as a SELECT first.",
+   "snippets": [
+    {
+     "language": "sql",
+     "code": "UPDATE products\nSET price_cents = price_cents + 500,\n    updated_at = NOW()\nWHERE category = 'books';"
+    },
+    {
+     "language": "sql",
+     "code": "-- PostgreSQL: UPDATE ... FROM takes the filter from another table\nUPDATE orders AS o\nSET status = 'cancelled'\nFROM customers AS c\nWHERE c.id = o.customer_id AND c.email = 'ana@example.com' AND o.status = 'pending';\n\n-- MySQL and MariaDB: UPDATE with a JOIN\nUPDATE orders AS o\nJOIN customers AS c ON c.id = o.customer_id\nSET o.status = 'cancelled'\nWHERE c.email = 'ana@example.com' AND o.status = 'pending';"
+    },
+    {
+     "language": "sql",
+     "code": "DELETE FROM sessions WHERE expires_at < NOW();\n\n-- Delete through a subquery rather than a multi-table join\nDELETE FROM orders\nWHERE customer_id IN (SELECT id FROM customers WHERE deleted_at IS NOT NULL);\n\n-- TRUNCATE is faster, resets identity in PostgreSQL and takes no WHERE\nTRUNCATE TABLE staging_events;"
+    }
+   ]
+  },
+  {
+   "id": "ddl",
+   "title": "DDL",
+   "description": "Create and reshape tables; most engines commit each of these implicitly.",
+   "snippets": [
+    {
+     "language": "sql",
+     "code": "CREATE TABLE customers (\n  id          BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,\n  email       TEXT NOT NULL UNIQUE,\n  name        TEXT NOT NULL,\n  country     CHAR(2) NOT NULL DEFAULT 'BR',\n  created_at  TIMESTAMPTZ NOT NULL DEFAULT NOW()\n);"
+    },
+    {
+     "language": "sql",
+     "code": "ALTER TABLE customers ADD COLUMN phone TEXT;\nALTER TABLE customers ALTER COLUMN name SET NOT NULL;\nALTER TABLE customers RENAME COLUMN phone TO phone_number;\nALTER TABLE customers DROP COLUMN phone_number;"
+    },
+    {
+     "language": "sql",
+     "code": "-- Copy the shape and the rows at once\nCREATE TABLE customers_2025 AS\nSELECT * FROM customers WHERE created_at < DATE '2026-01-01';\n\nDROP TABLE IF EXISTS staging_events;"
+    }
+   ]
+  },
+  {
+   "id": "constraints",
+   "title": "Constraints",
+   "description": "Let the database reject bad rows instead of trusting every caller.",
+   "snippets": [
+    {
+     "language": "sql",
+     "code": "CREATE TABLE orders (\n  id           BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,\n  customer_id  BIGINT NOT NULL REFERENCES customers (id) ON DELETE CASCADE,\n  status       TEXT NOT NULL DEFAULT 'pending'\n               CHECK (status IN ('pending', 'paid', 'shipped', 'cancelled')),\n  total_cents  INTEGER NOT NULL CHECK (total_cents >= 0),\n  created_at   TIMESTAMPTZ NOT NULL DEFAULT NOW()\n);"
+    },
+    {
+     "language": "sql",
+     "code": "-- Name the constraint so a later migration can drop it by name\nALTER TABLE orders\n  ADD CONSTRAINT orders_total_positive CHECK (total_cents >= 0);\n\n-- Composite unique: one review per customer and product\nALTER TABLE reviews\n  ADD CONSTRAINT reviews_customer_product_key UNIQUE (customer_id, product_id);"
+    },
+    {
+     "language": "sql",
+     "code": "-- PostgreSQL: the foreign key is checked at COMMIT, not per statement\nALTER TABLE order_items\n  ADD CONSTRAINT order_items_order_fk\n  FOREIGN KEY (order_id) REFERENCES orders (id)\n  ON DELETE CASCADE\n  DEFERRABLE INITIALLY DEFERRED;"
+    }
+   ]
+  },
+  {
+   "id": "indexes",
+   "title": "Indexes",
+   "description": "Make reads cheap and writes slightly slower; measure before adding one.",
+   "snippets": [
+    {
+     "language": "sql",
+     "code": "CREATE INDEX orders_customer_id_idx ON orders (customer_id);\nCREATE INDEX orders_created_at_idx ON orders (created_at DESC);\n\n-- Functional index: makes WHERE lower(email) = 'ana@example.com' seek\nCREATE UNIQUE INDEX customers_email_lower_idx ON customers (lower(email));"
+    },
+    {
+     "language": "sql",
+     "code": "-- Composite: equality columns first, range or sort column last\nCREATE INDEX orders_customer_status_idx ON orders (customer_id, status);\n\n-- Partial: only the rows the hot query reads\nCREATE INDEX orders_pending_idx ON orders (created_at) WHERE status = 'pending';\n\n-- Covering: the index alone answers the query, PostgreSQL 11 and later\nCREATE INDEX orders_customer_covering_idx ON orders (customer_id) INCLUDE (total_cents);"
+    },
+    {
+     "language": "sql",
+     "code": "-- Read the plan, not the wall clock alone\nEXPLAIN ANALYZE\nSELECT id, total_cents FROM orders\nWHERE customer_id = 42 ORDER BY created_at DESC LIMIT 10;\n\n-- Drop an index that no longer earns its write cost\nDROP INDEX IF EXISTS orders_created_at_idx;"
+    }
+   ]
+  },
+  {
+   "id": "transactions",
+   "title": "Transactions",
+   "description": "Group statements so they all land or none do.",
+   "snippets": [
+    {
+     "language": "sql",
+     "code": "BEGIN;\nUPDATE accounts SET balance_cents = balance_cents - 5000 WHERE id = 1;\nUPDATE accounts SET balance_cents = balance_cents + 5000 WHERE id = 2;\nCOMMIT;"
+    },
+    {
+     "language": "sql",
+     "code": "BEGIN;\nDELETE FROM order_items WHERE order_id = 900;\nSAVEPOINT after_items;\nDELETE FROM orders WHERE id = 900;\nROLLBACK TO SAVEPOINT after_items;\nCOMMIT;"
+    },
+    {
+     "language": "sql",
+     "code": "-- Read committed is the default; repeatable read holds one snapshot\nBEGIN ISOLATION LEVEL REPEATABLE READ;\nSELECT SUM(balance_cents) FROM accounts;\nCOMMIT;\n\n-- Lock the row for the rest of the transaction before read-modify-write\nSELECT * FROM accounts WHERE id = 1 FOR UPDATE;"
+    }
+   ]
+  },
+  {
+   "id": "nulls",
+   "title": "NULLs",
+   "description": "Missing values propagate through arithmetic and never compare equal.",
+   "snippets": [
+    {
+     "language": "sql",
+     "code": "-- NULL is unknown, so it is never equal or unequal to anything\nSELECT id FROM orders WHERE shipped_at IS NULL;\nSELECT id FROM orders WHERE shipped_at IS NOT NULL;\n\n-- This returns no rows, on every engine: use IS NULL instead\nSELECT id FROM orders WHERE shipped_at = NULL;"
+    },
+    {
+     "language": "sql",
+     "code": "-- COALESCE returns the first non-NULL argument\nSELECT id,\n       COALESCE(shipped_at, created_at) AS effective_date,\n       COALESCE(discount_pct, 0) AS discount,\n       NULLIF(quantity, 0) AS quantity_or_null\nFROM order_items;"
+    },
+    {
+     "language": "sql",
+     "code": "-- Aggregates ignore NULLs, so AVG divides by the non-null count\nSELECT COUNT(*) AS rows, COUNT(rating) AS rated, AVG(rating) AS average\nFROM reviews;\n\n-- PostgreSQL, SQLite and Oracle accept NULLS LAST\nSELECT id, rating FROM reviews ORDER BY rating DESC NULLS LAST;"
+    }
+   ]
+  },
+  {
+   "id": "dialect-differences",
+   "title": "Dialect Differences",
+   "description": "The same question spelled differently across the major engines.",
+   "snippets": [
+    {
+     "language": "sql",
+     "code": "-- Row limit: LIMIT is PostgreSQL, MySQL, SQLite; TOP is SQL Server\nSELECT id FROM orders ORDER BY created_at DESC LIMIT 10;\nSELECT TOP 10 id FROM orders ORDER BY created_at DESC;\n\n-- Oracle and SQL Server 2012 and later also take the standard form\nSELECT id FROM orders ORDER BY created_at DESC FETCH FIRST 10 ROWS ONLY;"
+    },
+    {
+     "language": "sql",
+     "code": "-- Concatenation: || is standard, CONCAT() is portable, + is SQL Server only\nSELECT first_name || ' ' || last_name AS full_name FROM customers;\nSELECT CONCAT(first_name, ' ', last_name) AS full_name FROM customers;\n\n-- Current time: NOW() in PostgreSQL and MySQL, always CURRENT_TIMESTAMP\nSELECT NOW(), CURRENT_TIMESTAMP;"
+    },
+    {
+     "language": "sql",
+     "code": "-- Auto increment: IDENTITY is standard, SERIAL is PostgreSQL, AUTO_INCREMENT is MySQL\nCREATE TABLE invoices (id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY);\nCREATE TABLE tickets  (id SERIAL PRIMARY KEY);\nCREATE TABLE events   (id BIGINT AUTO_INCREMENT PRIMARY KEY);\n\n-- Booleans: PostgreSQL has a real type, MySQL stores TINYINT(1)\nSELECT id FROM customers WHERE active = TRUE;"
+    }
+   ]
+  }
+ ]
+}

@@ -167,13 +167,23 @@ fn header(frame: &mut Frame, area: Rect, app: &App) {
         .current()
         .map_or(theme::fg_dim(), |topic| theme::accent(&topic.color));
     let version = env!("CARGO_PKG_VERSION");
+    // The trailing suffix is a warning, not a stat: it only exists when a file lost.
+    let skipped = if app.lib.skipped > 0 {
+        format!(" · {} skipped", app.lib.skipped)
+    } else {
+        String::new()
+    };
     let meta = format!(
-        "{} topics · {} sections · {} snippets",
+        "{} topics · {} sections · {} snippets{skipped}",
         app.lib.topics.len(),
         app.lib.sections,
         app.lib.snippets
     );
-    let short = format!("{} topics", app.lib.topics.len());
+    let short = if skipped.is_empty() {
+        format!("{} topics", app.lib.topics.len())
+    } else {
+        format!("{} topics{skipped}", app.lib.topics.len())
+    };
 
     // Bar, wordmark, version: 2 + 7 + 1 + len(version).
     let left = 2 + "cheatrs".len() as u16 + 1 + version.len() as u16;

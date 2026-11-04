@@ -1,0 +1,302 @@
+{
+ "slug": "kubernetes",
+ "title": "Kubernetes",
+ "label": "K8s",
+ "group": "Tool",
+ "color": "#326CE5",
+ "desc": "Declarative container orchestration: pods, workloads, networking and the kubectl commands that inspect them.",
+ "sections": [
+  {
+   "id": "setup",
+   "title": "Setup",
+   "description": "Install the client, point it at a cluster and confirm it answers.",
+   "snippets": [
+    {
+     "language": "bash",
+     "code": "# Client build and the API server behind the current context\nkubectl version --client\nkubectl cluster-info\n\n# Local clusters: kind for CI-shaped tests, minikube for a full node\nkind create cluster --name cheatrs\nminikube start --driver=docker --kubernetes-version=v1.32.0\n\n# Completion and a shorter alias for the rest of the session\neval \"$(kubectl completion bash)\"\nalias k=kubectl"
+    },
+    {
+     "language": "bash",
+     "code": "# Apply a manifest and block until the pod reports Ready\nkubectl apply -f pod.yaml\nkubectl wait --for=condition=Ready pod/web --timeout=90s\n\n# Everything the client can list in the current namespace\nkubectl get all"
+    }
+   ]
+  },
+  {
+   "id": "contexts",
+   "title": "Contexts",
+   "description": "Contexts bundle a cluster, a user and a namespace; switching is one command.",
+   "snippets": [
+    {
+     "language": "bash",
+     "code": "# Every context in the kubeconfig, with the active one marked\nkubectl config get-contexts\nkubectl config current-context\n\n# Switch cluster, then pin the default namespace of this context\nkubectl config use-context kind-cheatrs\nkubectl config set-context --current --namespace=staging\n\n# A specific kubeconfig file for one command\nKUBECONFIG=/home/felipe/.kube/prod.yaml kubectl get nodes"
+    },
+    {
+     "language": "bash",
+     "code": "# Rename a context after importing it\nkubectl config rename-context kind-cheatrs local\n\n# Merge two files into one; the colon separates them on Linux and macOS\nKUBECONFIG=dev.yaml:prod.yaml kubectl config view --flatten -o yaml > merged.yaml"
+    }
+   ]
+  },
+  {
+   "id": "pods",
+   "title": "Pods",
+   "description": "The smallest unit: one or more containers scheduled together on a node.",
+   "snippets": [
+    {
+     "language": "yaml",
+     "code": "apiVersion: v1\nkind: Pod\nmetadata:\n  name: web\n  labels:\n    app: web\nspec:\n  containers:\n    - name: web\n      image: nginx:1.27-alpine\n      ports:\n        - containerPort: 80"
+    },
+    {
+     "language": "bash",
+     "code": "# Throwaway pod with a shell, deleted on exit\nkubectl run shell --rm -it --image=busybox:1.36 -- sh\n\n# Node, pod IP and restart count, then the events at the bottom of describe\nkubectl get pods -o wide\nkubectl describe pod web"
+    },
+    {
+     "language": "bash",
+     "code": "# Generate the manifest instead of typing it, then keep it in git\nkubectl run web --image=nginx:1.27-alpine --port=80 --dry-run=client -o yaml > pod.yaml\nkubectl apply -f pod.yaml"
+    }
+   ]
+  },
+  {
+   "id": "deployments",
+   "title": "Deployments",
+   "description": "Declare a replica count and an image; the controller keeps reality matching it.",
+   "snippets": [
+    {
+     "language": "yaml",
+     "code": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: web\nspec:\n  replicas: 3\n  selector:\n    matchLabels:\n      app: web\n  template:\n    metadata:\n      labels:\n        app: web\n    spec:\n      containers:\n        - name: web\n          image: nginx:1.27-alpine\n          ports:\n            - containerPort: 80"
+    },
+    {
+     "language": "bash",
+     "code": "kubectl scale deployment web --replicas=5\nkubectl set image deployment/web web=nginx:1.28-alpine\nkubectl rollout status deployment/web"
+    },
+    {
+     "language": "bash",
+     "code": "kubectl get deployments\nkubectl get pods -l app=web -o wide\nkubectl describe deployment web"
+    }
+   ]
+  },
+  {
+   "id": "services",
+   "title": "Services",
+   "description": "Give a stable virtual IP and DNS name to a changing set of pods.",
+   "snippets": [
+    {
+     "language": "yaml",
+     "code": "apiVersion: v1\nkind: Service\nmetadata:\n  name: web\nspec:\n  type: ClusterIP\n  selector:\n    app: web\n  ports:\n    - name: http\n      port: 80\n      targetPort: 80"
+    },
+    {
+     "language": "bash",
+     "code": "# Expose a deployment without writing YAML; ClusterIP is the default\nkubectl expose deployment web --name=web --port=80 --target-port=80\n\n# NodePort for a quick check from the host, LoadBalancer on a cloud\nkubectl expose deployment web --name=web-nodeport --type=NodePort --port=80\n\nkubectl get services,endpoints"
+    }
+   ]
+  },
+  {
+   "id": "ingress",
+   "title": "Ingress",
+   "description": "Route external HTTP by host and path to Services, with TLS in front.",
+   "snippets": [
+    {
+     "language": "yaml",
+     "code": "apiVersion: networking.k8s.io/v1\nkind: Ingress\nmetadata:\n  name: web\n  annotations:\n    nginx.ingress.kubernetes.io/rewrite-target: /\nspec:\n  ingressClassName: nginx\n  rules:\n    - host: web.local\n      http:\n        paths:\n          - path: /\n            pathType: Prefix\n            backend:\n              service:\n                name: web\n                port:\n                  number: 80"
+    },
+    {
+     "language": "bash",
+     "code": "# The controller that serves the nginx ingress class\nhelm upgrade --install ingress-nginx ingress-nginx \\\n  --repo https://kubernetes.github.io/ingress-nginx \\\n  --namespace ingress-nginx --create-namespace\n\nkubectl get ingress\nkubectl describe ingress web"
+    },
+    {
+     "language": "yaml",
+     "code": "apiVersion: networking.k8s.io/v1\nkind: Ingress\nmetadata:\n  name: web-tls\nspec:\n  ingressClassName: nginx\n  tls:\n    - hosts:\n        - web.local\n      secretName: web-tls\n  rules:\n    - host: web.local\n      http:\n        paths:\n          - path: /\n            pathType: Prefix\n            backend:\n              service:\n                name: web\n                port:\n                  number: 80"
+    }
+   ]
+  },
+  {
+   "id": "config",
+   "title": "ConfigMaps and Secrets",
+   "description": "Keep configuration out of the image and inject it as env or files.",
+   "snippets": [
+    {
+     "language": "yaml",
+     "code": "apiVersion: v1\nkind: ConfigMap\nmetadata:\n  name: app-config\ndata:\n  LOG_LEVEL: info\n  APP_PORT: \"8080\"\n  config.yaml: |\n    retries: 3\n    timeout_seconds: 15"
+    },
+    {
+     "language": "yaml",
+     "code": "apiVersion: v1\nkind: Secret\nmetadata:\n  name: db-credentials\ntype: Opaque\nstringData:\n  POSTGRES_USER: app_user\n  POSTGRES_PASSWORD: devsecret"
+    },
+    {
+     "language": "yaml",
+     "code": "apiVersion: v1\nkind: Pod\nmetadata:\n  name: api\nspec:\n  containers:\n    - name: api\n      image: busybox:1.36\n      command: [\"sh\", \"-c\", \"env | sort; sleep 3600\"]\n      envFrom:\n        - configMapRef:\n            name: app-config\n        - secretRef:\n            name: db-credentials"
+    }
+   ]
+  },
+  {
+   "id": "volumes",
+   "title": "Volumes",
+   "description": "Share files between containers or survive a pod restart.",
+   "snippets": [
+    {
+     "language": "yaml",
+     "code": "apiVersion: v1\nkind: Pod\nmetadata:\n  name: cache\nspec:\n  containers:\n    - name: app\n      image: busybox:1.36\n      command: [\"sh\", \"-c\", \"while true; do date >> /cache/heartbeat; sleep 5; done\"]\n      volumeMounts:\n        - name: cache\n          mountPath: /cache\n  volumes:\n    - name: cache\n      emptyDir:\n        sizeLimit: 64Mi"
+    },
+    {
+     "language": "yaml",
+     "code": "apiVersion: v1\nkind: PersistentVolumeClaim\nmetadata:\n  name: data\nspec:\n  accessModes:\n    - ReadWriteOnce\n  storageClassName: standard\n  resources:\n    requests:\n      storage: 5Gi"
+    },
+    {
+     "language": "yaml",
+     "code": "apiVersion: v1\nkind: Pod\nmetadata:\n  name: db\nspec:\n  containers:\n    - name: postgres\n      image: postgres:17\n      volumeMounts:\n        - name: data\n          mountPath: /var/lib/postgresql/data\n  volumes:\n    - name: data\n      persistentVolumeClaim:\n        claimName: data"
+    }
+   ]
+  },
+  {
+   "id": "resources",
+   "title": "Resources",
+   "description": "Requests decide scheduling, limits decide who gets throttled or killed.",
+   "snippets": [
+    {
+     "language": "yaml",
+     "code": "apiVersion: v1\nkind: Pod\nmetadata:\n  name: api\nspec:\n  containers:\n    - name: api\n      image: nginx:1.27-alpine\n      resources:\n        requests:\n          cpu: 100m\n          memory: 128Mi\n        limits:\n          cpu: 500m\n          memory: 256Mi"
+    },
+    {
+     "language": "yaml",
+     "code": "apiVersion: v1\nkind: LimitRange\nmetadata:\n  name: defaults\nspec:\n  limits:\n    - type: Container\n      default:\n        cpu: 500m\n        memory: 256Mi\n      defaultRequest:\n        cpu: 100m\n        memory: 128Mi"
+    },
+    {
+     "language": "bash",
+     "code": "# What the node reserved, then what the containers actually use\nkubectl describe node kind-cheatrs-control-plane | sed -n '/Allocated resources/,/Events/p'\nkubectl top pods\nkubectl top nodes"
+    }
+   ]
+  },
+  {
+   "id": "probes",
+   "title": "Probes",
+   "description": "Startup, readiness and liveness answer three different questions.",
+   "snippets": [
+    {
+     "language": "yaml",
+     "code": "apiVersion: v1\nkind: Pod\nmetadata:\n  name: api\nspec:\n  containers:\n    - name: api\n      image: nginx:1.27-alpine\n      ports:\n        - containerPort: 80\n      startupProbe:\n        httpGet:\n          path: /\n          port: 80\n        failureThreshold: 30\n        periodSeconds: 2\n      readinessProbe:\n        httpGet:\n          path: /\n          port: 80\n        periodSeconds: 5\n      livenessProbe:\n        httpGet:\n          path: /\n          port: 80\n        periodSeconds: 10\n        failureThreshold: 3"
+    },
+    {
+     "language": "yaml",
+     "code": "apiVersion: v1\nkind: Pod\nmetadata:\n  name: cache\nspec:\n  containers:\n    - name: redis\n      image: redis:7.4-alpine\n      ports:\n        - containerPort: 6379\n      readinessProbe:\n        exec:\n          command: [\"redis-cli\", \"ping\"]\n        periodSeconds: 5\n      livenessProbe:\n        tcpSocket:\n          port: 6379\n        periodSeconds: 10"
+    },
+    {
+     "language": "bash",
+     "code": "# Probe failures surface as Unhealthy events and a climbing restart count\nkubectl describe pod api | sed -n '/Containers:/,/Events:/p'\nkubectl get pod api -o jsonpath='{.status.containerStatuses[0].restartCount}'"
+    }
+   ]
+  },
+  {
+   "id": "logs",
+   "title": "Logs and Debug",
+   "description": "Read stdout from the container, the previous one, or the whole workload.",
+   "snippets": [
+    {
+     "language": "bash",
+     "code": "kubectl logs web-7d9c8b6f5-2xk4p\nkubectl logs -f deployment/web --tail=100\nkubectl logs web-7d9c8b6f5-2xk4p -c sidecar"
+    },
+    {
+     "language": "bash",
+     "code": "# The container that crashed, before the restart\nkubectl logs web-7d9c8b6f5-2xk4p --previous\n\n# Every pod of a selector at once, each line prefixed with its pod\nkubectl logs -l app=web --all-containers --prefix --tail=50"
+    },
+    {
+     "language": "bash",
+     "code": "# Cluster events by time: the first place to look when a pod is stuck\nkubectl get events --sort-by=.lastTimestamp\nkubectl get events --field-selector involvedObject.name=web-7d9c8b6f5-2xk4p"
+    }
+   ]
+  },
+  {
+   "id": "exec",
+   "title": "Exec and Port-forward",
+   "description": "Get a shell, copy a file, or reach a Service from the laptop.",
+   "snippets": [
+    {
+     "language": "bash",
+     "code": "# Interactive shell, then a one-off command in the same container\nkubectl exec -it web-7d9c8b6f5-2xk4p -- sh\nkubectl exec web-7d9c8b6f5-2xk4p -- nginx -v\n\n# Copy files out without a shell in the image\nkubectl cp web-7d9c8b6f5-2xk4p:/etc/nginx/nginx.conf ./nginx.conf"
+    },
+    {
+     "language": "bash",
+     "code": "# Local 8080 to the Service on 80, no Ingress or NodePort needed\nkubectl port-forward service/web 8080:80\n\n# Straight to a pod, backgrounded for a curl test\nkubectl port-forward pod/web-7d9c8b6f5-2xk4p 8081:80 &\ncurl -sS http://127.0.0.1:8081/"
+    },
+    {
+     "language": "bash",
+     "code": "# Distroless image: attach an ephemeral container that has a shell\nkubectl debug -it web-7d9c8b6f5-2xk4p --image=busybox:1.36 --target=web"
+    }
+   ]
+  },
+  {
+   "id": "namespaces",
+   "title": "Namespaces",
+   "description": "Split one cluster into virtual scopes for teams and environments.",
+   "snippets": [
+    {
+     "language": "yaml",
+     "code": "apiVersion: v1\nkind: Namespace\nmetadata:\n  name: staging\n  labels:\n    env: staging"
+    },
+    {
+     "language": "bash",
+     "code": "kubectl create namespace staging\nkubectl get namespaces\nkubectl delete namespace staging"
+    },
+    {
+     "language": "bash",
+     "code": "# Make staging the default for this context, no -n per command\nkubectl config set-context --current --namespace=staging\n\n# Scope one command, or look everywhere at once\nkubectl get pods -n kube-system\nkubectl get pods --all-namespaces"
+    }
+   ]
+  },
+  {
+   "id": "jobs",
+   "title": "Jobs and CronJobs",
+   "description": "Run work that finishes, once or on a schedule.",
+   "snippets": [
+    {
+     "language": "yaml",
+     "code": "apiVersion: batch/v1\nkind: Job\nmetadata:\n  name: migrate\nspec:\n  backoffLimit: 3\n  ttlSecondsAfterFinished: 600\n  template:\n    spec:\n      restartPolicy: Never\n      containers:\n        - name: migrate\n          image: postgres:17\n          command: [\"psql\", \"-c\", \"SELECT 1\"]"
+    },
+    {
+     "language": "yaml",
+     "code": "apiVersion: batch/v1\nkind: CronJob\nmetadata:\n  name: backup\nspec:\n  schedule: \"0 3 * * *\"\n  concurrencyPolicy: Forbid\n  successfulJobsHistoryLimit: 3\n  jobTemplate:\n    spec:\n      template:\n        spec:\n          restartPolicy: OnFailure\n          containers:\n            - name: backup\n              image: postgres:17\n              command: [\"pg_dumpall\", \"--file=/backup/all.sql\"]"
+    },
+    {
+     "language": "bash",
+     "code": "kubectl get jobs\nkubectl logs job/migrate\n\n# Trigger a CronJob now without waiting for the schedule\nkubectl create job --from=cronjob/backup backup-manual"
+    }
+   ]
+  },
+  {
+   "id": "rollouts",
+   "title": "Rollouts",
+   "description": "Watch, pause, undo and restart a Deployment without hand-editing pods.",
+   "snippets": [
+    {
+     "language": "bash",
+     "code": "kubectl rollout status deployment/web\nkubectl rollout history deployment/web\nkubectl rollout history deployment/web --revision=3"
+    },
+    {
+     "language": "bash",
+     "code": "# Undo the last rollout, or a specific revision\nkubectl rollout undo deployment/web\nkubectl rollout undo deployment/web --to-revision=2\n\n# Recreate every pod without touching the image\nkubectl rollout restart deployment/web"
+    },
+    {
+     "language": "bash",
+     "code": "# The change-cause annotation is what rollout history shows\nkubectl annotate deployment/web kubernetes.io/change-cause=\"image nginx:1.28-alpine\"\n\n# Freeze a rollout mid-way to inspect, then let it finish\nkubectl rollout pause deployment/web\nkubectl rollout resume deployment/web"
+    }
+   ]
+  },
+  {
+   "id": "common-errors",
+   "title": "Common Errors",
+   "description": "The four states that stop a pod, and the command that explains each one.",
+   "snippets": [
+    {
+     "language": "bash",
+     "code": "# CrashLoopBackOff: read the exit code and the log of the dead container\nkubectl describe pod web-7d9c8b6f5-2xk4p | sed -n '/Last State/,/Events:/p'\nkubectl logs web-7d9c8b6f5-2xk4p --previous"
+    },
+    {
+     "language": "bash",
+     "code": "# ImagePullBackOff: the node cannot pull, check the tag and the registry secret\nkubectl describe pod web-7d9c8b6f5-2xk4p | grep -A3 \"Failed\"\nkubectl get secret regcred -o jsonpath='{.type}'"
+    },
+    {
+     "language": "bash",
+     "code": "# Pending: no node fits the requests, the event says which resource ran out\nkubectl describe pod web-7d9c8b6f5-2xk4p | sed -n '/Events:/,$p'\n\n# OOMKilled: the container crossed its memory limit and was killed\nkubectl get pod web-7d9c8b6f5-2xk4p \\\n  -o jsonpath='{.status.containerStatuses[0].lastState.terminated.reason}'"
+    }
+   ]
+  }
+ ]
+}

@@ -4,9 +4,7 @@ use ratatui::Terminal;
 use ratatui::backend::TestBackend;
 use ratatui::style::Color;
 
-fn render(app: &mut ui::App, width: u16, height: u16) -> String {
-    let mut terminal = Terminal::new(TestBackend::new(width, height)).unwrap();
-    terminal.draw(|frame| app.draw(frame)).unwrap();
+fn screen_text(terminal: &Terminal<TestBackend>) -> String {
     let buffer = terminal.backend().buffer();
     let mut out = String::new();
     for y in 0..buffer.area.height {
@@ -16,6 +14,12 @@ fn render(app: &mut ui::App, width: u16, height: u16) -> String {
         out.push('\n');
     }
     out
+}
+
+fn render(app: &mut ui::App, width: u16, height: u16) -> String {
+    let mut terminal = Terminal::new(TestBackend::new(width, height)).unwrap();
+    terminal.draw(|frame| app.draw(frame)).unwrap();
+    screen_text(&terminal)
 }
 
 fn key(code: KeyCode) -> KeyEvent {
@@ -826,9 +830,10 @@ fn header_carries_the_version_and_the_library_size() {
         screen.contains(env!("CARGO_PKG_VERSION")),
         "the header shows the version: {screen}"
     );
+    let count = format!("{} topics", app.lib.topics.len());
     assert!(
-        screen.contains("52 topics") && screen.contains("snippets"),
-        "and the size of the library"
+        screen.contains(&count) && screen.contains("snippets"),
+        "and the size of the library: {screen}"
     );
 }
 
@@ -849,4 +854,80 @@ fn the_two_fixed_columns_are_measured_not_assumed() {
         app.group_width >= 12 && app.topics_width >= 22,
         "and never cramped"
     );
+}
+
+#[test]
+fn header_names_the_skipped_files_only_when_there_are_some() {
+    // The shipped library is clean: the header must read exactly as it always did.
+    let mut clean = ui::App::new(data::load());
+    let screen = render(&mut clean, 160, 30);
+    let header = screen.lines().next().expect("a header line").to_string();
+    assert!(
+        !header.contains("skipped"),
+        "nothing was skipped, so nothing may be said: {header}"
+    );
+    assert!(
+        header.trim_end().ends_with("snippets"),
+        "the meta ends where it always ended: {header}"
+    );
+
+    // A user file the loader had to drop must not vanish silently.
+    let mut library = data::load();
+    library.skipped = 3;
+    let mut app = ui::App::new(library);
+    let screen = render(&mut app, 160, 30);
+    let header = screen.lines().next().expect("a header line").to_string();
+    assert!(
+        header.contains("3 skipped"),
+        "the count belongs in the header: {header}"
+    );
+    assert!(
+        header.trim_end().ends_with("3 skipped"),
+        "and it is a suffix at the end of the line: {header}"
+    );
+    assert!(
+        header.contains("snippets ·"),
+        "the stats stay put in front of it: {header}"
+    );
+}
+
+#[test]
+fn a_terminal_that_shrank_shows_the_minimum_size_warning() {
+    // One terminal, two sizes: the second frame must not keep cells of the first.
+    let mut terminal = Terminal::new(TestBackend::new(120, 30)).unwrap();
+    let mut app = ui::App::new(data::load());
+    terminal.draw(|frame| app.draw(frame)).unwrap();
+
+    terminal.backend_mut().resize(70, 20);
+    terminal.draw(|frame| app.draw(frame)).unwrap();
+    let small = screen_text(&terminal);
+    assert!(
+        small.contains("needs at least 80x24"),
+        "the warning must be readable: {small}"
+    );
+    assert!(
+        small.contains("70x20"),
+        "and it says the real size: {small}"
+    );
+    assert!(
+        !small.contains("LANGUAGES"),
+        "the layout it replaced must be gone: {small}"
+    );
+
+    let row = small
+        .lines()
+        .position(|line| line.contains("needs at least"))
+        .expect("the warning has a row");
+    assert!(
+        (8..=10).contains(&row),
+        "centred on a 20-row terminal, got row {row}: {small}"
+    );
+
+    // Growing back past the minimum brings the normal screen back.
+    terminal.backend_mut().resize(120, 30);
+    terminal.draw(|frame| app.draw(frame)).unwrap();
+    let large = screen_text(&terminal);
+    assert!(!large.contains("needs at least"), "{large}");
+    assert!(large.contains("LANGUAGES"), "{large}");
+    assert_eq!(app.screen, ui::Screen::Home, "no mode was introduced");
 }
