@@ -75,7 +75,7 @@ jobs:
 
   macos-arm64:
     # macos-15 runs on Apple silicon, so aarch64-apple-darwin is the native target.
-    runs-on: macos-15
+    runs-on: macos-14
     permissions:
       contents: write
     steps:
