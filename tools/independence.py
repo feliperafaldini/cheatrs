@@ -94,7 +94,9 @@ def main() -> int:
             continue
         print(f"{slug:18} {ratio:5.2f}  {verdict}")
 
-    still_derived = len(pending) - len(done)
+    # done holds both the topics that never had a twin and the ones now clear of
+    # it; the remainder is simply everything shipped minus those.
+    still_derived = len(shipped) - len(done)
 
     print()
     print(f"{len(done)}/{len(shipped)} topics rewritten, {still_derived} still derived")
