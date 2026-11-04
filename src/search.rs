@@ -101,7 +101,7 @@ impl Index {
             }
         }
 
-        scored.sort_unstable_by(|a, b| (a.0, a.1, a.2).cmp(&(b.0, b.1, b.2)));
+        scored.sort_unstable_by_key(|(rank, length, index, _)| (*rank, *length, *index));
         scored
             .into_iter()
             .map(|(_, _, entry, excerpt)| Hit { entry, excerpt })
