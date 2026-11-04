@@ -60,7 +60,7 @@ fn loads_the_whole_dataset() {
         library.skipped
     );
     let total: usize = library.topics.iter().map(|t| t.snippet_count()).sum();
-    assert_eq!(total, 1158, "snippet count of the converted data");
+    assert_eq!(total, 1167, "1158 from the source plus 9 written by us");
     assert_eq!(library.groups.len(), 6, "six groups carry topics");
 }
 
@@ -162,6 +162,44 @@ fn search_finds_a_command_inside_the_code() {
     assert_eq!(
         app.scroll, app.sections[section].1,
         "the reader lands on the section holding the line"
+    );
+}
+
+#[test]
+fn rust_topic_carries_the_sections_the_source_lacked() {
+    let library = data::load();
+    let rust = library
+        .topics
+        .iter()
+        .find(|topic| topic.slug == "rust")
+        .expect("rust topic");
+    let titles: Vec<&str> = rust.sections.iter().map(|s| s.title.as_str()).collect();
+
+    assert!(
+        rust.sections.len() >= 27,
+        "got {} sections",
+        rust.sections.len()
+    );
+    for expected in [
+        "Lifetimes",
+        "Cargo",
+        "Testing",
+        "Concurrency",
+        "Smart Pointers",
+    ] {
+        assert!(
+            titles.contains(&expected),
+            "missing section {expected}: {titles:?}"
+        );
+    }
+    let errors = rust
+        .sections
+        .iter()
+        .find(|s| s.title == "Error Handling")
+        .expect("error handling");
+    assert!(
+        errors.snippets.len() >= 2,
+        "error handling must show ? and the custom enum"
     );
 }
 
