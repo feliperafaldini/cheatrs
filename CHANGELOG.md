@@ -12,7 +12,7 @@ and the flags `--help`, `--version`, `--validate` will not change meaning.
 
 - `?` opens a key map inside the app, explaining the four columns and the keys the
   footer does not have room for.
-- `packaging/`: PKGBUILD for Arch, building from the tagged source.
+- `packaging/`: `cheatrs-bin` PKGBUILD for Arch, installing the static release binary, with the source-build problem documented.
 
 ### Changed
 

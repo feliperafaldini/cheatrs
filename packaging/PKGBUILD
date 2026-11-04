@@ -1,0 +1,27 @@
+# Maintainer: Felipe Albino <feliperafaldini@gmail.com>
+# Prebuilt package: ships the release binary, which is statically linked and needs
+# nothing at runtime. A source package would compile syntect's C regex engine, and
+# makepkg's CFLAGS break that link (undefined onig_* symbols) — documented in
+# packaging/README.md.
+pkgname=cheatrs-bin
+pkgver=1.0.0
+pkgrel=1
+pkgdesc="A terminal browser for programming cheatsheets: 60 topics inside one binary"
+arch=('x86_64')
+url="https://github.com/feliperafaldini/cheatrs"
+license=('MIT')
+provides=('cheatrs')
+conflicts=('cheatrs')
+options=('!strip')
+# The binary comes from the release; the source tarball is here only for LICENSE
+# and NOTICE, which must ship verbatim with the package.
+source_x86_64=("$pkgname-$pkgver::https://github.com/feliperafaldini/cheatrs/releases/download/v$pkgver/cheatrs-linux-x86_64"
+               "cheatrs-$pkgver.tar.gz::https://github.com/feliperafaldini/cheatrs/archive/v$pkgver.tar.gz")
+sha256sums_x86_64=('6520bbd3963a7315bace2994c31c59cee44c744b32669a8895915efd760e520c'
+                   'a0e4faa49565f2f4772128f01c65a855c8aa8113465249a0378ea48b60724377')
+
+package() {
+  install -Dm755 "$srcdir/$pkgname-$pkgver" "$pkgdir/usr/bin/cheatrs"
+  install -Dm644 "cheatrs-$pkgver/LICENSE" "$pkgdir/usr/share/licenses/$pkgname/LICENSE"
+  install -Dm644 "cheatrs-$pkgver/NOTICE" "$pkgdir/usr/share/licenses/$pkgname/NOTICE"
+}
