@@ -13,7 +13,7 @@
    "snippets": [
     {
      "language": "bash",
-     "code": "# Debian or Ubuntu\nsudo apt update\nsudo apt install mysql-server\nsudo systemctl enable --now mysql\nsudo mysql_secure_installation\n\n# macOS with Homebrew\nbrew install mysql\nbrew services start mysql\nmysql_secure_installation\n"
+     "code": "# Debian or Ubuntu\nsudo apt update\nsudo apt install mysql-server\nsudo systemctl enable --now mysql\nsudo mysql_secure_installation\n\n# Fedora packages MariaDB under the version, so look before installing\ndnf search mariadb-server\nsudo dnf install mariadb11.8-server\nsudo systemctl enable --now mariadb\n\n# Arch ships MariaDB; initialise the data directory once\nsudo pacman -S mariadb\nsudo mariadb-install-db --user=mysql --basedir=/usr --datadir=/var/lib/mysql\nsudo systemctl enable --now mariadb\n\n# Alpine\nsudo apk add mariadb mariadb-client\n\n# macOS with Homebrew\nbrew install mysql\nbrew services start mysql\nmysql_secure_installation\n"
     },
     {
      "language": "bash",

@@ -13,7 +13,7 @@
    "snippets": [
     {
      "language": "bash",
-     "code": "# Check the version and the feature list first\nvim --version | head -n 3\n\n# Debian and Ubuntu install a minimal vim-tiny by default\nsudo apt install vim\n\n# macOS ships an old binary; Homebrew keeps a current one\nbrew install vim\n\n# Windows\nwinget install --id vim.vim -e"
+     "code": "# Check the version and the feature list first\nvim --version | head -n 3\n\n# Debian and Ubuntu install a minimal vim-tiny by default\nsudo apt install vim\n\n# Fedora ships vim-minimal; this is the full build\nsudo dnf install vim-enhanced\n\n# Arch\nsudo pacman -S vim\n\n# Alpine\nsudo apk add vim\n\n# macOS ships an old binary; Homebrew keeps a current one\nbrew install vim\n\n# Windows\nwinget install --id vim.vim -e"
     },
     {
      "language": "bash",

@@ -22,6 +22,10 @@
     {
      "language": "bash",
      "code": "# Desktop builds bundle the engine, the CLI and Compose\nbrew install --cask docker\nwinget install --id Docker.DockerDesktop -e\n\n# Compose is a plugin, so it is called as a subcommand\ndocker compose version"
+    },
+    {
+     "language": "bash",
+     "code": "# Fedora: the engine is packaged as moby-engine, not docker\nsudo dnf install moby-engine\nsudo systemctl enable --now docker\n\n# Arch: docker and compose are separate packages\nsudo pacman -S docker docker-compose\nsudo systemctl enable --now docker\n\n# Alpine: OpenRC instead of systemd, and the CLI is its own package\nsudo apk add docker docker-cli docker-compose\nsudo rc-update add docker default\nsudo service docker start\n"
     }
    ]
   },

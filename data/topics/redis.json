@@ -13,7 +13,7 @@
    "snippets": [
     {
      "language": "bash",
-     "code": "# Debian or Ubuntu\nsudo apt update\nsudo apt install redis-server redis-tools\nsudo systemctl enable --now redis-server\n\n# macOS with Homebrew\nbrew install redis\nbrew services start redis\n\n# Confirm the server answers on the default port\nredis-cli PING"
+     "code": "# Debian and Ubuntu\nsudo apt update\nsudo apt install redis-server redis-tools\nsudo systemctl enable --now redis-server\n\n# Fedora, Arch and Alpine ship Valkey, the community fork that provides redis\nsudo dnf install valkey\nsudo pacman -S valkey\nsudo apk add valkey\n\n# On those packages the client is valkey-cli\nvalkey-cli PING\n\n# macOS with Homebrew\nbrew install redis\nbrew services start redis\n\n# Confirm the server answers on the default port\nredis-cli PING"
     },
     {
      "language": "bash",

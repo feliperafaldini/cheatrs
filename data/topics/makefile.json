@@ -13,7 +13,7 @@
    "snippets": [
     {
      "language": "bash",
-     "code": "# GNU Make is usually present already\nmake --version\n\n# Debian and Ubuntu\nsudo apt update && sudo apt install -y make\n\n# macOS Command Line Tools ship make 3.81\nxcode-select --install\n\n# Homebrew installs current GNU Make as gmake\nbrew install make\ngmake --version"
+     "code": "# GNU Make is usually present already\nmake --version\n\n# Debian and Ubuntu\nsudo apt update && sudo apt install -y make\n\n# Fedora and RHEL\nsudo dnf install make\n\n# Arch: make is part of base-devel, so ask for the group\nsudo pacman -S --needed base-devel\n\n# Alpine\nsudo apk add make build-base\n\n# macOS Command Line Tools ship make 3.81\nxcode-select --install\n\n# Homebrew installs current GNU Make as gmake\nbrew install make\ngmake --version"
     },
     {
      "language": "bash",

@@ -13,7 +13,7 @@
    "snippets": [
     {
      "language": "bash",
-     "code": "# Debian or Ubuntu: server plus contrib modules\nsudo apt update\nsudo apt install postgresql postgresql-contrib\nsudo systemctl enable --now postgresql\n\n# The package creates a cluster and a postgres superuser\nsudo -u postgres psql -c \"SELECT version();\"\n"
+     "code": "# Debian or Ubuntu: server plus contrib modules\nsudo apt update\nsudo apt install postgresql postgresql-contrib\nsudo systemctl enable --now postgresql\n\n# Fedora and RHEL: the init step is explicit\nsudo dnf install postgresql-server postgresql-contrib\nsudo postgresql-setup --initdb\nsudo systemctl enable --now postgresql\n\n# Arch: the package makes the user, the cluster is initialised by hand\nsudo pacman -S postgresql\nsudo -u postgres initdb -D /var/lib/postgres/data\nsudo systemctl enable --now postgresql\n\n# Alpine\nsudo apk add postgresql16 postgresql16-client\n\n# The package creates a cluster and a postgres superuser\nsudo -u postgres psql -c \"SELECT version();\"\n"
     },
     {
      "language": "bash",

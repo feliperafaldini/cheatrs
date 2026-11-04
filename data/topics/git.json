@@ -13,7 +13,7 @@
    "snippets": [
     {
      "language": "bash",
-     "code": "# Check what is already installed\ngit --version\n\n# Debian and Ubuntu\nsudo apt install git\n\n# macOS\nbrew install git\n\n# Windows\nwinget install --id Git.Git -e"
+     "code": "# Check what is already installed\ngit --version\n\n# Debian and Ubuntu\nsudo apt install git\n\n# Fedora and RHEL\nsudo dnf install git\n\n# Arch\nsudo pacman -S git\n\n# Alpine\nsudo apk add git\n\n# macOS\nbrew install git\n\n# Windows\nwinget install --id Git.Git -e"
     },
     {
      "language": "bash",

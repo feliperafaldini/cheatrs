@@ -13,7 +13,7 @@
    "snippets": [
     {
      "language": "bash",
-     "code": "# Debian and Ubuntu\nsudo apt install tmux\n\n# Fedora and RHEL\nsudo dnf install tmux\n\n# Arch\nsudo pacman -S tmux\n\n# macOS\nbrew install tmux\n\n# Confirm the version; 3.2 and newer support terminal-features\ntmux -V"
+     "code": "# Debian and Ubuntu\nsudo apt install tmux\n\n# Fedora and RHEL\nsudo dnf install tmux\n\n# Arch\nsudo pacman -S tmux\n\n# Alpine\nsudo apk add tmux\n\n# macOS\nbrew install tmux\n\n# Confirm the version; 3.2 and newer support terminal-features\ntmux -V"
     },
     {
      "language": "bash",
