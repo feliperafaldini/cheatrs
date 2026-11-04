@@ -125,7 +125,7 @@ fn search_finds_a_section_and_lands_on_it() {
     }
     assert!(!app.results.is_empty(), "a section title must be findable");
 
-    let entry_index = app.results[0];
+    let entry_index = app.results[0].entry;
     let expected = app.index.entries[entry_index]
         .section
         .expect("first hit is a section");
@@ -134,6 +134,54 @@ fn search_finds_a_section_and_lands_on_it() {
     assert_eq!(app.screen, ui::Screen::Reader);
     let start = app.sections[expected].1;
     assert_eq!(app.scroll, start, "the reader lands on the matched section");
+}
+
+#[test]
+fn search_finds_a_command_inside_the_code() {
+    let mut app = ui::App::new(data::load());
+    render(&mut app, 140, 30);
+
+    app.on_key(key(KeyCode::Char('/')));
+    for character in "pip install -r".chars() {
+        app.on_key(key(KeyCode::Char(character)));
+    }
+
+    assert!(
+        !app.results.is_empty(),
+        "the flag inside the code must be findable"
+    );
+    let hit = &app.results[0];
+    let excerpt = hit.excerpt.as_deref().expect("a code hit carries the line");
+    assert!(excerpt.contains("pip install"), "excerpt: {excerpt}");
+
+    let section = app.index.entries[hit.entry]
+        .section
+        .expect("code lives in a section");
+    app.on_key(key(KeyCode::Enter));
+    assert_eq!(app.screen, ui::Screen::Reader);
+    assert_eq!(
+        app.scroll, app.sections[section].1,
+        "the reader lands on the section holding the line"
+    );
+}
+
+#[test]
+fn code_search_stays_under_a_keystroke() {
+    let index = cheatrs::search::Index::build(&data::load());
+    let started = std::time::Instant::now();
+    let mut hits = 0;
+    for query in [
+        "p", "pi", "pip", "pip ", "pip i", "pip in", "pip ins", "pip inst",
+    ] {
+        hits += index.query(query).len();
+    }
+    let elapsed = started.elapsed();
+    assert!(hits > 0);
+    eprintln!("oito consultas em {elapsed:?} ({hits} resultados)");
+    assert!(
+        elapsed.as_millis() < 400,
+        "eight keystrokes over the whole dataset took {elapsed:?}"
+    );
 }
 
 #[test]

@@ -42,7 +42,7 @@ fn main() {
     }
     if args.iter().any(|a| a == "--search") {
         app.on_key(KeyEvent::new(KeyCode::Char('/'), KeyModifiers::NONE));
-        for character in "data".chars() {
+        for character in "pip install".chars() {
             app.on_key(KeyEvent::new(KeyCode::Char(character), KeyModifiers::NONE));
         }
         show(&mut app, "search", width, height);

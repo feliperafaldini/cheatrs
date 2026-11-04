@@ -14,7 +14,7 @@ use ratatui::text::Line;
 
 use crate::data::Library;
 use crate::model::Topic;
-use crate::search::Index as SearchIndex;
+use crate::search::{Hit, Index as SearchIndex};
 
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub enum Focus {
@@ -60,7 +60,7 @@ pub struct App {
     pub index: SearchIndex,
     pub searching: bool,
     pub query: String,
-    pub results: Vec<usize>,
+    pub results: Vec<Hit>,
     pub cursor: usize,
 }
 
@@ -222,11 +222,11 @@ impl App {
 
     /// A result is a destination: select the topic, open it, and land on the section if there is one.
     fn commit_search(&mut self) {
-        let Some(entry_index) = self.results.get(self.cursor).copied() else {
+        let Some(hit) = self.results.get(self.cursor) else {
             self.searching = false;
             return;
         };
-        let entry = &self.index.entries[entry_index];
+        let entry = &self.index.entries[hit.entry];
         let (topic_index, section) = (entry.topic, entry.section);
 
         if let Some((group, position)) =

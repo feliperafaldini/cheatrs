@@ -58,8 +58,8 @@ pub fn draw(frame: &mut Frame, area: Rect, app: &App) {
         .iter()
         .take(MAX_RESULTS)
         .enumerate()
-        .map(|(position, index)| {
-            let entry = &app.index.entries[*index];
+        .map(|(position, hit)| {
+            let entry = &app.index.entries[hit.entry];
             let selected = position == app.cursor;
             let bar = if selected { "▌" } else { " " };
             let title_style = if selected {
@@ -73,13 +73,21 @@ pub fn draw(frame: &mut Frame, area: Rect, app: &App) {
             } else {
                 entry.context.clone()
             };
-            Line::from(vec![
+            let mut spans = vec![
                 Span::styled(bar, Style::new().fg(theme::FG)),
                 Span::raw(" "),
-                Span::styled(truncate(&entry.title, 40), title_style),
+                Span::styled(truncate(&entry.title, 30), title_style),
                 Span::raw("  "),
                 Span::styled(kind, context_style),
-            ])
+            ];
+            if let Some(excerpt) = &hit.excerpt {
+                spans.push(Span::raw("  "));
+                spans.push(Span::styled(
+                    format!("⌁ {}", truncate(excerpt, 40)),
+                    Style::new().fg(theme::FG_DIM),
+                ));
+            }
+            Line::from(spans)
         })
         .collect();
 
