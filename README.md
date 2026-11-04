@@ -5,7 +5,7 @@ column to read it, full screen to read it properly. Built for the moment you kno
 what you forgot but not where it lives.
 
 ```
-cheatrs  48 topics · 0 skipped
+cheatrs  52 topics · 0 skipped
 ▌ LANGUAGES           │▌ SH Bash                     │▌ Getting Start… Bash
   FRAMEWORKS          │   C C                        │  Comments       Unix shell and command
   LIBRARIES           │  C# C#                       │  Variables      language for scripting and
