@@ -1,0 +1,389 @@
+{
+ "slug": "python",
+ "title": "Python",
+ "label": "Python",
+ "group": "Language",
+ "color": "#3776AB",
+ "desc": "General-purpose language with readable syntax and a large standard library.",
+ "sections": [
+  {
+   "id": "setup",
+   "title": "Setup",
+   "description": "Check the interpreter and run a first script.",
+   "snippets": [
+    {
+     "language": "bash",
+     "code": "# Check the interpreter that answers to python3\npython3 --version\n\n# Confirm pip is available for that interpreter\npython3 -m pip --version\n\n# Install a package for the current interpreter\npython3 -m pip install requests\n\n# Run a file, then drop into the interactive REPL\npython3 hello.py\npython3"
+    },
+    {
+     "language": "python",
+     "code": "# hello.py\ndef main() -> None:\n    print(\"Hello, world\")\n\nif __name__ == \"__main__\":\n    main()"
+    }
+   ]
+  },
+  {
+   "id": "basic-syntax",
+   "title": "Basic Syntax",
+   "description": "Comments, indentation and statement layout.",
+   "snippets": [
+    {
+     "language": "python",
+     "code": "# Comments start with a hash\nprint(\"Hello, world\")  # trailing comment\n\n# Indentation defines blocks; four spaces is the convention\nif True:\n    print(\"inside the block\")\nprint(\"outside the block\")\n\n# A backslash joins a long statement onto the next line\ntotal = 1 + 2 + \\\n        3\nprint(total)  # 6"
+    },
+    {
+     "language": "python",
+     "code": "# A module docstring documents the file\n\"\"\"Small helpers for the demo.\"\"\"\n\n# Semicolons can separate statements but are rarely needed\nx = 1; y = 2\n\n# Expressions in the REPL echo their value\n# >>> 2 ** 10\n# 1024"
+    }
+   ]
+  },
+  {
+   "id": "variables",
+   "title": "Variables",
+   "description": "Bind names to values and rebind them freely.",
+   "snippets": [
+    {
+     "language": "python",
+     "code": "name = \"Ada\"\nage = 36\nheight = 1.68\nis_admin = False\n\n# Names are bound to objects; the type comes from the value\nprint(type(age))  # <class 'int'>\n\n# Several targets at once, including a swap\nx, y = 10, 20\nx, y = y, x\nprint(x, y)  # 20 10\n\n# A name can be rebound to a different type\nvalue = 42\nvalue = \"forty-two\"\nprint(value)  # forty-two"
+    },
+    {
+     "language": "python",
+     "code": "# Constants are a naming convention, not a language rule\nMAX_RETRIES = 3\n\n# del removes the binding, not the object itself\ntemp = [1, 2, 3]\ndel temp\n\n# Augmented assignment updates in place when possible\ncount = 0\ncount += 1\ncount *= 5\nprint(count)  # 5"
+    }
+   ]
+  },
+  {
+   "id": "types",
+   "title": "Types",
+   "description": "Built-in scalars, conversion and type checks.",
+   "snippets": [
+    {
+     "language": "python",
+     "code": "count = 42\nratio = 0.5\nflag = True\nnothing = None\n\nprint(type(count))    # <class 'int'>\nprint(type(ratio))    # <class 'float'>\nprint(type(flag))     # <class 'bool'>\nprint(type(nothing))  # <class 'NoneType'>"
+    },
+    {
+     "language": "python",
+     "code": "# Explicit conversions\nprint(int(\"17\"))     # 17\nprint(float(\"2.5\"))  # 2.5\nprint(str(99))       # 99\nprint(bool(0))       # False\nprint(bool(\"text\"))  # True\n\n# isinstance follows subclass relationships\nprint(isinstance(True, int))  # True: bool is a subclass of int\n\n# Integers have arbitrary precision\nprint(2 ** 100)\n# 1267650600228229401496703205376"
+    }
+   ]
+  },
+  {
+   "id": "strings",
+   "title": "Strings",
+   "description": "Format, slice and transform text.",
+   "snippets": [
+    {
+     "language": "python",
+     "code": "name = \"Ada\"\nrole = \"engineer\"\n\n# f-strings embed expressions directly\nprint(f\"{name} is an {role}\")               # Ada is an engineer\nprint(f\"{name!r} has {len(name)} letters\")  # 'Ada' has 3 letters\n\n# Slicing: start, stop, step\ntext = \"python\"\nprint(text[0])     # p\nprint(text[-1])    # n\nprint(text[1:4])   # yth\nprint(text[::-1])  # nohtyp"
+    },
+    {
+     "language": "python",
+     "code": "# Common methods return new strings\nline = \"  Hello, World  \"\nprint(line.strip())          # Hello, World\nprint(line.strip().lower())  # hello, world\nprint(\"a,b,c\".split(\",\"))    # ['a', 'b', 'c']\nprint(\"-\".join([\"a\", \"b\"]))  # a-b\nprint(\"python\".replace(\"py\", \"Py\"))  # Python"
+    },
+    {
+     "language": "python",
+     "code": "# Raw strings ignore escapes; triple quotes span lines\npath = r\"C:\\Users\\ada\\notes\"\nquery = \"\"\"SELECT id\nFROM users\nWHERE active = 1\"\"\"\nprint(path)\nprint(query)"
+    }
+   ]
+  },
+  {
+   "id": "lists",
+   "title": "Lists",
+   "description": "Ordered, mutable sequences with slicing and in-place methods.",
+   "snippets": [
+    {
+     "language": "python",
+     "code": "numbers = [3, 1, 4, 1, 5]\n\nprint(numbers[0])   # 3\nprint(numbers[-1])  # 5\nprint(numbers[1:3]) # [1, 4]\n\n# Append, extend, insert\nnumbers.append(9)       # [3, 1, 4, 1, 5, 9]\nnumbers.extend([2, 6])  # [3, 1, 4, 1, 5, 9, 2, 6]\nnumbers.insert(0, 0)    # [0, 3, 1, 4, 1, 5, 9, 2, 6]\nprint(numbers)"
+    },
+    {
+     "language": "python",
+     "code": "# Sorting in place versus a sorted copy\nvalues = [3, 1, 4, 1, 5]\nvalues.sort()\nprint(values)  # [1, 1, 3, 4, 5]\n\nwords = [\"pear\", \"fig\", \"apple\"]\nprint(sorted(words, key=len))  # ['fig', 'pear', 'apple']\nprint(words)                   # original order is unchanged\n\n# Remove by value or by position\nvalues.remove(1)     # drops the first 1\nlast = values.pop()  # 5\nprint(values, last)  # [1, 3, 4] 5"
+    },
+    {
+     "language": "python",
+     "code": "# Lists are mutable and aliases share the same object\na = [1, 2, 3]\nb = a\nb.append(4)\nprint(a)  # [1, 2, 3, 4]\n\n# copy() or a full slice makes a shallow copy\nc = a.copy()\nc.append(5)\nprint(a, c)  # [1, 2, 3, 4] [1, 2, 3, 4, 5]"
+    }
+   ]
+  },
+  {
+   "id": "dicts",
+   "title": "Dictionaries",
+   "description": "Key-value maps with fast lookup and insertion order.",
+   "snippets": [
+    {
+     "language": "python",
+     "code": "user = {\"name\": \"Ada\", \"age\": 36, \"city\": \"London\"}\n\nprint(user[\"name\"])                  # Ada\nprint(user.get(\"email\"))             # None\nprint(user.get(\"email\", \"unknown\"))  # unknown\n\n# Insert and update\nuser[\"email\"] = \"ada@example.com\"\nuser.update({\"age\": 37, \"active\": True})\nprint(user)"
+    },
+    {
+     "language": "python",
+     "code": "# Iterate over keys, values or both\nscores = {\"math\": 90, \"art\": 75}\n\nfor subject in scores:\n    print(subject)\n\nfor subject, score in scores.items():\n    print(subject, score)\n\n# Membership tests keys, not values\nprint(\"math\" in scores)  # True\n\n# Remove a key and read what it held\nart = scores.pop(\"art\")\nprint(scores, art)  # {'math': 90} 75"
+    },
+    {
+     "language": "python",
+     "code": "# Nesting is fine, and dicts preserve insertion order\nconfig = {\n    \"server\": {\"host\": \"localhost\", \"port\": 8080},\n    \"debug\": False,\n}\nprint(config[\"server\"][\"port\"])  # 8080\n\n# setdefault inserts only when the key is missing\ngroups = {}\ngroups.setdefault(\"admins\", []).append(\"ada\")\nprint(groups)  # {'admins': ['ada']}"
+    }
+   ]
+  },
+  {
+   "id": "sets-and-tuples",
+   "title": "Sets and Tuples",
+   "description": "Unique unordered values and immutable records.",
+   "snippets": [
+    {
+     "language": "python",
+     "code": "# Sets hold unique values and support algebra\na = {1, 2, 3, 4}\nb = {3, 4, 5}\n\nprint(a | b)  # {1, 2, 3, 4, 5}\nprint(a & b)  # {3, 4}\nprint(a - b)  # {1, 2}\nprint(a ^ b)  # {1, 2, 5}\n\n# Empty braces make a dict, so use set() for an empty set\nempty = set()\nempty.add(\"x\")\nprint(empty)  # {'x'}"
+    },
+    {
+     "language": "python",
+     "code": "# Tuples are immutable and hashable when their items are\npoint = (3.5, -1.2)\nx, y = point\nprint(x, y)  # 3.5 -1.2\n\nsingle = (42,)       # trailing comma makes a one-item tuple\nprint(type(single))  # <class 'tuple'>\n\n# Tuples can be dictionary keys; lists cannot\nlocations = {(0, 0): \"origin\", (1, 2): \"target\"}\nprint(locations[(1, 2)])  # target"
+    },
+    {
+     "language": "python",
+     "code": "# frozenset is an immutable set and can also be a key\npermissions = frozenset({\"read\", \"write\"})\nprint(\"read\" in permissions)  # True\n\n# Unpacking with a star collects the rest\nfirst, *middle, last = [1, 2, 3, 4, 5]\nprint(first, middle, last)  # 1 [2, 3, 4] 5"
+    }
+   ]
+  },
+  {
+   "id": "control-flow",
+   "title": "Control Flow",
+   "description": "Branches, loops and pattern matching.",
+   "snippets": [
+    {
+     "language": "python",
+     "code": "score = 82\n\nif score >= 90:\n    grade = \"A\"\nelif score >= 80:\n    grade = \"B\"\nelse:\n    grade = \"C\"\n\nprint(grade)  # B"
+    },
+    {
+     "language": "python",
+     "code": "# for walks any iterable; range is lazy\nfor i in range(3):\n    print(i)  # 0 1 2\n\n# break stops the loop, continue skips one iteration\nfor n in [1, 2, 3, 4]:\n    if n == 2:\n        continue\n    if n == 4:\n        break\n    print(n)  # 1 3\n\n# while checks the condition before each pass\nattempts = 0\nwhile attempts < 2:\n    attempts += 1\nprint(attempts)  # 2"
+    },
+    {
+     "language": "python",
+     "code": "# for/else runs else when the loop was not broken\nfor item in [2, 4, 6]:\n    if item % 2:\n        print(\"odd found\")\n        break\nelse:\n    print(\"all even\")  # all even\n\n# match compares against patterns, not just values\ncommand = (\"move\", 3, 4)\nmatch command:\n    case (\"quit\",):\n        print(\"bye\")\n    case (\"move\", x, y):\n        print(f\"moving to {x},{y}\")\n    case _:\n        print(\"unknown\")"
+    }
+   ]
+  },
+  {
+   "id": "comprehensions",
+   "title": "Comprehensions",
+   "description": "Build collections and lazy sequences in one expression.",
+   "snippets": [
+    {
+     "language": "python",
+     "code": "# List comprehension: expression first, then the loop\nsquares = [n * n for n in range(6)]\nprint(squares)  # [0, 1, 4, 9, 16, 25]\n\n# Add a filter\nevens = [n for n in range(10) if n % 2 == 0]\nprint(evens)  # [0, 2, 4, 6, 8]\n\n# Nested loops read left to right\npairs = [(x, y) for x in range(2) for y in range(2)]\nprint(pairs)  # [(0, 0), (0, 1), (1, 0), (1, 1)]"
+    },
+    {
+     "language": "python",
+     "code": "# Dict and set comprehensions\nnames = [\"ada\", \"grace\", \"alan\"]\nlengths = {name: len(name) for name in names}\nprint(lengths)  # {'ada': 3, 'grace': 5, 'alan': 4}\n\ninitials = {name[0].upper() for name in names}\nprint(sorted(initials))  # ['A', 'G']"
+    },
+    {
+     "language": "python",
+     "code": "# A generator expression is lazy and keeps memory flat\ntotal = sum(n * n for n in range(1_000_000))\nprint(total)  # 333332833333500000\n\n# Parentheses around a generator can be dropped inside a call\nlines = [\"  one \", \" two  \"]\ncleaned = list(s.strip() for s in lines)\nprint(cleaned)  # ['one', 'two']"
+    }
+   ]
+  },
+  {
+   "id": "functions",
+   "title": "Functions",
+   "description": "Parameters, defaults, variadic arguments and first-class callables.",
+   "snippets": [
+    {
+     "language": "python",
+     "code": "def greet(name: str, greeting: str = \"Hello\") -> str:\n    \"\"\"Return a greeting for name.\"\"\"\n    return f\"{greeting}, {name}!\"\n\nprint(greet(\"Ada\"))                       # Hello, Ada!\nprint(greet(\"Ada\", greeting=\"Hi\"))        # Hi, Ada!\nprint(greet(name=\"Ada\", greeting=\"Hey\"))  # Hey, Ada!"
+    },
+    {
+     "language": "python",
+     "code": "# *args collects extra positional arguments, **kwargs extra keywords\ndef report(*values, **options):\n    label = options.get(\"label\", \"values\")\n    print(label, values)\n\nreport(1, 2, 3)                # values (1, 2, 3)\nreport(1, 2, label=\"numbers\")  # numbers (1, 2)\n\n# Unpacking at the call site spreads a list or dict\nargs = [4, 5]\nkwargs = {\"label\": \"pair\"}\nreport(*args, **kwargs)  # pair (4, 5)"
+    },
+    {
+     "language": "python",
+     "code": "# Functions are objects: assign, pass and return them\ndef double(x):\n    return x * 2\n\ndef apply(func, value):\n    return func(value)\n\nprint(apply(double, 21))  # 42\n\n# lambda is a short anonymous function\nadd = lambda a, b: a + b\nprint(add(2, 3))  # 5\n\n# A common pattern: sort by a computed key\npeople = [(\"Ada\", 36), (\"Alan\", 41)]\nprint(sorted(people, key=lambda person: person[1]))\n# [('Ada', 36), ('Alan', 41)]"
+    }
+   ]
+  },
+  {
+   "id": "classes",
+   "title": "Classes",
+   "description": "Define objects with state, behaviour and inheritance.",
+   "snippets": [
+    {
+     "language": "python",
+     "code": "class Account:\n    \"\"\"A small bank account.\"\"\"\n\n    bank = \"Example Bank\"  # class attribute shared by instances\n\n    def __init__(self, owner: str, balance: float = 0.0) -> None:\n        self.owner = owner\n        self.balance = balance\n\n    def deposit(self, amount: float) -> None:\n        if amount <= 0:\n            raise ValueError(\"amount must be positive\")\n        self.balance += amount\n\n    def __repr__(self) -> str:\n        return f\"Account({self.owner!r}, {self.balance})\"\n\n\naccount = Account(\"Ada\")\naccount.deposit(50)\nprint(account)       # Account('Ada', 50.0)\nprint(account.bank)  # Example Bank"
+    },
+    {
+     "language": "python",
+     "code": "class Savings(Account):\n    def __init__(self, owner: str, rate: float) -> None:\n        super().__init__(owner)\n        self.rate = rate\n\n    @property\n    def projected(self) -> float:\n        \"\"\"Balance after one year of simple interest.\"\"\"\n        return self.balance * (1 + self.rate)\n\n\nsavings = Savings(\"Grace\", 0.05)\nsavings.deposit(200)\nprint(savings.projected)             # 210.0\nprint(isinstance(savings, Account))  # True"
+    },
+    {
+     "language": "python",
+     "code": "from dataclasses import dataclass, field\n\n# Dataclasses generate __init__, __repr__ and __eq__\n@dataclass\nclass Point:\n    x: float\n    y: float\n    tags: list[str] = field(default_factory=list)\n\n    def distance_to_origin(self) -> float:\n        return (self.x ** 2 + self.y ** 2) ** 0.5\n\n\np = Point(3.0, 4.0)\np.tags.append(\"corner\")\nprint(p)                     # Point(x=3.0, y=4.0, tags=['corner'])\nprint(p.distance_to_origin())  # 5.0"
+    }
+   ]
+  },
+  {
+   "id": "exceptions",
+   "title": "Exceptions",
+   "description": "Handle failures, add context and define custom errors.",
+   "snippets": [
+    {
+     "language": "python",
+     "code": "try:\n    number = int(\"abc\")\nexcept ValueError as exc:\n    print(\"conversion failed:\", exc)\nelse:\n    print(\"converted\", number)\nfinally:\n    print(\"done either way\")"
+    },
+    {
+     "language": "python",
+     "code": "# Catch specific exceptions; a bare except hides bugs\ntry:\n    data = {\"a\": 1}\n    print(data[\"b\"])\nexcept KeyError:\n    print(\"missing key\")  # missing key\n\n# Re-raise after adding context\ndef parse(text):\n    try:\n        return int(text)\n    except ValueError as exc:\n        raise RuntimeError(f\"cannot parse {text!r}\") from exc\n\ntry:\n    parse(\"x\")\nexcept RuntimeError as exc:\n    print(exc)  # cannot parse 'x'"
+    },
+    {
+     "language": "python",
+     "code": "# Custom exceptions inherit from Exception\nclass ValidationError(ValueError):\n    \"\"\"Raised when a value fails validation.\"\"\"\n\n\ndef check_age(age: int) -> None:\n    if age < 0:\n        raise ValidationError(\"age cannot be negative\")\n\n\ntry:\n    check_age(-1)\nexcept ValidationError as exc:\n    print(exc)  # age cannot be negative"
+    }
+   ]
+  },
+  {
+   "id": "files",
+   "title": "Files",
+   "description": "Read and write text with open or pathlib.",
+   "snippets": [
+    {
+     "language": "python",
+     "code": "from pathlib import Path\n\npath = Path(\"notes.txt\")\n\n# Write text, replacing the file\npath.write_text(\"first line\\nsecond line\\n\", encoding=\"utf-8\")\n\n# Read the whole file at once\nprint(path.read_text(encoding=\"utf-8\"))"
+    },
+    {
+     "language": "python",
+     "code": "# with closes the file even when an error occurs\nwith open(\"notes.txt\", \"w\", encoding=\"utf-8\") as handle:\n    handle.write(\"alpha\\n\")\n    handle.write(\"beta\\n\")\n\nwith open(\"notes.txt\", encoding=\"utf-8\") as handle:\n    for line in handle:\n        print(line.rstrip())  # alpha / beta"
+    },
+    {
+     "language": "python",
+     "code": "from pathlib import Path\n\n# Walk a directory and filter with glob patterns\nroot = Path(\".\")\nfor path in sorted(root.glob(\"*.txt\")):\n    print(path.name, path.stat().st_size)\n\n# Build paths without string concatenation\ndata_dir = Path(\"data\") / \"topics\"\nprint(data_dir)        # data/topics\nprint(data_dir.exists())"
+    }
+   ]
+  },
+  {
+   "id": "json",
+   "title": "JSON",
+   "description": "Encode and decode JSON strings and files.",
+   "snippets": [
+    {
+     "language": "python",
+     "code": "import json\n\npayload = {\"name\": \"Ada\", \"age\": 36, \"tags\": [\"math\", \"code\"]}\n\n# Compact and pretty serialization\ntext = json.dumps(payload)\nprint(text)\n\npretty = json.dumps(payload, indent=2, sort_keys=True)\nprint(pretty)\n\n# Parse a string back into Python objects\nloaded = json.loads(text)\nprint(loaded[\"tags\"][0])  # math"
+    },
+    {
+     "language": "python",
+     "code": "import json\nfrom pathlib import Path\n\npath = Path(\"config.json\")\ndata = {\"host\": \"localhost\", \"port\": 8080, \"debug\": False}\n\nwith path.open(\"w\", encoding=\"utf-8\") as handle:\n    json.dump(data, handle, indent=2)\n\nwith path.open(encoding=\"utf-8\") as handle:\n    restored = json.load(handle)\n\nprint(restored[\"port\"])  # 8080"
+    },
+    {
+     "language": "python",
+     "code": "import json\n\ntry:\n    json.loads(\"{bad json}\")\nexcept json.JSONDecodeError as exc:\n    print(exc.lineno, exc.colno)  # 1 2\n\n# Tuple and list values both decode as lists\nprint(json.loads('{\"scores\": [90, 75]}'))  # {'scores': [90, 75]}"
+    }
+   ]
+  },
+  {
+   "id": "modules",
+   "title": "Modules and Imports",
+   "description": "Split code across modules and packages.",
+   "snippets": [
+    {
+     "language": "python",
+     "code": "# Import the whole module\nimport math\nprint(math.sqrt(16))  # 4.0\n\n# Import a name, optionally with an alias\nfrom math import ceil, floor\nfrom statistics import mean as average\n\nprint(ceil(2.1), floor(2.9))  # 3 2\nprint(average([1, 2, 3]))     # 2"
+    },
+    {
+     "language": "python",
+     "code": "# helpers.py\ndef double(x):\n    return x * 2\n\n# Only run the demo when this file is executed directly\nif __name__ == \"__main__\":\n    print(double(21))  # 42\n\n# In another file:\n# import helpers\n# print(helpers.double(5))  # 10"
+    },
+    {
+     "language": "python",
+     "code": "# Inside a package, prefer absolute imports\n# project/app/main.py\nfrom app.services import load_config\n\n# Relative imports work within the same package\nfrom .services import load_config\n\n# Find where a module lives\nimport json\nprint(json.__file__)"
+    }
+   ]
+  },
+  {
+   "id": "typing",
+   "title": "Type Hints",
+   "description": "Annotate functions and data for tools and readers.",
+   "snippets": [
+    {
+     "language": "python",
+     "code": "def greet(name: str, times: int = 1) -> str:\n    return (f\"Hello, {name}! \" * times).strip()\n\nprint(greet(\"Ada\", 2))  # Hello, Ada! Hello, Ada!"
+    },
+    {
+     "language": "python",
+     "code": "from collections.abc import Iterable, Sequence\n\n# Built-in generics: list[int], dict[str, float], set[str]\ndef total(values: Sequence[float]) -> float:\n    return sum(values)\n\ndef names(items: Iterable[dict[str, str]]) -> list[str]:\n    return [item[\"name\"] for item in items]\n\nprint(total([1.5, 2.5]))  # 4.0\nprint(names([{\"name\": \"Ada\"}, {\"name\": \"Alan\"}]))  # ['Ada', 'Alan']"
+    },
+    {
+     "language": "python",
+     "code": "from typing import TypedDict\n\n\nclass User(TypedDict):\n    name: str\n    email: str\n    age: int\n\n\ndef find_user(users: list[User], name: str) -> User | None:\n    for user in users:\n        if user[\"name\"] == name:\n            return user\n    return None\n\n\nada: User = {\"name\": \"Ada\", \"email\": \"ada@example.com\", \"age\": 36}\nprint(find_user([ada], \"Ada\"))"
+    }
+   ]
+  },
+  {
+   "id": "testing",
+   "title": "Testing",
+   "description": "Write and run automated checks with unittest or pytest.",
+   "snippets": [
+    {
+     "language": "python",
+     "code": "# test_calculator.py\nimport unittest\n\nfrom calculator import add\n\n\nclass TestAdd(unittest.TestCase):\n    def test_adds_integers(self):\n        self.assertEqual(add(2, 3), 5)\n\n    def test_handles_negatives(self):\n        self.assertEqual(add(-1, 1), 0)\n\n\nif __name__ == \"__main__\":\n    unittest.main()"
+    },
+    {
+     "language": "bash",
+     "code": "# Run every test in the current directory\npython3 -m unittest discover -v\n\n# Run a single module or a single test case\npython3 -m unittest test_calculator\npython3 -m unittest test_calculator.TestAdd.test_adds_integers"
+    },
+    {
+     "language": "python",
+     "code": "# test_calculator.py in pytest style\nimport pytest\n\nfrom calculator import add\n\n\ndef test_adds_integers():\n    assert add(2, 3) == 5\n\n\ndef test_rejects_bad_input():\n    with pytest.raises(TypeError):\n        add(\"2\", 3)"
+    }
+   ]
+  },
+  {
+   "id": "virtualenv",
+   "title": "Virtual Environments",
+   "description": "Isolate dependencies per project with venv and pip.",
+   "snippets": [
+    {
+     "language": "bash",
+     "code": "# Create an isolated environment in .venv\npython3 -m venv .venv\n\n# Activate it (Bash or Zsh)\nsource .venv/bin/activate\npython --version\nwhich python   # the interpreter inside .venv\n\n# Leave the environment\ndeactivate"
+    },
+    {
+     "language": "bash",
+     "code": "# Install and record dependencies\npython -m pip install requests==2.32.3\npython -m pip freeze > requirements.txt\n\n# Recreate the environment elsewhere\npython3 -m venv .venv\nsource .venv/bin/activate\npython -m pip install -r requirements.txt\n\n# Show what is installed\npython -m pip list"
+    }
+   ]
+  },
+  {
+   "id": "stdlib",
+   "title": "Standard Library Essentials",
+   "description": "Everyday tools that ship with Python.",
+   "snippets": [
+    {
+     "language": "python",
+     "code": "from collections import Counter, defaultdict\nfrom datetime import date, timedelta\n\nwords = [\"red\", \"blue\", \"red\", \"green\", \"red\"]\nprint(Counter(words).most_common(2))  # [('red', 3), ('blue', 1)]\n\ngroups = defaultdict(list)\ngroups[\"fruit\"].append(\"apple\")\nprint(dict(groups))  # {'fruit': ['apple']}\n\ntoday = date(2026, 11, 4)\nprint(today + timedelta(days=10))  # 2026-11-14"
+    },
+    {
+     "language": "python",
+     "code": "import itertools\nimport random\n\nprint(list(itertools.islice(itertools.count(10, 5), 3)))  # [10, 15, 20]\nprint(list(itertools.combinations(\"abc\", 2)))\n# [('a', 'b'), ('a', 'c'), ('b', 'c')]\n\nrandom.seed(7)\nprint(random.choice([\"rock\", \"paper\", \"scissors\"]))\nprint(random.sample(range(10), 3))"
+    },
+    {
+     "language": "python",
+     "code": "import re\nimport sys\nfrom pathlib import Path\n\ntext = \"order 42 shipped, order 77 pending\"\nprint(re.findall(r\"order (\\d+)\", text))  # ['42', '77']\n\nprint(Path.home().name)\nprint(sys.version_info[:2])"
+    }
+   ]
+  },
+  {
+   "id": "idioms",
+   "title": "Pythonic Idioms",
+   "description": "Small patterns that make code shorter and clearer.",
+   "snippets": [
+    {
+     "language": "python",
+     "code": "# enumerate gives index and value together\nfor index, name in enumerate([\"ada\", \"alan\"], start=1):\n    print(index, name)  # 1 ada, then 2 alan\n\n# zip pairs iterables and stops at the shortest\nfor city, temp in zip([\"London\", \"Rome\"], [12, 21]):\n    print(f\"{city}: {temp}C\")"
+    },
+    {
+     "language": "python",
+     "code": "# Truthiness: empty containers and None are false\nitems = []\nif not items:\n    print(\"empty\")  # empty\n\n# Conditional expression\nstatus = \"ok\" if items else \"empty\"\nprint(status)  # empty\n\n# any and all short-circuit\nprint(any(n > 5 for n in [1, 9, 3]))  # True\nprint(all(n > 0 for n in [1, 2, 3]))  # True"
+    },
+    {
+     "language": "python",
+     "code": "# Prefer EAFP over checking first\ntry:\n    value = {\"a\": 1}[\"a\"]\nexcept KeyError:\n    value = 0\nprint(value)  # 1\n\n# Swap without a temporary\na, b = 1, 2\na, b = b, a\nprint(a, b)  # 2 1\n\n# Join strings instead of concatenating in a loop\nparts = [\"alpha\", \"beta\", \"gamma\"]\nline = \", \".join(parts)\nprint(line)  # alpha, beta, gamma"
+    }
+   ]
+  }
+ ]
+}

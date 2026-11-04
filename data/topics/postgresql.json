@@ -1,0 +1,397 @@
+{
+ "slug": "postgresql",
+ "title": "PostgreSQL",
+ "label": "PostgreSQL",
+ "group": "Database",
+ "color": "#336791",
+ "desc": "Relational database with MVCC, a rich SQL dialect, JSONB, extensions and strong consistency guarantees.",
+ "sections": [
+  {
+   "id": "setup",
+   "title": "Setup",
+   "description": "Install the server, start it and confirm the cluster answers.",
+   "snippets": [
+    {
+     "language": "bash",
+     "code": "# Debian or Ubuntu: server plus contrib modules\nsudo apt update\nsudo apt install postgresql postgresql-contrib\nsudo systemctl enable --now postgresql\n\n# The package creates a cluster and a postgres superuser\nsudo -u postgres psql -c \"SELECT version();\"\n"
+    },
+    {
+     "language": "bash",
+     "code": "# macOS with Homebrew\nbrew install postgresql@17\nbrew services start postgresql@17\nexport PATH=\"/opt/homebrew/opt/postgresql@17/bin:$PATH\"\npsql postgres -c \"SELECT version();\"\n\n# Container with a password and a named volume\ndocker run --name pg17 \\\n  -e POSTGRES_PASSWORD=devsecret \\\n  -e POSTGRES_DB=inventory \\\n  -p 5432:5432 \\\n  -v pg17-data:/var/lib/postgresql/data \\\n  -d postgres:17\n\n# Wait until the port accepts connections\npg_isready -h 127.0.0.1 -p 5432 -U app_user\n"
+    }
+   ]
+  },
+  {
+   "id": "connection",
+   "title": "Connection",
+   "description": "Reach a database by URI, environment or password file and inspect the session.",
+   "snippets": [
+    {
+     "language": "bash",
+     "code": "# URI form: user, password, host, port, database\npsql \"postgresql://app_user:devsecret@127.0.0.1:5432/inventory?sslmode=require\"\n\n# The same connection through environment variables\nexport PGHOST=127.0.0.1\nexport PGPORT=5432\nexport PGUSER=app_user\nexport PGDATABASE=inventory\npsql -c \"SELECT 1;\"\n"
+    },
+    {
+     "language": "bash",
+     "code": "# Keep the password out of the shell history and out of ps output\n# format: host:port:database:user:password\nprintf '127.0.0.1:5432:inventory:app_user:devsecret\\n' >> ~/.pgpass\nchmod 600 ~/.pgpass\npsql -h 127.0.0.1 -U app_user -d inventory\n"
+    },
+    {
+     "language": "sql",
+     "code": "-- Who am I, where am I, and which server answered\nSELECT current_database() AS database,\n       current_user AS login,\n       current_schema() AS schema,\n       inet_server_addr() AS server_ip,\n       inet_server_port() AS server_port,\n       version() AS server_version;\n"
+    }
+   ]
+  },
+  {
+   "id": "psql",
+   "title": "psql Basics",
+   "description": "Meta-commands, scripted runs and client-side file loading.",
+   "snippets": [
+    {
+     "language": "text",
+     "code": "\\l                 list databases\n\\c inventory       connect to another database\n\\dn                list schemas\n\\dt public.*       list tables in one schema\n\\dv                list views\n\\df+ round         describe functions named round\n\\d+ orders         columns, indexes, constraints and storage\n\\du                list roles\n\\x auto            expand wide output automatically\n\\timing on         print execution time\n\\e                 edit the last query in $EDITOR\n\\i schema.sql      run a file on the client side\n\\copy customers (email, display_name) FROM 'customers.csv' WITH (FORMAT csv, HEADER true)\n\\q                 quit\n"
+    },
+    {
+     "language": "bash",
+     "code": "# Run a script and stop at the first error\npsql -h 127.0.0.1 -U app_user -d inventory \\\n  -v ON_ERROR_STOP=1 \\\n  -f migrations/001_init.sql\n\n# Unaligned, tuples only: useful inside shell pipelines\npsql -h 127.0.0.1 -U app_user -d inventory \\\n  -Atc \"SELECT count(*) FROM orders;\"\n"
+    }
+   ]
+  },
+  {
+   "id": "databases",
+   "title": "Databases and Schemas",
+   "description": "Create databases and schemas, then inspect their size and ownership.",
+   "snippets": [
+    {
+     "language": "sql",
+     "code": "-- Start from an empty template so no objects leak in\nCREATE DATABASE inventory\n  WITH OWNER = app_user\n       ENCODING = 'UTF8'\n       TEMPLATE = template0;\n\n-- A schema keeps reporting objects away from the public schema\nCREATE SCHEMA reporting AUTHORIZATION app_user;\n\n-- New sessions of this role resolve unqualified names in this order\nALTER ROLE app_user SET search_path = public, reporting;\n"
+    },
+    {
+     "language": "sql",
+     "code": "-- Databases and their size on disk\nSELECT datname,\n       pg_size_pretty(pg_database_size(datname)) AS size\nFROM pg_database\nORDER BY pg_database_size(datname) DESC;\n\n-- Application schemas only\nSELECT schema_name, schema_owner\nFROM information_schema.schemata\nWHERE schema_name NOT IN ('pg_catalog', 'information_schema');\n\n-- Drop even when sessions are connected (PostgreSQL 13+)\nDROP DATABASE IF EXISTS inventory_old WITH (FORCE);\n\n-- Defaults applied to every new session on this database\nALTER DATABASE inventory SET timezone = 'UTC';\nALTER DATABASE inventory SET statement_timeout = '30s';\n"
+    }
+   ]
+  },
+  {
+   "id": "tables",
+   "title": "Tables",
+   "description": "Define tables with identity keys, constraints and partitions, then alter them safely.",
+   "snippets": [
+    {
+     "language": "sql",
+     "code": "CREATE TABLE customers (\n  id          bigint GENERATED ALWAYS AS IDENTITY PRIMARY KEY,\n  email       text NOT NULL UNIQUE,\n  display_name text NOT NULL,\n  created_at  timestamptz NOT NULL DEFAULT now()\n);\n\nCREATE TABLE orders (\n  id           bigint GENERATED ALWAYS AS IDENTITY PRIMARY KEY,\n  customer_id  bigint NOT NULL REFERENCES customers (id) ON DELETE CASCADE,\n  status       text NOT NULL DEFAULT 'pending'\n                 CHECK (status IN ('pending', 'paid', 'shipped', 'cancelled')),\n  total_cents  integer NOT NULL CHECK (total_cents >= 0),\n  placed_at    timestamptz NOT NULL DEFAULT now()\n);\n\nCREATE INDEX orders_customer_idx ON orders (customer_id);\n"
+    },
+    {
+     "language": "sql",
+     "code": "-- Add a nullable column; existing rows get NULL without a rewrite\nALTER TABLE orders ADD COLUMN shipped_at timestamptz;\n\n-- Nothing may ship before it was placed\nALTER TABLE orders\n  ADD CONSTRAINT orders_shipped_after_placed\n  CHECK (shipped_at IS NULL OR shipped_at >= placed_at);\n\nALTER TABLE customers RENAME COLUMN display_name TO full_name;\n\n-- Remove every row and restart the identity counter\nTRUNCATE orders RESTART IDENTITY CASCADE;\n"
+    },
+    {
+     "language": "sql",
+     "code": "-- Monthly partitions keep old data cheap to drop\nCREATE TABLE events (\n  id          bigint NOT NULL,\n  occurred_at timestamptz NOT NULL,\n  payload     jsonb NOT NULL,\n  PRIMARY KEY (id, occurred_at)\n) PARTITION BY RANGE (occurred_at);\n\nCREATE TABLE events_2026_11 PARTITION OF events\n  FOR VALUES FROM ('2026-11-01') TO ('2026-12-01');\n\nCREATE TABLE events_2026_12 PARTITION OF events\n  FOR VALUES FROM ('2026-12-01') TO ('2027-01-01');\n"
+    }
+   ]
+  },
+  {
+   "id": "types",
+   "title": "Data Types",
+   "description": "Pick exact numbers, time-zone-aware timestamps, arrays and custom enum types.",
+   "snippets": [
+    {
+     "language": "sql",
+     "code": "-- Money as integer cents, ratings as exact decimal, time as timestamptz\nCREATE TABLE type_demo (\n  id          bigint GENERATED ALWAYS AS IDENTITY PRIMARY KEY,\n  quantity    integer NOT NULL,\n  unit_cents  integer NOT NULL,\n  rating      numeric(3, 2) CHECK (rating BETWEEN 0 AND 5),\n  label       text NOT NULL,\n  code        varchar(12) NOT NULL,\n  active      boolean NOT NULL DEFAULT true,\n  born_on     date,\n  seen_at     timestamptz NOT NULL DEFAULT now(),\n  tags        text[] NOT NULL DEFAULT '{}',\n  payload     jsonb NOT NULL DEFAULT '{}'::jsonb\n);\n"
+    },
+    {
+     "language": "sql",
+     "code": "SELECT\n  '42'::integer AS from_text,\n  now()::date AS today,\n  CAST('2026-11-04' AS date) AS explicit_cast,\n  '2 days 03:30:00'::interval AS duration,\n  7 / 2 AS integer_division,\n  7::numeric / 2 AS numeric_division,\n  round(2.675::numeric, 2) AS rounded;\n\n-- timestamptz stores an instant; the session decides how to render it\nSET TIME ZONE 'America/Sao_Paulo';\nSELECT now() AT TIME ZONE 'UTC' AS utc_clock;\n"
+    },
+    {
+     "language": "sql",
+     "code": "CREATE TYPE order_status AS ENUM ('pending', 'paid', 'shipped', 'cancelled');\n\nCREATE DOMAIN positive_cents AS integer CHECK (VALUE > 0);\n\nCREATE TABLE shipments (\n  id        bigint GENERATED ALWAYS AS IDENTITY PRIMARY KEY,\n  status    order_status NOT NULL DEFAULT 'pending',\n  fee_cents positive_cents NOT NULL\n);\n"
+    }
+   ]
+  },
+  {
+   "id": "insert",
+   "title": "Inserting Rows",
+   "description": "Insert many rows, upsert on conflict and copy data in bulk.",
+   "snippets": [
+    {
+     "language": "sql",
+     "code": "INSERT INTO customers (email, full_name)\nVALUES ('ana@example.com', 'Ana Souza'),\n       ('bruno@example.com', 'Bruno Lima'),\n       ('carla@example.com', 'Carla Nunes')\nRETURNING id, email;\n"
+    },
+    {
+     "language": "sql",
+     "code": "-- One row per email: update the existing row instead of failing\nINSERT INTO customers (email, full_name)\nVALUES ('ana@example.com', 'Ana Souza')\nON CONFLICT (email) DO UPDATE\nSET full_name = EXCLUDED.full_name\nRETURNING id, email;\n\n-- Keep explicit ids when copying from a legacy system\nINSERT INTO customers (id, email, full_name)\nOVERRIDING SYSTEM VALUE\nVALUES (9001, 'dave@example.com', 'Dave Park');\n"
+    },
+    {
+     "language": "sql",
+     "code": "-- Move old rows into an archive table\nINSERT INTO customers_archive (id, email, full_name)\nSELECT id, email, full_name\nFROM customers\nWHERE created_at < '2025-01-01';\n\n-- Bulk load a file that lives on the server, not on the client\nCOPY customers (email, full_name)\nFROM '/srv/import/customers.csv'\nWITH (FORMAT csv, HEADER true);\n"
+    }
+   ]
+  },
+  {
+   "id": "select",
+   "title": "Selecting Rows",
+   "description": "Project columns, compute expressions and page through ordered results.",
+   "snippets": [
+    {
+     "language": "sql",
+     "code": "SELECT id,\n       email,\n       created_at\nFROM customers\nORDER BY created_at DESC\nLIMIT 20 OFFSET 40;\n"
+    },
+    {
+     "language": "sql",
+     "code": "SELECT id,\n       status,\n       coalesce(shipped_at, placed_at) AS last_event,\n       total_cents / 100.0 AS total,\n       date_trunc('day', placed_at) AS day\nFROM orders\nWHERE status = 'paid'\nORDER BY placed_at DESC;\n"
+    },
+    {
+     "language": "sql",
+     "code": "SELECT 2 + 3 AS sum,\n       '2026-11-04'::date + 7 AS next_week,\n       concat('order-', 42) AS reference,\n       nullif('', '') IS NULL AS empty_is_null,\n       split_part('ana@example.com', '@', 2) AS domain;\n"
+    }
+   ]
+  },
+  {
+   "id": "filtering",
+   "title": "Filtering and Sorting",
+   "description": "Combine predicates, pattern matching and deterministic ordering.",
+   "snippets": [
+    {
+     "language": "sql",
+     "code": "-- Half-open range catches every timestamp in 2026\nSELECT id, email, created_at\nFROM customers\nWHERE created_at >= '2026-01-01'\n  AND created_at <  '2027-01-01'\n  AND email ILIKE '%@example.com'\n  AND full_name IS NOT NULL\nORDER BY created_at;\n"
+    },
+    {
+     "language": "sql",
+     "code": "SELECT id, status, total_cents\nFROM orders\nWHERE status IN ('pending', 'paid')\n  AND total_cents BETWEEN 1000 AND 50000\n  AND shipped_at IS NULL\nORDER BY total_cents DESC NULLS LAST, id ASC\nLIMIT 25;\n"
+    },
+    {
+     "language": "sql",
+     "code": "-- Latest order per customer, one row each\nSELECT DISTINCT ON (customer_id)\n       customer_id, id, placed_at\nFROM orders\nORDER BY customer_id, placed_at DESC;\n"
+    }
+   ]
+  },
+  {
+   "id": "joins",
+   "title": "Joins",
+   "description": "Combine tables with inner, outer and lateral joins.",
+   "snippets": [
+    {
+     "language": "sql",
+     "code": "SELECT o.id,\n       c.email,\n       o.total_cents,\n       o.placed_at\nFROM orders AS o\nJOIN customers AS c ON c.id = o.customer_id\nWHERE o.status = 'paid'\nORDER BY o.placed_at DESC;\n"
+    },
+    {
+     "language": "sql",
+     "code": "-- Every customer, including those with no orders\nSELECT c.id, c.email, count(o.id) AS orders\nFROM customers AS c\nLEFT JOIN orders AS o ON o.customer_id = c.id\nGROUP BY c.id, c.email\nORDER BY orders DESC;\n\n-- Anti-join: customers who never ordered\nSELECT c.id, c.email\nFROM customers AS c\nLEFT JOIN orders AS o ON o.customer_id = c.id\nWHERE o.id IS NULL;\n"
+    },
+    {
+     "language": "sql",
+     "code": "-- Three most recent orders for each customer\nSELECT c.email, recent.id AS order_id, recent.total_cents\nFROM customers AS c\nCROSS JOIN LATERAL (\n  SELECT o.id, o.total_cents\n  FROM orders AS o\n  WHERE o.customer_id = c.id\n  ORDER BY o.placed_at DESC\n  LIMIT 3\n) AS recent\nORDER BY c.email, recent.id;\n"
+    }
+   ]
+  },
+  {
+   "id": "aggregation",
+   "title": "Aggregation and Grouping",
+   "description": "Count, filter aggregates, group by expressions and build totals.",
+   "snippets": [
+    {
+     "language": "sql",
+     "code": "SELECT count(*) AS all_rows,\n       count(shipped_at) AS shipped_rows,\n       count(*) FILTER (WHERE status = 'paid') AS paid_rows,\n       avg(total_cents) AS avg_cents\nFROM orders;\n"
+    },
+    {
+     "language": "sql",
+     "code": "SELECT date_trunc('month', placed_at) AS month,\n       count(*) AS orders,\n       count(*) FILTER (WHERE status = 'paid') AS paid,\n       sum(total_cents) / 100.0 AS revenue\nFROM orders\nWHERE placed_at >= '2026-01-01'\nGROUP BY 1\nHAVING count(*) >= 5\nORDER BY 1;\n"
+    },
+    {
+     "language": "sql",
+     "code": "SELECT c.email,\n       string_agg(o.id::text, ', ' ORDER BY o.placed_at) AS order_ids,\n       array_agg(o.total_cents ORDER BY o.placed_at) AS totals\nFROM customers AS c\nJOIN orders AS o ON o.customer_id = c.id\nGROUP BY c.email;\n\n-- Per status plus a grand total row\nSELECT status, sum(total_cents) AS cents\nFROM orders\nGROUP BY ROLLUP (status)\nORDER BY status NULLS LAST;\n"
+    }
+   ]
+  },
+  {
+   "id": "window-functions",
+   "title": "Window Functions",
+   "description": "Rank rows, compute running totals and compare neighbours without collapsing them.",
+   "snippets": [
+    {
+     "language": "sql",
+     "code": "SELECT customer_id,\n       id,\n       placed_at,\n       row_number() OVER (\n         PARTITION BY customer_id ORDER BY placed_at DESC\n       ) AS recency,\n       sum(total_cents) OVER (\n         PARTITION BY customer_id ORDER BY placed_at\n         ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW\n       ) AS running_cents\nFROM orders;\n"
+    },
+    {
+     "language": "sql",
+     "code": "SELECT id,\n       customer_id,\n       placed_at,\n       placed_at - lag(placed_at) OVER (\n         PARTITION BY customer_id ORDER BY placed_at\n       ) AS gap_since_previous,\n       lead(total_cents, 1, 0) OVER (\n         PARTITION BY customer_id ORDER BY placed_at\n       ) AS next_total\nFROM orders;\n"
+    },
+    {
+     "language": "sql",
+     "code": "-- Window functions are filtered after they run, so wrap them\nSELECT *\nFROM (\n  SELECT o.*,\n         row_number() OVER (\n           PARTITION BY customer_id ORDER BY placed_at DESC\n         ) AS rn\n  FROM orders AS o\n) AS ranked\nWHERE rn <= 3;\n"
+    }
+   ]
+  },
+  {
+   "id": "cte",
+   "title": "Common Table Expressions",
+   "description": "Name intermediate results, walk hierarchies and modify data in one statement.",
+   "snippets": [
+    {
+     "language": "sql",
+     "code": "WITH paid AS (\n  SELECT customer_id, sum(total_cents) AS cents\n  FROM orders\n  WHERE status = 'paid'\n  GROUP BY customer_id\n)\nSELECT c.email, paid.cents\nFROM paid\nJOIN customers AS c ON c.id = paid.customer_id\nORDER BY paid.cents DESC;\n"
+    },
+    {
+     "language": "sql",
+     "code": "WITH RECURSIVE tree AS (\n  SELECT id, parent_id, name, 1 AS depth\n  FROM categories\n  WHERE parent_id IS NULL\n\n  UNION ALL\n\n  SELECT c.id, c.parent_id, c.name, t.depth + 1\n  FROM categories AS c\n  JOIN tree AS t ON c.parent_id = t.id\n)\nSELECT depth, repeat('  ', depth - 1) || name AS path\nFROM tree\nORDER BY path;\n"
+    },
+    {
+     "language": "sql",
+     "code": "-- Move cancelled orders to an archive in one statement\nWITH moved AS (\n  DELETE FROM orders\n  WHERE status = 'cancelled'\n  RETURNING id, customer_id, status, total_cents, placed_at\n)\nINSERT INTO orders_archive (id, customer_id, status, total_cents, placed_at)\nSELECT id, customer_id, status, total_cents, placed_at\nFROM moved;\n"
+    }
+   ]
+  },
+  {
+   "id": "indexes",
+   "title": "Indexes",
+   "description": "Create the right index shape and build it without blocking writes.",
+   "snippets": [
+    {
+     "language": "sql",
+     "code": "-- Composite index for the common filter plus order\nCREATE INDEX orders_customer_placed_idx\n  ON orders (customer_id, placed_at DESC);\n\n-- Partial index: only pending rows are stored\nCREATE INDEX orders_pending_idx\n  ON orders (placed_at)\n  WHERE status = 'pending';\n\n-- Expression index for case-insensitive lookups\nCREATE INDEX customers_lower_email_idx\n  ON customers (lower(email));\n"
+    },
+    {
+     "language": "sql",
+     "code": "-- Build without blocking writes; cannot run inside a transaction\nCREATE INDEX CONCURRENTLY orders_status_idx ON orders (status);\n\n-- Rebuild without blocking reads or writes\nREINDEX INDEX CONCURRENTLY orders_customer_placed_idx;\n\nDROP INDEX CONCURRENTLY IF EXISTS orders_status_idx;\n"
+    },
+    {
+     "language": "sql",
+     "code": "-- GIN for JSONB containment queries\nCREATE INDEX events_payload_idx\n  ON events USING gin (payload jsonb_path_ops);\n\n-- GIN for full-text search over a generated column\nALTER TABLE articles\n  ADD COLUMN search tsvector\n  GENERATED ALWAYS AS (to_tsvector('english', body)) STORED;\n\nCREATE INDEX articles_search_idx ON articles USING gin (search);\n"
+    }
+   ]
+  },
+  {
+   "id": "explain",
+   "title": "EXPLAIN and Performance",
+   "description": "Measure a plan with real buffers, refresh statistics and find slow statements.",
+   "snippets": [
+    {
+     "language": "sql",
+     "code": "-- ANALYZE executes the query; BUFFERS shows cache hits and disk reads\nEXPLAIN (ANALYZE, BUFFERS)\nSELECT o.id, o.total_cents\nFROM orders AS o\nWHERE o.customer_id = 42\nORDER BY o.placed_at DESC\nLIMIT 10;\n"
+    },
+    {
+     "language": "sql",
+     "code": "-- Refresh planner statistics after a large load\nVACUUM (ANALYZE) orders;\nANALYZE customers;\n\n-- Slowest statements by total time, once pg_stat_statements is loaded\nSELECT calls,\n       round(total_exec_time::numeric, 1) AS total_ms,\n       round(mean_exec_time::numeric, 1) AS mean_ms,\n       rows,\n       query\nFROM pg_stat_statements\nORDER BY total_exec_time DESC\nLIMIT 10;\n"
+    },
+    {
+     "language": "sql",
+     "code": "-- Compare estimated rows with actual rows for one node\nEXPLAIN (ANALYZE, VERBOSE, COSTS OFF)\nSELECT count(*)\nFROM orders\nWHERE status = 'paid';\n"
+    }
+   ]
+  },
+  {
+   "id": "transactions",
+   "title": "Transactions",
+   "description": "Group statements atomically, roll back partially and claim rows without waiting.",
+   "snippets": [
+    {
+     "language": "sql",
+     "code": "BEGIN;\n\nUPDATE accounts SET balance_cents = balance_cents - 2500 WHERE id = 1;\nUPDATE accounts SET balance_cents = balance_cents + 2500 WHERE id = 2;\n\nCOMMIT;\n\n-- Undo everything since BEGIN\nBEGIN;\nDELETE FROM orders WHERE status = 'cancelled';\nROLLBACK;\n\n-- Serializable may abort; the client retries on SQLSTATE 40001\nBEGIN ISOLATION LEVEL SERIALIZABLE;\nUPDATE accounts SET balance_cents = balance_cents - 100 WHERE id = 1;\nCOMMIT;\n"
+    },
+    {
+     "language": "sql",
+     "code": "BEGIN;\n\nINSERT INTO customers (email, full_name)\nVALUES ('new@example.com', 'New Customer');\n\nSAVEPOINT before_cleanup;\n\nDELETE FROM orders WHERE customer_id = 9001;\n\n-- Undo only the delete, keep the insert before the savepoint\nROLLBACK TO SAVEPOINT before_cleanup;\nRELEASE SAVEPOINT before_cleanup;\n\nCOMMIT;\n"
+    },
+    {
+     "language": "sql",
+     "code": "-- One worker claims a job without waiting for another worker\nWITH job AS (\n  SELECT id\n  FROM jobs\n  WHERE status = 'queued'\n  ORDER BY created_at\n  FOR UPDATE SKIP LOCKED\n  LIMIT 1\n)\nUPDATE jobs\nSET status = 'running'\nWHERE id IN (SELECT id FROM job)\nRETURNING id;\n"
+    }
+   ]
+  },
+  {
+   "id": "roles",
+   "title": "Roles and Grants",
+   "description": "Create login and group roles, grant least privilege and verify it.",
+   "snippets": [
+    {
+     "language": "sql",
+     "code": "-- LOGIN allows a connection; the password is stored as a SCRAM hash\nCREATE ROLE app_user LOGIN PASSWORD 'devsecret';\nCREATE ROLE reporting NOLOGIN;\nCREATE ROLE deploy IN ROLE app_user;\n\n-- Change a password interactively without shell history\n-- psql: \\password app_user\n\n-- A contractor account that stops working at the end of the month\nCREATE ROLE contractor LOGIN PASSWORD 'temp-pass-2026'\n  VALID UNTIL '2026-11-30';\n"
+    },
+    {
+     "language": "sql",
+     "code": "GRANT CONNECT ON DATABASE inventory TO app_user;\nGRANT USAGE ON SCHEMA public TO app_user;\n\nGRANT SELECT, INSERT, UPDATE, DELETE\n  ON ALL TABLES IN SCHEMA public\n  TO app_user;\n\nGRANT USAGE, SELECT\n  ON ALL SEQUENCES IN SCHEMA public\n  TO app_user;\n\n-- Future tables created by this role get read access for reporting\nALTER DEFAULT PRIVILEGES IN SCHEMA public\n  GRANT SELECT ON TABLES TO reporting;\n"
+    },
+    {
+     "language": "sql",
+     "code": "-- Read-only role: all data readable, nothing writable (PostgreSQL 14+)\nGRANT pg_read_all_data TO reporting;\n\n-- Remove the default world access from the public schema\nREVOKE ALL ON SCHEMA public FROM PUBLIC;\n\n-- Verify instead of guessing\nSELECT has_table_privilege('app_user', 'public.orders', 'UPDATE') AS can_update;\n"
+    }
+   ]
+  },
+  {
+   "id": "backup",
+   "title": "Backup and Restore",
+   "description": "Dump logical backups in several formats and take a physical base backup.",
+   "snippets": [
+    {
+     "language": "bash",
+     "code": "# Custom format: compressed single file, selective restore\npg_dump -h 127.0.0.1 -U app_user -d inventory -Fc -f inventory.dump\n\n# Inspect what the dump contains before restoring\npg_restore --list inventory.dump | head -20\n"
+    },
+    {
+     "language": "bash",
+     "code": "# Directory format allows parallel dump and restore\npg_dump -h 127.0.0.1 -U app_user -d inventory -Fd -j 4 -f inventory_dir\n\ncreatedb -h 127.0.0.1 -U app_user inventory_restore\npg_restore -h 127.0.0.1 -U app_user \\\n  -d inventory_restore \\\n  -j 4 \\\n  inventory_dir\n"
+    },
+    {
+     "language": "bash",
+     "code": "# Plain SQL compressed on the fly; the result is portable text\npg_dump -h 127.0.0.1 -U app_user -d inventory | gzip > inventory.sql.gz\ngunzip -c inventory.sql.gz | psql -h 127.0.0.1 -U app_user -d inventory_restore\n\n# Roles and tablespaces only\npg_dumpall -h 127.0.0.1 -U postgres --globals-only > globals.sql\n\n# Physical backup of the whole cluster as compressed tar\npg_basebackup -h 127.0.0.1 -U replicator -D /srv/backup/base -Ft -z -P\n"
+    }
+   ]
+  },
+  {
+   "id": "extensions",
+   "title": "Extensions",
+   "description": "List available modules, add trigram search and load server instrumentation.",
+   "snippets": [
+    {
+     "language": "sql",
+     "code": "-- What is installed and which version is loaded\nSELECT extname, extversion\nFROM pg_extension\nORDER BY extname;\n\n-- What the server can install\nSELECT name, default_version\nFROM pg_available_extensions\nWHERE name IN ('pg_trgm', 'pg_stat_statements', 'postgis', 'pgcrypto')\nORDER BY name;\n"
+    },
+    {
+     "language": "sql",
+     "code": "CREATE EXTENSION IF NOT EXISTS pg_trgm;\n\n-- Trigram search backs LIKE, ILIKE and the % operator\nSELECT similarity('postgresql', 'postgres') AS score,\n       'postgres' % 'postgre' AS matches;\n\nCREATE INDEX customers_email_trgm_idx\n  ON customers USING gin (email gin_trgm_ops);\n"
+    },
+    {
+     "language": "sql",
+     "code": "-- pg_stat_statements must be preloaded before it can start\nALTER SYSTEM SET shared_preload_libraries = 'pg_stat_statements';\n-- restart the server, then create the extension\nCREATE EXTENSION IF NOT EXISTS pg_stat_statements;\n\n-- pgcrypto adds hashing and encryption functions\nCREATE EXTENSION IF NOT EXISTS pgcrypto;\nSELECT encode(digest('devsecret', 'sha256'), 'hex') AS hex_digest;\n"
+    }
+   ]
+  },
+  {
+   "id": "json",
+   "title": "JSON and JSONB",
+   "description": "Extract, filter, expand and rebuild JSONB documents with operators and functions.",
+   "snippets": [
+    {
+     "language": "sql",
+     "code": "SELECT id,\n       payload->>'status' AS status,\n       payload->'customer'->>'email' AS email,\n       payload->'items'->0->>'sku' AS first_sku\nFROM events\nWHERE payload @> '{\"status\": \"paid\"}';\n"
+    },
+    {
+     "language": "sql",
+     "code": "-- Expand an array into one row per element\nSELECT e.id,\n       item->>'sku' AS sku,\n       (item->>'qty')::integer AS qty\nFROM events AS e\nCROSS JOIN LATERAL jsonb_array_elements(e.payload->'items') AS item;\n\n-- Merge a patch into an object, then drop one key\nUPDATE events\nSET payload = (payload || '{\"status\": \"shipped\"}'::jsonb) - 'retries'\nWHERE id = 42\nRETURNING payload;\n"
+    },
+    {
+     "language": "sql",
+     "code": "-- Build one document per customer from relational rows\nSELECT jsonb_build_object(\n         'customer', c.email,\n         'orders', jsonb_agg(\n           jsonb_build_object('id', o.id, 'cents', o.total_cents)\n           ORDER BY o.placed_at\n         )\n       ) AS document\nFROM customers AS c\nJOIN orders AS o ON o.customer_id = c.id\nWHERE c.id = 42\nGROUP BY c.email;\n"
+    }
+   ]
+  },
+  {
+   "id": "common-errors",
+   "title": "Common Errors",
+   "description": "Recognise frequent failures and the check that settles each one.",
+   "snippets": [
+    {
+     "language": "text",
+     "code": "FATAL: password authentication failed for user \"app_user\"\n  check pg_hba.conf uses scram-sha-256 and that the role has a password\n\nFATAL: no pg_hba.conf entry for host \"10.0.0.5\", user \"app_user\", database \"inventory\"\n  add a host line for 10.0.0.0/24 and reload the configuration\n\nERROR: relation \"orders\" does not exist\n  check current_schema() and search_path, or qualify the name as public.orders\n\nERROR: deadlock detected\n  take locks in the same order everywhere and keep transactions short\n\nERROR: could not serialize access due to concurrent update\n  retry the transaction; SERIALIZABLE and REPEATABLE READ can abort by design\n"
+    },
+    {
+     "language": "sql",
+     "code": "-- duplicate key value violates unique constraint \"customers_email_key\"\nINSERT INTO customers (email, full_name)\nVALUES ('ana@example.com', 'Ana Souza')\nON CONFLICT (email) DO UPDATE\nSET full_name = EXCLUDED.full_name\nRETURNING id;\n\n-- permission denied for table orders\nSELECT has_table_privilege('app_user', 'public.orders', 'SELECT') AS can_read;\nGRANT SELECT ON public.orders TO app_user;\n"
+    },
+    {
+     "language": "sql",
+     "code": "-- canceling statement due to statement timeout\nSHOW statement_timeout;\nSET statement_timeout = '60s';\n\n-- too many connections for role \"app_user\"\nSHOW max_connections;\nSELECT count(*) AS open_connections FROM pg_stat_activity;\n\n-- could not serialize access due to concurrent update\nBEGIN ISOLATION LEVEL REPEATABLE READ;\n-- retry the whole transaction from the client when SQLSTATE 40001 is returned\nCOMMIT;\n"
+    }
+   ]
+  }
+ ]
+}

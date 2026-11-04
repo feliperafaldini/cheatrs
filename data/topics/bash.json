@@ -1,0 +1,341 @@
+{
+ "slug": "bash",
+ "title": "Bash",
+ "label": "Bash",
+ "group": "Language",
+ "color": "#4EAA25",
+ "desc": "The Bourne Again Shell: interactive command line and scripting language.",
+ "sections": [
+  {
+   "id": "setup",
+   "title": "Setup",
+   "description": "Check the shell, its version and how a script starts.",
+   "snippets": [
+    {
+     "language": "bash",
+     "code": "# Check which Bash is in use and its version\nbash --version | head -n 1\necho \"$BASH_VERSION\"\n\n# Start a login shell or a plain interactive subshell\nbash -l\nbash --norc --noprofile\n\n# Run one command without loading startup files\nbash --noprofile --norc -c 'echo \"$BASH_VERSION\"'"
+    },
+    {
+     "language": "bash",
+     "code": "# Save this as hello.sh, then run it\nchmod +x hello.sh\n./hello.sh\n\n# Or run it without the execute bit\nbash hello.sh\n\n# The shebang chooses the interpreter\nhead -n 1 hello.sh   # #!/usr/bin/env bash"
+    }
+   ]
+  },
+  {
+   "id": "basic-syntax",
+   "title": "Basic Syntax",
+   "description": "Comments, statements and the shebang line.",
+   "snippets": [
+    {
+     "language": "bash",
+     "code": "#!/usr/bin/env bash\n\n# Comments start with a hash and run to the end of the line\necho \"Hello, world\"      # trailing comment\n\n# Statements are separated by newlines or semicolons\nname=\"Ada\"; echo \"Hello, $name\"\n\n# A trailing backslash continues the command on the next line\nprintf '%s\\n' \\\n  \"first line\" \\\n  \"second line\""
+    },
+    {
+     "language": "bash",
+     "code": "# Braces group commands in the current shell\n{ echo \"one\"; echo \"two\"; } > out.txt\ncat out.txt\n\n# Parentheses group commands in a subshell\n( cd /tmp && pwd )\npwd   # still the original directory"
+    }
+   ]
+  },
+  {
+   "id": "variables",
+   "title": "Variables",
+   "description": "Assign values and use the special variables Bash provides.",
+   "snippets": [
+    {
+     "language": "bash",
+     "code": "# Assignment: no spaces around the equals sign\nname=\"Grace\"\nage=36\nreadonly project=\"cheatrs\"\n\n# Use a variable with $name or ${name}\necho \"$name is $age years old\"\n\n# Local variables inside functions need the local keyword\ngreet() {\n  local greeting=\"Hello\"\n  echo \"$greeting, $1\"\n}\n\n# Read-only variables reject later assignments\n# project=\"other\"   # error: project: readonly variable"
+    },
+    {
+     "language": "bash",
+     "code": "# Positional and script variables\necho \"script: $0\"        # name of the script\necho \"arguments: $#\"     # how many were passed\necho \"all: $@\"           # every argument, quoted separately\necho \"status: $?\"        # exit status of the last command\necho \"pid: $$\"           # process id of the current shell\necho \"line: $LINENO\"     # current line number"
+    }
+   ]
+  },
+  {
+   "id": "quoting",
+   "title": "Quoting and Escaping",
+   "description": "Pick quotes that expand, preserve or escape text.",
+   "snippets": [
+    {
+     "language": "bash",
+     "code": "# Double quotes expand variables and command substitution\nname=\"Ada\"\necho \"Hello, $name\"        # Hello, Ada\necho \"Today is $(date +%F)\"\n\n# Single quotes keep every character literal\necho 'Cost: $100'          # Cost: $100\n\n# Backslash escapes a single character\necho \"She said \\\"hi\\\"\"     # She said \"hi\"\necho 'It'\\''s fine'        # It's fine"
+    },
+    {
+     "language": "bash",
+     "code": "# $'...' interprets escapes like \\n and \\t\nprintf '%s' $'line one\\nline two\\n'\nprintf 'tab\\tseparated\\n'\n\n# Quote expansions to keep spaces intact\nprintf '[%s]\\n' \"  padded  \"\n\n# An unquoted variable is split into words\nitems=\"red green blue\"\nfor item in $items; do echo \"$item\"; done"
+    }
+   ]
+  },
+  {
+   "id": "parameter-expansion",
+   "title": "Parameter Expansion",
+   "description": "Edit and test values without spawning extra commands.",
+   "snippets": [
+    {
+     "language": "bash",
+     "code": "file=\"report-2026.tar.gz\"\nname=\"Ada\"\n\necho \"${name:-unknown}\"      # Ada (fallback when unset or empty)\necho \"${missing:-fallback}\"  # fallback\necho \"${#name}\"              # 3 (length in characters)\necho \"${file%.tar.gz}\"       # report-2026 (strip shortest suffix)\necho \"${file#report-}\"       # 2026.tar.gz (strip shortest prefix)26.tar.gz (strip shortest prefix)\necho \"${name^^}\"             # ADA (uppercase)\necho \"${name,}\"              # ada (lowercase first character)"
+    },
+    {
+     "language": "bash",
+     "code": "path=\"/home/ada/notes/todo.txt\"\n\necho \"${path/ada/grace}\"     # /home/grace/notes/todo.txt\necho \"${path//\\//-}\"         # -home-ada-notes-todo.txt\necho \"${path##*/}\"           # todo.txt (basename)\necho \"${path%/*}\"            # /home/ada/notes (dirname)\necho \"${path:6:3}\"           # ada (offset 6, length 3)"
+    }
+   ]
+  },
+  {
+   "id": "conditionals",
+   "title": "Conditionals",
+   "description": "Branch with arithmetic, string and file tests.",
+   "snippets": [
+    {
+     "language": "bash",
+     "code": "# if / elif / else with arithmetic tests\ncount=12\n\nif (( count > 10 )); then\n  echo \"more than ten\"\nelif (( count == 10 )); then\n  echo \"exactly ten\"\nelse\n  echo \"fewer than ten\"\nfi\n\n# String and file tests\nname=\"Ada\"\nif [[ -n $name && -f /etc/hostname ]]; then\n  echo \"$name has a hostname file\"\nfi\n\n# One-line form\n[[ -d /tmp ]] && echo \"/tmp is a directory\""
+    },
+    {
+     "language": "bash",
+     "code": "# case matches glob patterns and stops at the first match\ncase \"$1\" in\n  start)   echo \"starting\" ;;\n  stop)    echo \"stopping\" ;;\n  restart) echo \"restarting\" ;;\n  *)       echo \"usage: $0 start|stop|restart\" ;;\nesac\n\n# Numeric comparisons in a test expression\nif [ \"$age\" -ge 18 ]; then\n  echo \"adult\"\nfi"
+    }
+   ]
+  },
+  {
+   "id": "loops",
+   "title": "Loops",
+   "description": "Repeat work over lists, ranges and input.",
+   "snippets": [
+    {
+     "language": "bash",
+     "code": "# for over an explicit list\nfor fruit in apple banana cherry; do\n  echo \"fruit: $fruit\"\ndone\n\n# C-style arithmetic loop\nfor ((i = 1; i <= 3; i++)); do\n  echo \"round $i\"\ndone\n\n# while with a counter\ncount=3\nwhile (( count > 0 )); do\n  echo \"countdown $count\"\n  ((count--))\ndone"
+    },
+    {
+     "language": "bash",
+     "code": "# Read input line by line\nprintf 'alpha\\nbeta\\n' | while IFS= read -r line; do\n  printf 'line: %s\\n' \"$line\"\ndone\n\n# until runs while the condition is false\nn=0\nuntil (( n == 2 )); do\n  echo \"n=$n\"\n  ((n++))\ndone"
+    }
+   ]
+  },
+  {
+   "id": "functions",
+   "title": "Functions",
+   "description": "Wrap commands, pass arguments and return status.",
+   "snippets": [
+    {
+     "language": "bash",
+     "code": "# Two equivalent definitions\ngreet() {\n  local name=\"$1\"\n  echo \"Hello, $name\"\n}\n\nfunction add {\n  echo \"$(( $1 + $2 ))\"\n}\n\ngreet \"Ada\"\nadd 2 3\n\n# The return value is an exit status, not a string\nis_even() {\n  (( $1 % 2 == 0 ))\n}\nis_even 4 && echo \"4 is even\""
+    },
+    {
+     "language": "bash",
+     "code": "# Capture stdout instead of printing it\nsquare() {\n  local n=\"$1\"\n  printf '%s\\n' \"$(( n * n ))\"\n}\n\nresult=$(square 7)\necho \"7 squared is $result\"   # 49"
+    }
+   ]
+  },
+  {
+   "id": "arrays",
+   "title": "Arrays",
+   "description": "Store ordered lists and key-value pairs.",
+   "snippets": [
+    {
+     "language": "bash",
+     "code": "# Indexed array\nfruits=(\"apple\" \"banana\" \"cherry\")\necho \"${fruits[0]}\"      # apple\necho \"${fruits[@]}\"      # all elements\necho \"${#fruits[@]}\"     # 3\nfruits+=(\"date\")         # append\nunset 'fruits[1]'        # remove one element\n\n# Loop over every remaining element\nfor fruit in \"${fruits[@]}\"; do\n  echo \"$fruit\"\ndone"
+    },
+    {
+     "language": "bash",
+     "code": "# Associative arrays require declare -A\ndeclare -A ports=(\n  [http]=80\n  [https]=443\n  [ssh]=22\n)\n\necho \"${ports[https]}\"   # 443\nfor key in \"${!ports[@]}\"; do\n  echo \"$key -> ${ports[$key]}\"\ndone\n\n# Slices keep a range of an indexed array\nnumbers=(10 20 30 40 50)\necho \"${numbers[@]:1:2}\"   # 20 30"
+    }
+   ]
+  },
+  {
+   "id": "input",
+   "title": "Reading Input",
+   "description": "Ask the user for values and parse options.",
+   "snippets": [
+    {
+     "language": "bash",
+     "code": "# Prompt and read a line\nread -r -p \"Your name: \" name\necho \"Hello, $name\"\n\n# Silent input for passwords\nread -r -s -p \"Password: \" secret\necho\necho \"read ${#secret} characters\"\n\n# Read with a timeout and a default answer\nread -r -t 5 -p \"Continue? [y/N] \" answer\nanswer=${answer:-n}\necho \"choice: $answer\""
+    },
+    {
+     "language": "bash",
+     "code": "# Parse options with getopts\nwhile getopts \":v:o:\" opt; do\n  case \"$opt\" in\n    v) verbose=\"$OPTARG\" ;;\n    o) output=\"$OPTARG\" ;;\n    \\?) echo \"unknown option: -$OPTARG\" >&2; exit 1 ;;\n    :)  echo \"option -$OPTARG needs a value\" >&2; exit 1 ;;\n  esac\ndone\nshift $((OPTIND - 1))\n\necho \"verbose=$verbose output=$output rest=$*\""
+    }
+   ]
+  },
+  {
+   "id": "output",
+   "title": "Output and Echo",
+   "description": "Print readable text, formatted values and colour.",
+   "snippets": [
+    {
+     "language": "bash",
+     "code": "# echo adds a newline; printf gives control over format\necho \"plain text\"\nprintf '%s\\n' \"formatted text\"\nprintf 'name=%-8s score=%03d\\n' \"Ada\" 97\n\n# Write to stderr\necho \"warning: disk almost full\" >&2\n\n# Keep escapes literal unless -e is used\necho -e \"first\\nsecond\""
+    },
+    {
+     "language": "bash",
+     "code": "# ANSI colours: reset with \\033[0m\ngreen='\\033[0;32m'\nred='\\033[0;31m'\nreset='\\033[0m'\n\nprintf \"${green}ok${reset}: build finished\\n\"\nprintf \"${red}fail${reset}: 2 tests failed\\n\"\n\n# Only use colour when stdout is a terminal\nif [[ -t 1 ]]; then\n  echo \"interactive terminal\"\nfi"
+    }
+   ]
+  },
+  {
+   "id": "redirection",
+   "title": "Redirection",
+   "description": "Route stdout, stderr and extra descriptors.",
+   "snippets": [
+    {
+     "language": "bash",
+     "code": "# stdout, stderr and both\nls /etc > listing.txt          # stdout only\nls /missing 2> errors.txt      # stderr only\ncommand > all.log 2>&1         # both to the same file\n\n# Append instead of truncating\necho \"new run\" >> all.log\n\n# Discard output\ncommand > /dev/null 2>&1\n\n# Here-document with variable expansion\ncat <<EOF\nuser: $USER\nhome: $HOME\nEOF"
+    },
+    {
+     "language": "bash",
+     "code": "# Open a file on descriptor 3\nexec 3> log.txt\necho \"first line\" >&3\necho \"second line\" >&3\nexec 3>&-\n\n# Feed one line through a pipe instead of a temporary file\nprintf 'one two three\\n' | wc -w   # 3"
+    }
+   ]
+  },
+  {
+   "id": "pipes",
+   "title": "Pipes and Filters",
+   "description": "Connect commands and filter the stream in flight.",
+   "snippets": [
+    {
+     "language": "bash",
+     "code": "# Count files and show the first sorted names\nls /etc | wc -l\nprintf '%s\\n' cherry apple banana | sort | head -n 2\n\n# Keep stderr out of the pipe\ngrep -r \"PermitRootLogin\" /etc/ssh 2>/dev/null | head -n 5\n\n# pipefail makes a failing stage fail the whole pipeline\nset -o pipefail\nfalse | true\necho \"status: $?\""
+    },
+    {
+     "language": "bash",
+     "code": "# tee writes to a file and keeps the stream flowing\nprintf 'alpha\\nbeta\\n' | tee words.txt | wc -l\n\n# xargs turns lines into arguments\nprintf 'a.txt\\nb.txt\\n' | xargs -n 1 echo \"file:\"\n\n# Process substitution compares two sorted streams\ndiff <(printf 'b\\na\\n' | sort) <(printf 'a\\nc\\n' | sort)"
+    }
+   ]
+  },
+  {
+   "id": "text-processing",
+   "title": "Text Processing",
+   "description": "Cut, search and transform text with core utilities.",
+   "snippets": [
+    {
+     "language": "bash",
+     "code": "# Pick columns and rows\nprintf 'ada:36:london\\ngrace:40:new york\\n' | cut -d: -f1,3\nprintf 'ada:36\\ngrace:40\\n' | awk -F: '$2 > 37 { print $1 }'\n\n# Search and replace with sed\nprintf 'red green red\\n' | sed 's/red/blue/g'\n\n# Count repeated values\nprintf 'b\\na\\nb\\n' | sort | uniq -c"
+    },
+    {
+     "language": "bash",
+     "code": "# Grep with line numbers and fixed strings\ngrep -n -F \"root\" /etc/passwd\ngrep -c \"^#\" /etc/services      # count comment lines\n\n# Translate characters and squeeze repeats\nprintf 'Hello   World\\n' | tr -s ' ' | tr '[:upper:]' '[:lower:]'\n\n# Show the first and last line\nprintf '1\\n2\\n3\\n4\\n' | sed -n '1p;$p'"
+    },
+    {
+     "language": "bash",
+     "code": "# Sum a numeric column with awk\nprintf '10 apples\\n5 pears\\n7 plums\\n' | awk '{ total += $1 } END { print total }'\n\n# Extract every IP address from a log\nprintf '10.0.0.5 - ok\\n192.168.1.7 - fail\\n' | grep -oE '([0-9]{1,3}\\.){3}[0-9]{1,3}'"
+    }
+   ]
+  },
+  {
+   "id": "files",
+   "title": "Files and Directories",
+   "description": "Create, locate and clean up files and directories.",
+   "snippets": [
+    {
+     "language": "bash",
+     "code": "# Create and inspect\nmkdir -p notes/2026\ntouch notes/2026/todo.txt\nls -lh notes/2026\nstat -c '%n %s bytes %y' notes/2026/todo.txt\n\n# Copy, move and remove\ncp notes/2026/todo.txt notes/todo.bak\nmv notes/todo.bak notes/2026/old.txt\nrm notes/2026/old.txt"
+    },
+    {
+     "language": "bash",
+     "code": "# Find files by name, type and age\nfind . -maxdepth 2 -type f -name '*.txt'\nfind /var/log -type f -mtime -7 -name '*.log'\nfind . -type d -empty\n\n# Act on each result and show what is removed\nfind . -maxdepth 1 -type f -name '*.bak' -print -delete"
+    },
+    {
+     "language": "bash",
+     "code": "# Read a file line by line, preserving whitespace\nwhile IFS= read -r line; do\n  printf '%s\\n' \"$line\"\ndone < /etc/hostname\n\n# Compare two files and show the difference\ndiff -u notes/2026/todo.txt notes/2026/old.txt"
+    }
+   ]
+  },
+  {
+   "id": "permissions",
+   "title": "Permissions",
+   "description": "Read and change modes, ownership and special bits.",
+   "snippets": [
+    {
+     "language": "bash",
+     "code": "# Symbolic and numeric modes\nchmod +x deploy.sh          # add execute for everyone\nchmod 644 notes.txt         # rw-r--r--\nchmod 755 scripts           # rwxr-xr-x\nchmod u+w,g-w report.txt\n\n# Recursive change that touches only existing directories\nchmod -R u+rwX shared"
+    },
+    {
+     "language": "bash",
+     "code": "# Ownership changes need root for files you do not own\nchown ada:developers project.txt\nchgrp developers project.txt\n\n# Read the mode, owner and group\nstat -c '%a %U:%G %n' project.txt\n\n# setuid, setgid and sticky bits\nchmod 4755 backup-tool\nchmod 2775 shared-dir\nchmod 1777 /tmp"
+    }
+   ]
+  },
+  {
+   "id": "processes",
+   "title": "Jobs and Processes",
+   "description": "List processes, send signals and manage jobs.",
+   "snippets": [
+    {
+     "language": "bash",
+     "code": "# List and search running processes\nps aux | grep -F sshd\npgrep -a sshd\ntop -b -n 1 | head -n 15\n\n# Send signals\nkill -TERM 4242      # polite shutdown\nkill -9 4242         # force (last resort)\npkill -f \"python3 server.py\""
+    },
+    {
+     "language": "bash",
+     "code": "# Background jobs in the current shell\nsleep 30 &\njob=$!\necho \"started job $job\"\njobs -l\nwait \"$job\"\necho \"finished with status $?\"\n\n# Keep a job alive after the terminal closes\nnohup ./backup.sh > backup.log 2>&1 &"
+    }
+   ]
+  },
+  {
+   "id": "environment",
+   "title": "Environment and Startup",
+   "description": "Inspect exported variables and startup files.",
+   "snippets": [
+    {
+     "language": "bash",
+     "code": "# Show the environment\nprintenv | sort | head -n 20\necho \"$PATH\"\nenv | grep -E '^(HOME|SHELL|USER)='\n\n# Export a variable to child processes\nexport EDITOR=vim\nexport PATH=\"$HOME/.local/bin:$PATH\"\n\n# Temporary environment for a single command\nLANG=C date +%A"
+    },
+    {
+     "language": "bash",
+     "code": "# Login shells read ~/.bash_profile or ~/.profile\n# Interactive non-login shells read ~/.bashrc\n# Put aliases and prompt settings in ~/.bashrc\n\n# Reload the current shell configuration\nsource ~/.bashrc\n. ~/.bashrc\n\n# Check whether this is a login shell\nshopt -q login_shell && echo \"login shell\" || echo \"not a login shell\""
+    }
+   ]
+  },
+  {
+   "id": "script-safety",
+   "title": "Script Safety",
+   "description": "Fail fast, quote expansions and clean up on exit.",
+   "snippets": [
+    {
+     "language": "bash",
+     "code": "#!/usr/bin/env bash\nset -euo pipefail\n\n# -e: exit on a failed command\n# -u: error on an unset variable\n# -o pipefail: a failed stage fails the pipeline\n\nmain() {\n  local target=\"${1:?usage: $0 TARGET}\"\n  echo \"working on $target\"\n}\n\nmain \"/tmp\""
+    },
+    {
+     "language": "bash",
+     "code": "# Refuse to run as root and work from a known directory\nif (( EUID == 0 )); then\n  echo \"do not run this as root\" >&2\n  exit 1\nfi\n\ncd \"$(dirname \"$0\")\" || exit 1\n\n# Quote every expansion and use -- to end options\nrm -f -- \"./cache.tmp\"\nprintf '%s\\n' \"$HOME\""
+    },
+    {
+     "language": "bash",
+     "code": "# Remove temporary files even when the script fails\nworkdir=$(mktemp -d)\ntrap 'rm -rf \"$workdir\"' EXIT\nprintf 'data\\n' > \"$workdir/input.txt\"\n\n# Catch errors and report the line\ntrap 'echo \"failed at line $LINENO\" >&2' ERR\nset -E"
+    }
+   ]
+  },
+  {
+   "id": "debugging",
+   "title": "Debugging",
+   "description": "Trace execution and find the line that broke.",
+   "snippets": [
+    {
+     "language": "bash",
+     "code": "# Print each command before running it\nset -x\nname=\"Ada\"\necho \"Hello, $name\"\nset +x\n\n# Verbose shell input\nbash -v script.sh\n\n# Syntax check without executing anything\nbash -n script.sh"
+    },
+    {
+     "language": "bash",
+     "code": "# Add file and line number to the trace\nPS4='+ ${BASH_SOURCE}:${LINENO}: '\nset -x\nfor i in 1 2; do echo \"i=$i\"; done\nset +x\n\n# Stop at the first error and report where it happened\nset -eE\ntrap 'echo \"failed at line $LINENO\" >&2' ERR\nfalse"
+    }
+   ]
+  },
+  {
+   "id": "recipes",
+   "title": "Common Recipes",
+   "description": "Ready-made scripts for routine tasks.",
+   "snippets": [
+    {
+     "language": "bash",
+     "code": "# Timestamped backup of a directory\nsrc=\"$HOME/Documents\"\nstamp=$(date +%Y%m%d-%H%M%S)\ndest=\"$HOME/backups/documents-$stamp.tar.gz\"\n\nmkdir -p \"$HOME/backups\"\ntar -czf \"$dest\" -C \"$HOME\" Documents\necho \"wrote $dest\""
+    },
+    {
+     "language": "bash",
+     "code": "# Retry a command up to three times\nretry() {\n  local tries=3\n  local n=1\n\n  until \"$@\"; do\n    if (( n >= tries )); then\n      echo \"gave up after $tries attempts\" >&2\n      return 1\n    fi\n    echo \"attempt $n failed, retrying\" >&2\n    ((n++))\n    sleep 2\n  done\n}\n\nretry curl -fsS https://example.com/health"
+    },
+    {
+     "language": "bash",
+     "code": "# Ten largest files under the home directory\ndu -ah \"$HOME\" 2>/dev/null | sort -rh | head -n 10\n\n# Remove files older than 30 days from a cache directory\nfind \"$HOME/.cache/builds\" -type f -mtime +30 -print -delete"
+    }
+   ]
+  }
+ ]
+}

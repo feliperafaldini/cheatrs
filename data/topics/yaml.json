@@ -1,0 +1,258 @@
+{
+ "slug": "yaml",
+ "title": "YAML",
+ "label": "YAML",
+ "group": "Tool",
+ "color": "#CB171E",
+ "desc": "Human-readable data serialization used for config files, pipelines and manifests.",
+ "sections": [
+  {
+   "id": "syntax",
+   "title": "Syntax",
+   "description": "A document is a tree of keys and values written with spaces.",
+   "snippets": [
+    {
+     "language": "yaml",
+     "code": "# Comments start with a hash and run to the end of the line\nname: cheatrs\nversion: 2\nenabled: true\ntags:\n  - cli\n  - rust"
+    },
+    {
+     "language": "yaml",
+     "code": "---\n# The start marker is optional, but makes the document boundary explicit\nproject: cheatrs\nmaintainer: felipe\n..."
+    }
+   ]
+  },
+  {
+   "id": "scalars",
+   "title": "Scalars",
+   "description": "Plain values are read as strings, numbers, booleans or null.",
+   "snippets": [
+    {
+     "language": "yaml",
+     "code": "name: cheatrs\nport: 8080\nratio: 3.14\ndebug: false\nmissing: null\nquoted_number: \"8080\"   # stays a string\nreleased: 2026-11-04"
+    },
+    {
+     "language": "yaml",
+     "code": "# Null has several spellings\nfirst: null\nsecond: Null\nthird: ~\nfourth:\n\n# Keys are plain scalars too\napp-name: cheatrs\napp_env: production"
+    }
+   ]
+  },
+  {
+   "id": "quoting",
+   "title": "Quoting Strings",
+   "description": "Quote a value when YAML syntax or type inference would misread it.",
+   "snippets": [
+    {
+     "language": "yaml",
+     "code": "plain: hello world\nsingle: 'it''s a literal $HOME'   # only '' is an escape\ndouble: \"line\\nbreak and \\u00e9\"  # backslash escapes work here\nnumber_as_text: \"0755\"\nwith_colon: \"key: value\"\nempty: \"\""
+    },
+    {
+     "language": "yaml",
+     "code": "# Single quotes keep backslashes literal\npath: 'C:\\Users\\felipe'\n\n# Double quotes interpret escapes\nmessage: \"tab\\there\"\nwindows_path: \"C:\\\\Users\\\\felipe\"\nhash: \"# not a comment while quoted\"\n"
+    }
+   ]
+  },
+  {
+   "id": "collections",
+   "title": "Lists and Mappings",
+   "description": "Block style uses dashes and indentation; flow style uses brackets.",
+   "snippets": [
+    {
+     "language": "yaml",
+     "code": "# Block sequence\nports:\n  - 80\n  - 443\n\n# Block mapping\ndatabase:\n  host: localhost\n  port: 5432\n\n# Sequence of mappings\nusers:\n  - name: ana\n    role: admin\n  - name: bruno\n    role: viewer"
+    },
+    {
+     "language": "yaml",
+     "code": "# Flow style is compact and mirrors JSON\nports: [80, 443, 8080]\nlimits: {cpu: \"500m\", memory: \"256Mi\"}\nmatrix: [[1, 2], [3, 4]]\nempty_list: []\nempty_map: {}"
+    }
+   ]
+  },
+  {
+   "id": "nesting",
+   "title": "Nesting",
+   "description": "Spaces decide which block a key belongs to; tabs are not allowed.",
+   "snippets": [
+    {
+     "language": "yaml",
+     "code": "app:\n  name: cheatrs\n  server:\n    host: 0.0.0.0\n    port: 8080\n    tls:\n      enabled: true\n      cert: /etc/ssl/cheatrs.pem\n  features:\n    - search\n    - preview"
+    },
+    {
+     "language": "yaml",
+     "code": "# A dash may share its line with the first key of a mapping\njobs:\n  - name: build\n    runs-on: ubuntu-latest\n  - name: test\n    runs-on: ubuntu-latest"
+    }
+   ]
+  },
+  {
+   "id": "multiline",
+   "title": "Multi-line Strings",
+   "description": "Literal blocks keep line breaks; folded blocks join lines with spaces.",
+   "snippets": [
+    {
+     "language": "yaml",
+     "code": "literal: |\n  first line\n  second line\n  third line\n\nfolded: >\n  this text is\n  joined into one line\n\nstripped: |-\n  no trailing newline\n\nindented: |2\n    two leading spaces kept"
+    },
+    {
+     "language": "yaml",
+     "code": "# Blank lines become paragraph breaks in folded text\ndescription: >\n  A terminal browser for programming cheatsheets.\n\n  Two columns to find a topic, one to read it."
+    }
+   ]
+  },
+  {
+   "id": "anchors",
+   "title": "Anchors and Aliases",
+   "description": "Name a node with & and repeat the same value with *.",
+   "snippets": [
+    {
+     "language": "yaml",
+     "code": "# &labels a node, * reuses it\nbase: &base\n  retries: 3\n  timeout: 30\n\nprimary: *base\nsecondary: *base"
+    },
+    {
+     "language": "yaml",
+     "code": "# Scalars and sequences can be anchored too\nregion: &region eu-west-1\nreplicas: &replicas 3\n\nproduction:\n  region: *region\n  replicas: *replicas\n  zones: [eu-west-1a, eu-west-1b]"
+    }
+   ]
+  },
+  {
+   "id": "merge-keys",
+   "title": "Merge Keys",
+   "description": "The << key copies mappings in and local keys win; it comes from YAML 1.1.",
+   "snippets": [
+    {
+     "language": "yaml",
+     "code": "defaults: &defaults\n  image: nginx:1.27-alpine\n  restart: always\n  logging:\n    driver: json-file\n\nweb:\n  <<: *defaults\n  image: nginx:1.27\n  ports:\n    - \"8080:80\""
+    },
+    {
+     "language": "yaml",
+     "code": "base: &base\n  timeout: 30\n  retries: 3\nsecure: &secure\n  tls: true\n\nservice:\n  <<: [*base, *secure]\n  retries: 5   # this local key overrides the merged value"
+    }
+   ]
+  },
+  {
+   "id": "datatypes",
+   "title": "Data Types",
+   "description": "Core schema types: strings, integers, floats, booleans and timestamps.",
+   "snippets": [
+    {
+     "language": "yaml",
+     "code": "text: plain string\ninteger: 42\nnegative: -7\nhex: 0x2A\noctal: 0o52\nfloat: 3.14\nexponent: 1.2e3\nenabled: true\ndisabled: false\nnothing: null\nmoment: 2026-11-04T10:30:00Z\nday: 2026-11-04"
+    },
+    {
+     "language": "yaml",
+     "code": "# YAML 1.2 core schema does not treat these words as booleans\nlegacy_yes: yes    # boolean only in YAML 1.1 parsers\nlegacy_on: on      # same caveat\nquoted_bool: \"true\"   # always a string"
+    }
+   ]
+  },
+  {
+   "id": "multi-document",
+   "title": "Multiple Documents",
+   "description": "--- starts a document and ... ends it, so one stream holds many.",
+   "snippets": [
+    {
+     "language": "yaml",
+     "code": "---\nkind: ConfigMap\nmetadata:\n  name: app-config\ndata:\n  mode: production\n\n---\nkind: Secret\nmetadata:\n  name: app-secret\ntype: Opaque\n..."
+    },
+    {
+     "language": "python",
+     "code": "import yaml\n\nwith open(\"manifests.yaml\") as handle:\n    documents = list(yaml.safe_load_all(handle))\n\nfor document in documents:\n    print(document[\"kind\"], document[\"metadata\"][\"name\"])"
+    }
+   ]
+  },
+  {
+   "id": "json-compat",
+   "title": "YAML and JSON",
+   "description": "YAML 1.2 is a superset of JSON, and yq converts between both.",
+   "snippets": [
+    {
+     "language": "yaml",
+     "code": "# A JSON object is also a valid YAML document\n{\"name\": \"cheatrs\", \"version\": 2, \"tags\": [\"cli\", \"rust\"]}"
+    },
+    {
+     "language": "bash",
+     "code": "# JSON to YAML, pretty printed\nyq -P config.json > config.yaml\n\n# YAML to JSON\nyq -o=json config.yaml > config.json"
+    },
+    {
+     "language": "python",
+     "code": "import json\nimport yaml\n\ndata = yaml.safe_load(\"name: cheatrs\\nport: 8080\")\nprint(json.dumps(data, indent=2))"
+    }
+   ]
+  },
+  {
+   "id": "docker-compose",
+   "title": "Docker Compose Example",
+   "description": "Services, health checks and a named volume in one compose file.",
+   "snippets": [
+    {
+     "language": "yaml",
+     "code": "services:\n  web:\n    image: nginx:1.27-alpine\n    ports:\n      - \"8080:80\"\n    environment:\n      APP_ENV: production\n      TZ: America/Sao_Paulo\n    volumes:\n      - ./site:/usr/share/nginx/html:ro\n    depends_on:\n      api:\n        condition: service_healthy\n    restart: unless-stopped\n\n  api:\n    build:\n      context: ./api\n      dockerfile: Dockerfile\n    environment:\n      DATABASE_URL: postgres://app:secret@db:5432/app\n    healthcheck:\n      test: [\"CMD\", \"curl\", \"-f\", \"http://localhost:3000/health\"]\n      interval: 10s\n      timeout: 3s\n      retries: 5\n    depends_on:\n      db:\n        condition: service_started\n\n  db:\n    image: postgres:17-alpine\n    environment:\n      POSTGRES_USER: app\n      POSTGRES_PASSWORD: secret\n      POSTGRES_DB: app\n    volumes:\n      - pgdata:/var/lib/postgresql/data\n\nvolumes:\n  pgdata:"
+    }
+   ]
+  },
+  {
+   "id": "github-actions",
+   "title": "GitHub Actions Example",
+   "description": "A workflow that tests two Node versions and deploys after them.",
+   "snippets": [
+    {
+     "language": "yaml",
+     "code": "name: CI\n\non:\n  push:\n    branches: [main]\n  pull_request:\n\npermissions:\n  contents: read\n\njobs:\n  test:\n    runs-on: ubuntu-latest\n    strategy:\n      matrix:\n        node-version: [20, 22]\n    steps:\n      - uses: actions/checkout@v4\n      - uses: actions/setup-node@v4\n        with:\n          node-version: ${{ matrix.node-version }}\n          cache: npm\n      - run: npm ci\n      - run: npm test"
+    },
+    {
+     "language": "yaml",
+     "code": "# Second job in the same workflow file\n  deploy:\n    needs: test\n    runs-on: ubuntu-latest\n    environment: production\n    steps:\n      - uses: actions/checkout@v4\n      - run: ./scripts/deploy.sh\n        env:\n          API_TOKEN: ${{ secrets.API_TOKEN }}"
+    }
+   ]
+  },
+  {
+   "id": "kubernetes",
+   "title": "Kubernetes Example",
+   "description": "A Deployment with probes and limits, plus the Service in front of it.",
+   "snippets": [
+    {
+     "language": "yaml",
+     "code": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: cheatrs-api\n  labels:\n    app: cheatrs-api\nspec:\n  replicas: 2\n  selector:\n    matchLabels:\n      app: cheatrs-api\n  template:\n    metadata:\n      labels:\n        app: cheatrs-api\n    spec:\n      containers:\n        - name: api\n          image: ghcr.io/felipe/cheatrs-api:1.4.0\n          ports:\n            - containerPort: 8080\n          env:\n            - name: RUST_LOG\n              value: info\n          resources:\n            requests:\n              cpu: 100m\n              memory: 128Mi\n            limits:\n              cpu: 500m\n              memory: 256Mi\n          readinessProbe:\n            httpGet:\n              path: /health\n              port: 8080\n            initialDelaySeconds: 5\n            periodSeconds: 10"
+    },
+    {
+     "language": "yaml",
+     "code": "apiVersion: v1\nkind: Service\nmetadata:\n  name: cheatrs-api\nspec:\n  selector:\n    app: cheatrs-api\n  ports:\n    - port: 80\n      targetPort: 8080\n  type: ClusterIP"
+    }
+   ]
+  },
+  {
+   "id": "common-mistakes",
+   "title": "Common Mistakes",
+   "description": "Tabs, missing spaces and unquoted values fail in ways that look harmless.",
+   "snippets": [
+    {
+     "language": "yaml",
+     "code": "# Wrong: no space after the colon\n# name:cheatrs\n\n# Right\nname: cheatrs\n\n# Wrong: unquoted value containing a colon and space\n# title: Cheatrs: terminal browser\n\n# Right\ntitle: \"Cheatrs: terminal browser\"\n\n# Wrong: version read as the float 1.1\n# version: 1.10\n\n# Right\nversion: \"1.10\""
+    },
+    {
+     "language": "yaml",
+     "code": "# Wrong: a tab used for indentation (shown escaped in the comment)\n# server:\n# \\tport: 8080\n\n# Right: spaces only\nserver:\n  port: 8080\n\n# Wrong: duplicate keys, the last one silently wins\n# port: 8080\n# port: 9090"
+    },
+    {
+     "language": "yaml",
+     "code": "# Quote anything that must stay text\ncountry_code: \"NO\"   # bare NO is false in YAML 1.1\nzip: \"01234\"         # bare 01234 is an integer\nrevision: \"1.10\"     # bare 1.10 is the float 1.1"
+    }
+   ]
+  },
+  {
+   "id": "tools",
+   "title": "Linters and Parsers",
+   "description": "Validate, query and convert YAML from the command line.",
+   "snippets": [
+    {
+     "language": "bash",
+     "code": "# Install the Python tooling\npip install pyyaml yamllint\n\n# Lint syntax and style\nyamllint config.yaml\n\n# Check formatting with Prettier\nnpx prettier --check config.yaml"
+    },
+    {
+     "language": "bash",
+     "code": "# Read one value with yq v4\nyq '.services.web.image' compose.yaml\n\n# Fail with a non-zero exit code when the value is null\nyq -e '.services.api.image' compose.yaml\n\n# Convert the whole file to JSON\nyq -o=json config.yaml"
+    },
+    {
+     "language": "python",
+     "code": "import yaml\n\nwith open(\"config.yaml\") as handle:\n    config = yaml.safe_load(handle)\n\nprint(config[\"server\"][\"port\"])"
+    }
+   ]
+  }
+ ]
+}

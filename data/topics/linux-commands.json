@@ -1,0 +1,209 @@
+{
+ "slug": "linux-commands",
+ "title": "Linux Commands",
+ "label": "Linux Commands",
+ "group": "Tool",
+ "color": "#FCC624",
+ "desc": "Everyday command line moves for files, text, processes, packages and services on a Linux box.",
+ "sections": [
+  {
+   "id": "files",
+   "title": "Files and Directories",
+   "description": "Navigate the tree, inspect what is there, and copy, move or remove entries.",
+   "snippets": [
+    {
+     "language": "bash",
+     "code": "# Where am I, and what is here?\npwd\nls -lah /var/log\nls -lt ~/Downloads | head -n 5\n\n# Build a directory tree, then copy it elsewhere\nmkdir -p ~/proj/src/utils\ncp -r ~/proj ~/backup/proj-2026-11\n\n# Move or rename, and delete after a prompt\nmv ~/Downloads/report.pdf ~/Documents/reports/q4-2026.pdf\nrm -i ~/tmp/old-dump.sql"
+    },
+    {
+     "language": "bash",
+     "code": "# Files changed in the last two days that are larger than 10 MB\nfind /home/felipe/Videos -type f -mtime -2 -size +10M\n\n# Remove empty directories left behind in a build folder\nfind ./build -type d -empty -delete\n\n# Run one command against every matching file\nfind ./config -name '*.json' -exec jq empty {} \\;"
+    }
+   ]
+  },
+  {
+   "id": "viewing",
+   "title": "Viewing Files",
+   "description": "Read a file whole, page through it, or watch only its edges.",
+   "snippets": [
+    {
+     "language": "bash",
+     "code": "# Follow a log while you work; Ctrl+C stops following, q leaves less\nless +F /var/log/syslog\n\n# The first and last lines, useful for configs and recent errors\nhead -n 20 ~/.bashrc\ntail -n 50 /var/log/auth.log"
+    },
+    {
+     "language": "bash",
+     "code": "# Identify the real format, then look at metadata\nfile ~/Downloads/archive.zip\nstat /etc/hosts\n\n# Count lines across a set of source files\nwc -l src/*.rs"
+    }
+   ]
+  },
+  {
+   "id": "text",
+   "title": "Text Processing",
+   "description": "Filter, transform and summarise lines without leaving the shell.",
+   "snippets": [
+    {
+     "language": "bash",
+     "code": "# Search recursively inside Rust sources\ngrep -rn --include='*.rs' 'unwrap()' src\n\n# Keep only errors and warnings, then trim each line to its first fields\ngrep -E 'ERROR|WARN' /var/log/app.log | cut -d' ' -f1-3"
+    },
+    {
+     "language": "bash",
+     "code": "# Replace every localhost in place\nsed -i 's/localhost/127.0.0.1/g' config.ini\n\n# Print regular accounts from the password database\nawk -F: '$3 >= 1000 { print $1, $3 }' /etc/passwd"
+    },
+    {
+     "language": "bash",
+     "code": "# The ten most frequent lines in a log\nsort access.log | uniq -c | sort -nr | head -n 10\n\n# Lowercase names and drop duplicates\ntr '[:upper:]' '[:lower:]' < names.txt | sort -u"
+    }
+   ]
+  },
+  {
+   "id": "permissions",
+   "title": "Permissions",
+   "description": "Decide who can read, write and execute each path on the filesystem.",
+   "snippets": [
+    {
+     "language": "bash",
+     "code": "# Symbolic mode: add execute for the owner only\nchmod u+x deploy.sh\n\n# Numeric mode: owner read/write, group read, others nothing\nchmod 640 ~/.ssh/config\nchmod 700 ~/.ssh\n\n# Recursive ownership change for a web application\nchown -R felipe:www-data /srv/app/storage"
+    },
+    {
+     "language": "bash",
+     "code": "# New files start as owner read/write, group read, others read\numask 022\n\n# Share a single file with another account through an ACL\nsetfacl -m u:maria:rw /srv/shared/report.csv\ngetfacl /srv/shared/report.csv"
+    }
+   ]
+  },
+  {
+   "id": "processes",
+   "title": "Processes",
+   "description": "Find what is running, see how much it costs, and stop it cleanly.",
+   "snippets": [
+    {
+     "language": "bash",
+     "code": "# Largest memory users, then a program matched by its command line\nps aux --sort=-%mem | head -n 8\npgrep -af 'cargo run'\n\n# Ask a process to exit, and force it only when it refuses\nkill -TERM 4821\nkill -KILL 4821"
+    },
+    {
+     "language": "bash",
+     "code": "# Full state for one PID and the files it currently holds open\nps -o pid,ppid,stat,%cpu,%mem,cmd -p 4821\nlsof -p 4821 | head -n 20"
+    }
+   ]
+  },
+  {
+   "id": "system-info",
+   "title": "System Information",
+   "description": "Ask the machine what it is: kernel, hardware, memory and load.",
+   "snippets": [
+    {
+     "language": "bash",
+     "code": "uname -r       # kernel release\nhostnamectl    # distribution, kernel and architecture\nuptime         # load average and time since boot\nfree -h        # RAM and swap in human units"
+    },
+    {
+     "language": "bash",
+     "code": "# CPU count and topology\nnproc\nlscpu | grep -E 'Model name|Socket|Thread|Core'\n\n# Memory module details; reading SMBIOS needs root\nsudo dmidecode -t memory | grep -E 'Size|Speed'"
+    }
+   ]
+  },
+  {
+   "id": "packages",
+   "title": "Package Management",
+   "description": "Install, query and clean up software with apt or dnf.",
+   "snippets": [
+    {
+     "language": "bash",
+     "code": "# Debian and Ubuntu\nsudo apt update\napt search ripgrep\nsudo apt install -y ripgrep\napt list --upgradable\nsudo apt autoremove"
+    },
+    {
+     "language": "bash",
+     "code": "# Fedora and RHEL family\nsudo dnf install -y htop\ndnf info neovim\nsudo dnf upgrade --refresh"
+    }
+   ]
+  },
+  {
+   "id": "network",
+   "title": "Network",
+   "description": "Addresses, listening ports and quick reachability checks.",
+   "snippets": [
+    {
+     "language": "bash",
+     "code": "ip -brief address   # interfaces and their addresses\nip route            # default gateway and routes\nss -tulpn           # TCP and UDP listeners with owning processes\nping -c 4 1.1.1.1   # four ICMP probes"
+    },
+    {
+     "language": "bash",
+     "code": "# Resolve a name and check that a web endpoint answers\ndig +short example.com A\ncurl -sS -o /dev/null -w '%{http_code}\\n' https://example.com"
+    }
+   ]
+  },
+  {
+   "id": "disks",
+   "title": "Disks and Filesystems",
+   "description": "See what is mounted, how full it is, and attach removable media.",
+   "snippets": [
+    {
+     "language": "bash",
+     "code": "lsblk -f                    # block devices, filesystems and labels\ndf -hT                      # usage per mounted filesystem\ndu -sh ~/Projects/* | sort -h   # space used by each project"
+    },
+    {
+     "language": "bash",
+     "code": "# Partition table of the first NVMe drive\nsudo fdisk -l /dev/nvme0n1\n\n# Mount a USB stick, confirm it, then unmount it\nsudo mount /dev/sdb1 /mnt/usb\nfindmnt /mnt/usb\nsudo umount /mnt/usb"
+    }
+   ]
+  },
+  {
+   "id": "archives",
+   "title": "Archives",
+   "description": "Pack directories into tarballs or zip files and unpack them again.",
+   "snippets": [
+    {
+     "language": "bash",
+     "code": "# Create, list and extract a gzip-compressed tarball\ntar -czf backup-2026-11-04.tar.gz ~/Documents/reports\ntar -tzf backup-2026-11-04.tar.gz | head -n 20\ntar -xzf backup-2026-11-04.tar.gz -C /tmp/restore"
+    },
+    {
+     "language": "bash",
+     "code": "# The zip equivalent, with a destination directory on extraction\nzip -r site-2026-11-04.zip public/\nunzip -l site-2026-11-04.zip\nunzip site-2026-11-04.zip -d /srv/www"
+    }
+   ]
+  },
+  {
+   "id": "users",
+   "title": "Users and Groups",
+   "description": "Create accounts, change their groups and confirm their identity.",
+   "snippets": [
+    {
+     "language": "bash",
+     "code": "id                  # uid, gid and every group of the current user\nwhoami\ngetent passwd felipe"
+    },
+    {
+     "language": "bash",
+     "code": "# Add an account with a home directory and a bash shell\nsudo useradd -m -s /bin/bash maria\nsudo passwd maria\n\n# Grant docker access and confirm the new group list\nsudo usermod -aG docker maria\ngroups maria"
+    }
+   ]
+  },
+  {
+   "id": "systemd",
+   "title": "Services",
+   "description": "Control unit lifecycles and read what a service unit actually runs.",
+   "snippets": [
+    {
+     "language": "bash",
+     "code": "sudo systemctl status nginx\nsudo systemctl restart nginx\nsystemctl is-enabled nginx\nsystemctl list-units --type=service --state=running"
+    },
+    {
+     "language": "bash",
+     "code": "# Enable at boot and start right away\nsudo systemctl enable --now docker\n\n# Inspect the unit file and a per-user service\nsystemctl cat sshd\nsystemctl --user status pipewire"
+    }
+   ]
+  },
+  {
+   "id": "logs",
+   "title": "Logs",
+   "description": "Follow the journal and the plain log files under /var/log.",
+   "snippets": [
+    {
+     "language": "bash",
+     "code": "# Restrict the journal by unit and by date\njournalctl -u sshd --since '2026-11-01' --until '2026-11-04'\n\n# Errors from the current boot, then a live stream\njournalctl -p err -b\njournalctl -f"
+    },
+    {
+     "language": "bash",
+     "code": "# Plain-text logs still matter for many daemons\ntail -f /var/log/nginx/error.log\ngrep -i 'failed' /var/log/auth.log | tail -n 20"
+    }
+   ]
+  }
+ ]
+}

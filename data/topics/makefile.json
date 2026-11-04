@@ -1,0 +1,184 @@
+{
+ "slug": "makefile",
+ "title": "Makefile",
+ "label": "Makefile",
+ "group": "Tool",
+ "color": "#427819",
+ "desc": "Describe builds as rules and variables, and let make rebuild only what changed.",
+ "sections": [
+  {
+   "id": "setup",
+   "title": "Setup",
+   "description": "Install GNU Make, confirm the version and inspect the defaults it ships with.",
+   "snippets": [
+    {
+     "language": "bash",
+     "code": "# GNU Make is usually present already\nmake --version\n\n# Debian and Ubuntu\nsudo apt update && sudo apt install -y make\n\n# macOS Command Line Tools ship make 3.81\nxcode-select --install\n\n# Homebrew installs current GNU Make as gmake\nbrew install make\ngmake --version"
+    },
+    {
+     "language": "bash",
+     "code": "# Built-in compiler and flag variables, with no Makefile involved\nmake -p -f /dev/null | grep -E '^(CC|CXX|CFLAGS|RM) '\n\n# The shell make uses for recipe lines\nmake -p -f /dev/null | grep '^SHELL '\n\n# The binary a project actually invokes\ncommand -v make"
+    }
+   ]
+  },
+  {
+   "id": "syntax",
+   "title": "Syntax",
+   "description": "Rules pair a target with prerequisites, and every recipe line starts with a tab.",
+   "snippets": [
+    {
+     "language": "makefile",
+     "code": "# target: prerequisites, then tab-indented recipe lines\napp: app.o util.o\n\tcc -o app app.o util.o\n\napp.o: app.c\n\tcc -Wall -Wextra -c app.c\n\n# A backslash joins recipe lines into one shell command\ndocs:\n\tpandoc README.md \\\n\t\t--output README.pdf"
+    },
+    {
+     "language": "makefile",
+     "code": "# Each recipe line gets its own shell, so state does not carry over\ninstall: app\n\tmkdir -p /usr/local/bin && \\\n\tcp app /usr/local/bin/app\n\n# @ silences the command, - ignores a non-zero exit status\ncheck:\n\t@echo \"checking the binary\"\n\t-test -x app"
+    }
+   ]
+  },
+  {
+   "id": "variables",
+   "title": "Variables",
+   "description": "Assign with =, :=, ?= and +=, then expand values with $(NAME).",
+   "snippets": [
+    {
+     "language": "makefile",
+     "code": "# Recursive: expanded every time it is used\nCFLAGS = -Wall -Wextra\n\n# Simple: expanded once, right now\nBUILD_DIR := build\n\n# Conditional: keep an environment or command-line value\nPREFIX ?= /usr/local\n\n# Append to the existing value\nCFLAGS += -O2\n\napp: src/main.c\n\t$(CC) $(CFLAGS) -o $(BUILD_DIR)/app src/main.c"
+    },
+    {
+     "language": "makefile",
+     "code": "# Target-specific value, visible only while building debug\ndebug: CFLAGS += -g -O0\ndebug: app\n\t@echo \"debug build $(GIT_REV)\"\n\n# Shell output at parse time versus at use time\nGIT_REV := $(shell git rev-parse --short HEAD)\nBUILD_DATE = $(shell date +%Y-%m-%d)\n\n# Export to the environment of every recipe\nexport DATABASE_URL = postgres://localhost/cheatrs"
+    }
+   ]
+  },
+  {
+   "id": "targets",
+   "title": "Targets",
+   "description": "Choose the default goal, build several goals and control jobs and output.",
+   "snippets": [
+    {
+     "language": "bash",
+     "code": "# The first target in the file is the default goal\nmake\n\n# Several goals, processed left to right\nmake clean build test\n\n# Four recipes at a time, then a dry run of install\nmake -j4 build\nmake -n install"
+    },
+    {
+     "language": "makefile",
+     "code": "# The first target is the default one\nall: build test\n\nbuild:\n\tcargo build --release\n\ntest: build\n\tcargo test --release\n\n# State the default goal explicitly so order can change\n.DEFAULT_GOAL := all"
+    },
+    {
+     "language": "makefile",
+     "code": "# GNU Make uses /bin/sh by default; bash adds arrays and [[ ]]\nSHELL := /bin/bash\n\n# Run every recipe line in a single shell\n.ONESHELL:\n\nrelease:\n\tVERSION=$$(git describe --tags --always)\n\ttar -czf cheatrs-$$VERSION.tar.gz target/release/cheatrs"
+    }
+   ]
+  },
+  {
+   "id": "dependencies",
+   "title": "Dependencies",
+   "description": "Prerequisites set the build order and decide when a target is out of date.",
+   "snippets": [
+    {
+     "language": "makefile",
+     "code": "# The link step waits for both objects\napp: main.o util.o\n\t$(CC) -o app main.o util.o\n\n# Each object also depends on the shared header\nmain.o: main.c util.h\n\t$(CC) $(CFLAGS) -c main.c\n\nutil.o: util.c util.h\n\t$(CC) $(CFLAGS) -c util.c"
+    },
+    {
+     "language": "makefile",
+     "code": "# Normal prerequisite: rebuild when config.h changes\n# Order-only after |: create build/ once, never rebuild because of it\nbuild/app: src/main.c | build\n\t$(CC) $(CFLAGS) -o build/app src/main.c\n\nbuild:\n\tmkdir -p build"
+    },
+    {
+     "language": "bash",
+     "code": "# Ask the compiler which headers each source includes\ncc -MM src/main.c\n\n# Save the generated rules and include them from the Makefile\ncc -MM src/main.c > build/main.d"
+    }
+   ]
+  },
+  {
+   "id": "pattern-rules",
+   "title": "Pattern Rules",
+   "description": "Use % stems to build whole families of files with a single rule.",
+   "snippets": [
+    {
+     "language": "makefile",
+     "code": "# % captures the stem: build/main.o comes from src/main.c\nbuild/%.o: src/%.c\n\t@mkdir -p $(dir $@)\n\t$(CC) $(CFLAGS) -c $< -o $@\n\n# $@ target, $< first prerequisite, $^ all prerequisites\napp: build/main.o build/util.o\n\t$(CC) -o $@ $^"
+    },
+    {
+     "language": "makefile",
+     "code": "# Static pattern: fixed target list, stem still comes from %\nOBJECTS := build/main.o build/util.o\n\n$(OBJECTS): build/%.o: src/%.c include/%.h\n\t@mkdir -p $(dir $@)\n\t$(CC) $(CFLAGS) -Iinclude -c $< -o $@"
+    },
+    {
+     "language": "makefile",
+     "code": "# Old suffix rule, equivalent to the %.o: %.c pattern\n.SUFFIXES: .c .o\n\n.c.o:\n\t$(CC) $(CFLAGS) -c $< -o $@"
+    }
+   ]
+  },
+  {
+   "id": "functions",
+   "title": "Functions",
+   "description": "Text functions shape file lists before any recipe runs.",
+   "snippets": [
+    {
+     "language": "makefile",
+     "code": "# Discover sources, then map them to object paths\nSOURCES := $(wildcard src/*.c)\nOBJECTS := $(patsubst src/%.c,build/%.o,$(SOURCES))\n\n# The same mapping with a substitution reference\nOBJECTS := $(SOURCES:src/%.c=build/%.o)\n\napp: $(OBJECTS)\n\t$(CC) -o $@ $^"
+    },
+    {
+     "language": "makefile",
+     "code": "# Add a directory and swap the extension\nOBJECTS := $(patsubst %.c,%.o,$(addprefix build/,$(notdir $(SOURCES))))\n\n# One directory per module\nMODULES := auth billing search\nDIRS := $(foreach m,$(MODULES),cmd/$(m))\n\n# Filter by pattern and sort the result\nC_SOURCES := $(filter %.c,$(SOURCES))\nHEADERS := $(sort $(wildcard include/*.h))"
+    },
+    {
+     "language": "makefile",
+     "code": "# Shell runs once at parse time when assigned with :=\nDATE := $(shell date +%Y%m%d)\nSOURCES := $(shell find src -name '*.c' | sort)\n\n# $(call) reuses a recipe fragment with positional arguments\ndefine compile\n$(CC) $(CFLAGS) -c $(1) -o $(2)\nendef\n\nbuild/app.o:\n\t$(call compile,src/app.c,build/app.o)"
+    }
+   ]
+  },
+  {
+   "id": "phony",
+   "title": "Phony Targets",
+   "description": "Declare command targets phony so a file with the same name cannot satisfy them.",
+   "snippets": [
+    {
+     "language": "makefile",
+     "code": "# These names are commands, not build artifacts\n.PHONY: all build test clean install\n\nall: build\n\nbuild:\n\tcargo build --release\n\ntest: build\n\tcargo test --release\n\nclean:\n\tcargo clean\n\ninstall: build\n\tinstall -m 0755 target/release/cheatrs /usr/local/bin/cheatrs"
+    },
+    {
+     "language": "makefile",
+     "code": "# Without .PHONY, a file called test would block this target\n.PHONY: test\ntest:\n\tcargo test\n\n# A force target makes a file rule run every time\n.PHONY: FORCE\nFORCE:\n\nconfig.yml: FORCE\n\t./scripts/render-config.sh > $@"
+    }
+   ]
+  },
+  {
+   "id": "includes",
+   "title": "Includes",
+   "description": "Split the build into fragments and pull them in with include or -include.",
+   "snippets": [
+    {
+     "language": "makefile",
+     "code": "# Required fragments: make stops when the file is missing\ninclude config.mk\ninclude platform/linux.mk\n\n# Optional local overrides, silently skipped when absent\n-include local.mk"
+    },
+    {
+     "language": "makefile",
+     "code": "# config.mk: values shared by every target\nCC := clang\nCFLAGS := -Wall -Wextra -O2\nPREFIX := /usr/local"
+    },
+    {
+     "language": "makefile",
+     "code": "# Guard against parsing the same fragment twice\nifndef CONFIG_MK\nCONFIG_MK := 1\ninclude config.mk\nendif\n\n# Every makefile read so far, in order\n$(info parsed: $(MAKEFILE_LIST))\n\n# Rebuild and restart make when the template changes\nMakefile: Makefile.in\n\t./configure"
+    }
+   ]
+  },
+  {
+   "id": "recipes",
+   "title": "Common Recipes",
+   "description": "Ready targets for C, Rust and release packaging.",
+   "snippets": [
+    {
+     "language": "makefile",
+     "code": "CC := cc\nCFLAGS := -Wall -Wextra -O2 -MMD -MP\nSRC := $(wildcard src/*.c)\nOBJ := $(SRC:src/%.c=build/%.o)\n\napp: $(OBJ)\n\t$(CC) $(CFLAGS) -o $@ $^\n\nbuild/%.o: src/%.c\n\t@mkdir -p $(dir $@)\n\t$(CC) $(CFLAGS) -c $< -o $@\n\n# Header dependencies written by -MMD\n-include $(OBJ:.o=.d)"
+    },
+    {
+     "language": "makefile",
+     "code": ".PHONY: all build test fmt lint clean\n\nall: build\n\nbuild:\n\tcargo build --release\n\ntest:\n\tcargo test --all-targets\n\nfmt:\n\tcargo fmt --all\n\nlint:\n\tcargo clippy --all-targets -- -D warnings\n\nclean:\n\tcargo clean"
+    },
+    {
+     "language": "makefile",
+     "code": "VERSION := $(shell git describe --tags --always)\nARCH := $(shell uname -m)\nDIST := dist/cheatrs-$(VERSION)-$(ARCH)\n\n.PHONY: dist\n\ndist: build\n\tmkdir -p $(DIST)\n\tinstall -m 0755 target/release/cheatrs $(DIST)/cheatrs\n\ttar -czf $(DIST).tar.gz -C dist $(notdir $(DIST))"
+    }
+   ]
+  }
+ ]
+}

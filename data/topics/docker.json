@@ -1,0 +1,333 @@
+{
+ "slug": "docker",
+ "title": "Docker",
+ "label": "Docker",
+ "group": "Tool",
+ "color": "#2496ED",
+ "desc": "Package, ship and run applications as containers, from a single image to a Compose stack.",
+ "sections": [
+  {
+   "id": "setup",
+   "title": "Setup",
+   "description": "Install the engine, confirm the client talks to the daemon and run the smoke test image.",
+   "snippets": [
+    {
+     "language": "bash",
+     "code": "# Client and Compose versions\ndocker --version\ndocker compose version\n\n# Engine and plugins on Debian or Ubuntu, from Docker's own repository\nsudo apt update\nsudo apt install -y ca-certificates curl\nsudo install -m 0755 -d /etc/apt/keyrings\nsudo curl -fsSL https://download.docker.com/linux/ubuntu/gpg -o /etc/apt/keyrings/docker.asc\nsudo chmod a+r /etc/apt/keyrings/docker.asc\necho \"deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/ubuntu $(. /etc/os-release && echo $VERSION_CODENAME) stable\" | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null\nsudo apt update\nsudo apt install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin"
+    },
+    {
+     "language": "bash",
+     "code": "# Run the client as your own user instead of through sudo\nsudo usermod -aG docker $USER\nnewgrp docker\n\n# Client and daemon versions, storage driver and kernel\ndocker info\n\n# Pull and run the official smoke test, then delete it\ndocker run --rm hello-world"
+    },
+    {
+     "language": "bash",
+     "code": "# Desktop builds bundle the engine, the CLI and Compose\nbrew install --cask docker\nwinget install --id Docker.DockerDesktop -e\n\n# Compose is a plugin, so it is called as a subcommand\ndocker compose version"
+    }
+   ]
+  },
+  {
+   "id": "images",
+   "title": "Images",
+   "description": "Read-only templates: list, pull, inspect, tag and move them between machines.",
+   "snippets": [
+    {
+     "language": "bash",
+     "code": "# Local images with size and creation date\ndocker images\n\n# Only the untagged leftovers from old builds\ndocker images --filter dangling=true\n\n# Download or refresh a tag\ndocker pull postgres:17\ndocker pull alpine:3.21"
+    },
+    {
+     "language": "bash",
+     "code": "# One field from the image config\ndocker image inspect postgres:17 --format '{{.Config.ExposedPorts}}'\ndocker image inspect postgres:17 --format '{{.Config.Env}}'\n\n# Layer by layer history, with the command that created each one\ndocker history postgres:17"
+    },
+    {
+     "language": "bash",
+     "code": "# Tag before sending the image to a registry\ndocker tag cheatrs-api:1.4.0 ghcr.io/felipe/cheatrs-api:1.4.0\n\n# Move an image without a registry\ndocker save cheatrs-api:1.4.0 -o cheatrs-api-1.4.0.tar\ndocker load -i cheatrs-api-1.4.0.tar\n\n# Look up public images by name\ndocker search postgres --limit 5"
+    }
+   ]
+  },
+  {
+   "id": "containers",
+   "title": "Containers",
+   "description": "Manage the running instances: inspect, start, stop, copy files and change limits.",
+   "snippets": [
+    {
+     "language": "bash",
+     "code": "# Running containers, then every container including stopped ones\ndocker ps\ndocker ps -a\n\n# Full lifecycle without the shortcut flags of docker run\ndocker create --name cache redis:7-alpine\ndocker start cache\ndocker stop cache\ndocker restart cache\ndocker rm cache\n\n# Remove a container that is still running\ndocker rm -f cache"
+    },
+    {
+     "language": "bash",
+     "code": "# CPU, memory and network use, live and as a snapshot\ndocker stats\ndocker stats --no-stream cheatrs-api\n\n# Processes inside the container as seen from the host\ndocker top cheatrs-api\n\n# Copy files in both directions\ndocker cp cheatrs-api:/app/config.yml ./config.yml\ndocker cp ./seed.sql cheatrs-db:/tmp/seed.sql"
+    },
+    {
+     "language": "bash",
+     "code": "# New limits on a running container, no recreation needed\ndocker update --cpus 1.5 --memory 512m cheatrs-api\n\n# Freeze every process, then let it continue\ndocker pause cheatrs-api\ndocker unpause cheatrs-api\n\n# Rename without touching the filesystem\ndocker rename cheatrs-api cheatrs-api-old"
+    }
+   ]
+  },
+  {
+   "id": "run",
+   "title": "Running Containers",
+   "description": "docker run flags that matter: ports, environment, mounts, users and resource limits.",
+   "snippets": [
+    {
+     "language": "bash",
+     "code": "# Detached server, host port 8080 to container port 8080, restarted unless stopped\ndocker run -d --name cheatrs-api -p 8080:8080 --restart unless-stopped cheatrs-api:1.4.0\n\n# Foreground shell, thrown away on exit\ndocker run --rm -it alpine:3.21 sh\n\n# Keep the image entrypoint but run another command in it\ndocker run --rm --entrypoint sh postgres:17 -c \"pg_isready -h db\""
+    },
+    {
+     "language": "bash",
+     "code": "# Environment for the process\ndocker run -d --name cheatrs-db -e POSTGRES_PASSWORD=hunter2 -e POSTGRES_DB=cheatrs postgres:17\n\n# The same thing from a file, one KEY=value per line\ndocker run -d --name cheatrs-db --env-file ./db.env postgres:17\n\n# Named volume so the data outlives the container\ndocker run -d --name cheatrs-db -v cheatrs_pgdata:/var/lib/postgresql/data postgres:17"
+    },
+    {
+     "language": "bash",
+     "code": "# Hard limits and a real init process as PID 1\ndocker run -d --name worker --cpus 2 --memory 1g --memory-swap 1g --init cheatrs-worker:1.4.0\n\n# Non-root user and a fixed working directory\ndocker run --rm -u 1000:1000 -w /app node:22-alpine node -e \"console.log(process.cwd())\"\n\n# Project folder mounted into an interactive container\ndocker run --rm -it -v \"$PWD\":/app -w /app node:22-alpine sh"
+    }
+   ]
+  },
+  {
+   "id": "exec",
+   "title": "Exec and Shell",
+   "description": "Open a shell or run a single command inside a container that is already running.",
+   "snippets": [
+    {
+     "language": "bash",
+     "code": "# Interactive shell in the running container\ndocker exec -it cheatrs-api sh\ndocker exec -it cheatrs-db bash\n\n# One command, no session\ndocker exec cheatrs-api ls -la /app\ndocker exec cheatrs-db psql -U postgres -d cheatrs -c \"select count(*) from users;\"\n\n# Test something and see the command exit status\ndocker exec cheatrs-api sh -c \"grep -q ready /tmp/health && echo ready\""
+    },
+    {
+     "language": "bash",
+     "code": "# Another user and another directory for this call only\ndocker exec -u root cheatrs-api chown -R app:app /app/storage\ndocker exec -w /app cheatrs-api npm run migrate\n\n# Extra environment variable, not persisted in the container\ndocker exec -e NODE_ENV=test cheatrs-api node scripts/seed.js\n\n# What is actually running inside\ndocker exec cheatrs-api ps aux"
+    },
+    {
+     "language": "bash",
+     "code": "# Long job in the background, output kept in a file inside the container\ndocker exec -d cheatrs-api sh -c \"node scripts/reindex.js > /tmp/reindex.log 2>&1\"\n\n# Follow that output from the host\ndocker exec -it cheatrs-api tail -f /tmp/reindex.log"
+    }
+   ]
+  },
+  {
+   "id": "logs",
+   "title": "Logs and Inspect",
+   "description": "Read stdout and stderr, filter by time and pull single fields out of the JSON state.",
+   "snippets": [
+    {
+     "language": "bash",
+     "code": "# Follow with timestamps, starting from the last 200 lines\ndocker logs -f --tail 200 -t cheatrs-api\n\n# A time window instead of everything\ndocker logs --since 30m cheatrs-api\ndocker logs --since 2026-11-01T10:00:00 --until 2026-11-01T11:00:00 cheatrs-api"
+    },
+    {
+     "language": "bash",
+     "code": "# Whole document, then just the parts you need\ndocker inspect cheatrs-api\ndocker inspect cheatrs-api --format '{{.State.Status}}'\ndocker inspect cheatrs-api --format '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}'\ndocker inspect cheatrs-api --format '{{json .Mounts}}'"
+    },
+    {
+     "language": "bash",
+     "code": "# Files changed in the container since the image layer\ndocker diff cheatrs-api\n\n# Custom table for several containers\ndocker ps --format 'table {{.Names}}\\t{{.Status}}\\t{{.Ports}}'\n\n# Daemon events, handy during a restart loop\ndocker events --filter container=cheatrs-api --since 10m"
+    }
+   ]
+  },
+  {
+   "id": "volumes",
+   "title": "Volumes",
+   "description": "Persist data outside the container lifecycle and back it up with a throwaway container.",
+   "snippets": [
+    {
+     "language": "bash",
+     "code": "# Named volume, managed by Docker\n# The label and driver show up in inspect\ndocker volume create --label project=cheatrs cheatrs_pgdata\ndocker volume ls\ndocker volume inspect cheatrs_pgdata\n\n# Delete one volume, or every unused one\ndocker volume rm cheatrs_pgdata\ndocker volume prune -f"
+    },
+    {
+     "language": "bash",
+     "code": "# Source code from the host, dependencies in a volume so the host folder stays clean\ndocker run -d --name web -v \"$PWD\":/app -v web_node_modules:/app/node_modules -p 3000:3000 node:22-alpine sh -c \"cd /app && npm install && npm run dev\"\n\n# Read-only config file mounted over the image default\ndocker run --rm -v \"$PWD/nginx.conf\":/etc/nginx/nginx.conf:ro nginx:1.27-alpine nginx -t"
+    },
+    {
+     "language": "bash",
+     "code": "# Archive a volume from a small helper container\ndocker run --rm -v cheatrs_pgdata:/data -v \"$PWD\":/backup alpine:3.21 tar czf /backup/pgdata.tar.gz -C /data .\n\n# Restore the archive into a fresh volume\ndocker volume create cheatrs_pgdata_new\ndocker run --rm -v cheatrs_pgdata_new:/data -v \"$PWD\":/backup alpine:3.21 tar xzf /backup/pgdata.tar.gz -C /data"
+    }
+   ]
+  },
+  {
+   "id": "networks",
+   "title": "Networks",
+   "description": "User-defined bridges give containers DNS names and isolate them from unrelated stacks.",
+   "snippets": [
+    {
+     "language": "bash",
+     "code": "# List and inspect\ndocker network ls\ndocker network inspect cheatrs_net\n\n# Bridge network with a fixed subnet\ndocker network create --driver bridge --subnet 172.28.0.0/16 cheatrs_net"
+    },
+    {
+     "language": "bash",
+     "code": "# Attach and detach a container that is already running\ndocker network connect cheatrs_net cheatrs-api\ndocker network disconnect cheatrs_net cheatrs-api\n\n# Database reachable from other containers, published only on localhost\ndocker run -d --name cheatrs-db --network cheatrs_net -p 127.0.0.1:5432:5432 postgres:17"
+    },
+    {
+     "language": "bash",
+     "code": "# Name resolution inside the network: cheatrs-db resolves to its container IP\ndocker run --rm --network cheatrs_net alpine:3.21 nslookup cheatrs-db\n\n# Host networking removes the port mapping layer, Linux only\ndocker run --rm --network host nginx:1.27-alpine"
+    }
+   ]
+  },
+  {
+   "id": "build",
+   "title": "Building Images",
+   "description": "Turn a Dockerfile into a tagged image, with build arguments, targets and multiple platforms.",
+   "snippets": [
+    {
+     "language": "bash",
+     "code": "# Context is the current folder\ndocker build -t cheatrs-api:1.4.0 .\n\n# Another Dockerfile and another context directory\ndocker build -f docker/Dockerfile.prod -t cheatrs-api:1.4.0 ./app\n\n# Pass a build argument and stop at a named stage\ndocker build --build-arg NODE_ENV=production --target runtime -t cheatrs-api:1.4.0 ."
+    },
+    {
+     "language": "bash",
+     "code": "# Build for servers and Apple Silicon at once, pushing the manifest list\ndocker buildx build --platform linux/amd64,linux/arm64 -t ghcr.io/felipe/cheatrs-api:1.4.0 --push .\n\n# Single platform, loaded into the local engine\ndocker buildx build --platform linux/arm64 -t cheatrs-api:1.4.0 --load ."
+    },
+    {
+     "language": "bash",
+     "code": "# Ignore the layer cache\ndocker build --no-cache -t cheatrs-api:1.4.0 .\n\n# Plain output, one line per step, with timings\ndocker build --progress=plain -t cheatrs-api:1.4.0 .\n\n# Fetch newer base images while rebuilding\ndocker build --pull -t cheatrs-api:1.4.0 ."
+    }
+   ]
+  },
+  {
+   "id": "dockerfile",
+   "title": "Dockerfile",
+   "description": "Multi-stage builds keep compilers out of the final image and leave a small, non-root runtime.",
+   "snippets": [
+    {
+     "language": "dockerfile",
+     "code": "# syntax=docker/dockerfile:1\n\nFROM node:22-alpine AS deps\nWORKDIR /app\nCOPY package.json package-lock.json ./\nRUN npm ci\n\nFROM deps AS build\nCOPY . .\nRUN npm run build && npm prune --omit=dev\n\nFROM node:22-alpine AS runtime\nENV NODE_ENV=production\nWORKDIR /app\nRUN addgroup -S app && adduser -S app -G app\nCOPY --from=build --chown=app:app /app/node_modules ./node_modules\nCOPY --from=build --chown=app:app /app/dist ./dist\nUSER app\nEXPOSE 8080\nHEALTHCHECK --interval=30s --timeout=3s --start-period=10s --retries=3 \\\n  CMD wget -qO- http://127.0.0.1:8080/health || exit 1\nCMD [\"node\", \"dist/server.js\"]"
+    },
+    {
+     "language": "dockerfile",
+     "code": "# Pin the base, install system packages in one layer and clean up in the same step\nFROM python:3.12-slim\nENV PYTHONDONTWRITEBYTECODE=1 PYTHONUNBUFFERED=1\nWORKDIR /srv\nCOPY requirements.txt .\nRUN pip install --no-cache-dir -r requirements.txt \\\n    && useradd --create-home app\nCOPY --chown=app:app . .\nUSER app\nCMD [\"python\", \"-m\", \"app\"]"
+    },
+    {
+     "language": "bash",
+     "code": "# Keep the build context small and the COPY layer cache stable\ncat > .dockerignore <<'EOF'\n.git\nnode_modules\ndist\n.env\n*.log\nEOF"
+    }
+   ]
+  },
+  {
+   "id": "compose",
+   "title": "Compose",
+   "description": "Describe a multi-container stack in one YAML file and drive it with docker compose.",
+   "snippets": [
+    {
+     "language": "yaml",
+     "code": "services:\n  api:\n    build:\n      context: .\n      target: runtime\n    image: cheatrs-api:1.4.0\n    ports:\n      - \"8080:8080\"\n    environment:\n      DATABASE_URL: postgres://cheatrs:hunter2@db:5432/cheatrs\n    depends_on:\n      db:\n        condition: service_healthy\n    restart: unless-stopped\n\n  db:\n    image: postgres:17\n    environment:\n      POSTGRES_USER: cheatrs\n      POSTGRES_PASSWORD: hunter2\n      POSTGRES_DB: cheatrs\n    volumes:\n      - pgdata:/var/lib/postgresql/data\n    healthcheck:\n      test: [\"CMD-SHELL\", \"pg_isready -U cheatrs -d cheatrs\"]\n      interval: 10s\n      timeout: 5s\n      retries: 5\n\nvolumes:\n  pgdata:"
+    },
+    {
+     "language": "bash",
+     "code": "# Start in the background and watch one service\ndocker compose up -d\ndocker compose logs -f api\n\n# Rebuild what changed and recreate only those containers\ndocker compose up -d --build\n\n# Stop and remove containers and the network, named volumes stay\ndocker compose down\n\n# Also remove volumes and locally built images\ndocker compose down -v --rmi local"
+    },
+    {
+     "language": "bash",
+     "code": "# What Compose thinks the project looks like after merges and defaults\ndocker compose config\n\n# Status and processes\ndocker compose ps\ndocker compose top\n\n# Several copies of a stateless service\ndocker compose up -d --scale worker=3"
+    }
+   ]
+  },
+  {
+   "id": "compose-services",
+   "title": "Compose Services",
+   "description": "Act on a single service instead of the whole project: exec, run, logs, restart and profiles.",
+   "snippets": [
+    {
+     "language": "bash",
+     "code": "# Command inside the running container\ndocker compose exec api sh\n\n# One-off container from the service definition, removed afterwards\ndocker compose run --rm api npm run migrate\n\n# Only this service's output\ndocker compose logs -f --tail 100 db"
+    },
+    {
+     "language": "bash",
+     "code": "# Restart, stop or remove one service\ndocker compose restart api\ndocker compose stop worker\ndocker compose rm -sf worker\n\n# Rebuild just the API and recreate it\ndocker compose up -d --build api"
+    },
+    {
+     "language": "bash",
+     "code": "# Start the services tagged with the debug profile\ndocker compose --profile debug up -d\n\n# Merge a local override on top of the base file\ndocker compose -f compose.yaml -f compose.override.yaml up -d\n\n# Fetch images without starting anything\ndocker compose pull"
+    }
+   ]
+  },
+  {
+   "id": "registry",
+   "title": "Registry",
+   "description": "Authenticate, push tags and inspect what a remote registry actually serves.",
+   "snippets": [
+    {
+     "language": "bash",
+     "code": "# Log in, tag with the registry host, push, then forget the session\ndocker login ghcr.io -u felipe\ndocker tag cheatrs-api:1.4.0 ghcr.io/felipe/cheatrs-api:1.4.0\ndocker push ghcr.io/felipe/cheatrs-api:1.4.0\ndocker logout ghcr.io"
+    },
+    {
+     "language": "bash",
+     "code": "# Token from stdin, so it never lands in shell history\necho \"$GHCR_TOKEN\" | docker login ghcr.io -u felipe --password-stdin\n\n# Which registries already have stored credentials\njq '.auths | keys' ~/.docker/config.json"
+    },
+    {
+     "language": "bash",
+     "code": "# Manifest and digest of a remote tag, before pulling it\ndocker manifest inspect ghcr.io/felipe/cheatrs-api:1.4.0\ndocker buildx imagetools inspect ghcr.io/felipe/cheatrs-api:1.4.0\n\n# Private registry on localhost for tests\ndocker run -d -p 5000:5000 --name registry registry:2\ndocker tag cheatrs-api:1.4.0 localhost:5000/cheatrs-api:1.4.0\ndocker push localhost:5000/cheatrs-api:1.4.0"
+    }
+   ]
+  },
+  {
+   "id": "cleanup",
+   "title": "Cleanup",
+   "description": "Find what consumes disk and remove containers, images, volumes and cache that nothing uses.",
+   "snippets": [
+    {
+     "language": "bash",
+     "code": "# Space used by each category, then per object\ndocker system df\ndocker system df -v\n\n# Stop everything that is running\ndocker stop $(docker ps -q)"
+    },
+    {
+     "language": "bash",
+     "code": "# Stopped containers and untagged images\ndocker container prune -f\ndocker image prune -f\n\n# Every image not referenced by a container\ndocker image prune -a -f"
+    },
+    {
+     "language": "bash",
+     "code": "# Unused networks and volumes\ndocker network prune -f\ndocker volume prune -f\n\n# Build cache, keeping the most recent 2GB\ndocker builder prune -f --keep-storage 2GB\n\n# Everything unused at once\ndocker system prune -a -f --volumes"
+    }
+   ]
+  },
+  {
+   "id": "healthcheck",
+   "title": "Healthchecks",
+   "description": "Let Docker test the process itself, then gate startup and deploys on the healthy state.",
+   "snippets": [
+    {
+     "language": "dockerfile",
+     "code": "# Probe defined by the image; start-period gives the app time to boot before failures count\nHEALTHCHECK --interval=30s --timeout=5s --start-period=20s --retries=3 \\\n  CMD curl -fsS http://127.0.0.1:8080/health || exit 1"
+    },
+    {
+     "language": "bash",
+     "code": "# Add or replace the probe for a single container\ndocker run -d --name cheatrs-api \\\n  --health-cmd \"curl -fsS http://127.0.0.1:8080/health\" \\\n  --health-interval 15s --health-timeout 3s --health-retries 3 \\\n  cheatrs-api:1.4.0\n\n# Current state and the log of past probes\ndocker inspect cheatrs-api --format '{{.State.Health.Status}}'\ndocker inspect cheatrs-api --format '{{json .State.Health.Log}}'"
+    },
+    {
+     "language": "bash",
+     "code": "# Block a script until the container reports healthy\nuntil [ \"$(docker inspect -f '{{.State.Health.Status}}' cheatrs-api)\" = \"healthy\" ]; do sleep 2; done\n\n# Then it is safe to run migrations against it\ndocker exec cheatrs-api npm run migrate"
+    }
+   ]
+  },
+  {
+   "id": "security",
+   "title": "Security",
+   "description": "Shrink the attack surface: non-root user, read-only filesystem, dropped capabilities and scanning.",
+   "snippets": [
+    {
+     "language": "bash",
+     "code": "# No root, no capabilities, no privilege escalation, read-only root filesystem\ndocker run -d --name cheatrs-api \\\n  --user 1000:1000 \\\n  --read-only \\\n  --tmpfs /tmp:size=64m \\\n  --cap-drop ALL \\\n  --security-opt no-new-privileges \\\n  -p 127.0.0.1:8080:8080 \\\n  cheatrs-api:1.4.0"
+    },
+    {
+     "language": "bash",
+     "code": "# Known vulnerabilities in the image layers\ndocker scout cves cheatrs-api:1.4.0\ndocker scout quickview cheatrs-api:1.4.0\n\n# Software bill of materials for auditing, as JSON by default\ndocker scout sbom cheatrs-api:1.4.0"
+    },
+    {
+     "language": "bash",
+     "code": "# Secrets from a file at runtime, never baked into the image or visible in docker inspect\nprintf 'hunter2' > db_password.txt\ndocker run -d --name cheatrs-db \\\n  --mount type=bind,source=./db_password.txt,target=/run/secrets/db_password,readonly \\\n  postgres:17\n\n# The value is readable inside the container only at that path\ndocker exec cheatrs-db cat /run/secrets/db_password"
+    }
+   ]
+  },
+  {
+   "id": "troubleshooting",
+   "title": "Troubleshooting",
+   "description": "Diagnose containers that exit immediately, restart in a loop or cannot reach each other.",
+   "snippets": [
+    {
+     "language": "bash",
+     "code": "# Why did it stop? Exit code and the error recorded by the daemon\ndocker inspect cheatrs-api --format '{{.State.ExitCode}} {{.State.Error}}'\n\n# Output from the run before the restart\ndocker logs --previous cheatrs-api\n\n# Disk pressure is a common cause of failed pulls and builds\ndocker system df"
+    },
+    {
+     "language": "bash",
+     "code": "# Bypass the entrypoint when the container dies before you can exec into it\ndocker run --rm -it --entrypoint sh cheatrs-api:1.4.0\n\n# Does the app answer on the port the mapping expects?\ndocker exec cheatrs-api wget -qO- http://127.0.0.1:8080/health\n\n# Can one container resolve the other by name?\ndocker run --rm --network cheatrs_net alpine:3.21 nslookup cheatrs-db"
+    },
+    {
+     "language": "bash",
+     "code": "# Keep a file from a container that will be removed\ndocker cp cheatrs-api:/app/logs/error.log ./error.log\n\n# What changed relative to the image\ndocker diff cheatrs-api\n\n# Rebuild with fresh base images when the cache hides a change\ndocker build --no-cache --pull -t cheatrs-api:1.4.0 ."
+    }
+   ]
+  }
+ ]
+}

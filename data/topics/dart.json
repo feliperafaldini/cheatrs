@@ -1,0 +1,272 @@
+{
+ "slug": "dart",
+ "title": "Dart",
+ "label": "Dart",
+ "group": "Language",
+ "color": "#0175C2",
+ "desc": "Client-optimized language with sound null safety and ahead-of-time compilation.",
+ "sections": [
+  {
+   "id": "setup",
+   "title": "Setup",
+   "description": "Install the SDK, scaffold a console package, and build a native binary",
+   "snippets": [
+    {
+     "language": "bash",
+     "code": "# Print the version of the SDK that is on the PATH\ndart --version\n\n# Scaffold a console package with pubspec.yaml and analysis_options.yaml\ndart create -t console clock\ncd clock\n\n# Download the packages declared in pubspec.yaml\ndart pub get\n\n# Run the entry point in bin/clock.dart\ndart run\n\n# Compile a standalone executable for this machine\ndart compile exe bin/clock.dart -o clock"
+    },
+    {
+     "language": "yaml",
+     "code": "name: clock\ndescription: Prints the time in a few zones\npublish_to: none\nenvironment:\n  sdk: ^3.9.0\n\ndependencies:\n  http: ^1.5.0\n\ndev_dependencies:\n  lints: ^6.0.0\n  test: ^1.26.0"
+    }
+   ]
+  },
+  {
+   "id": "syntax",
+   "title": "Syntax",
+   "description": "Entry point, bindings, string interpolation, and control flow",
+   "snippets": [
+    {
+     "language": "dart",
+     "code": "// Single line comment. /* Block comments nest in Dart. */\n/// Doc comments attach to the declaration below.\n\nvoid main() {\n  final name = 'Ada';     // inferred String, never reassigned\n  var visits = 3;         // inferred int, can change\n  const limit = 5;        // compile-time constant\n\n  visits += 1;\n  print('$name has $visits visits, limit ${limit * 2}');\n\n  // Cascades run several calls on the same object.\n  final buffer = StringBuffer()\n    ..write('id=')\n    ..write(42);\n  print(buffer.toString()); // id=42\n}"
+    },
+    {
+     "language": "dart",
+     "code": "void main() {\n  for (var i = 1; i <= 3; i++) {\n    print(classify(i)); // small, small, large\n  }\n\n  var attempts = 0;\n  while (attempts < 2) {\n    attempts++;\n  }\n  print('attempts: $attempts'); // attempts: 2\n}\n\nString classify(int value) => switch (value) {\n      1 => 'small',\n      2 => 'small',\n      3 => 'large',\n      _ => 'unknown',\n    };"
+    },
+    {
+     "language": "dart",
+     "code": "void main() {\n  final point = (x: 3, y: 4);\n  final (x: px, y: py) = point; // destructuring pattern\n  print('$px, $py'); // 3, 4\n\n  if (point case (x: final a, y: final b) when a == b) {\n    print('on the diagonal');\n  } else {\n    print('off the diagonal'); // off the diagonal\n  }\n}"
+    }
+   ]
+  },
+  {
+   "id": "types",
+   "title": "Types",
+   "description": "Built-in scalars, records, typedefs, enums, and runtime checks",
+   "snippets": [
+    {
+     "language": "dart",
+     "code": "void main() {\n  int count = 12;\n  double ratio = 0.75;\n  num mixed = count; // num covers int and double\n  String label = 'ready';\n  bool online = true;\n\n  print(count.toDouble());           // 12.0\n  print(ratio.toInt());              // 0, it truncates\n  print(int.parse('2048'));          // 2048\n  print(3.14159.toStringAsFixed(2)); // 3.14\n  print(mixed.runtimeType);          // int\n  print('$label $online');           // ready true\n}"
+    },
+    {
+     "language": "dart",
+     "code": "typedef Point = ({double x, double y});\n\nvoid main() {\n  final Point origin = (x: 0.0, y: 0.0);\n  final (x: x, y: y) = origin;\n  print('$x/$y'); // 0.0/0.0\n\n  Object value = 'text';\n  if (value is String) {\n    print(value.toUpperCase()); // TEXT\n  }\n  print(value is! int); // true\n}"
+    },
+    {
+     "language": "dart",
+     "code": "enum Suit {\n  hearts('H'),\n  spades('S');\n\n  const Suit(this.symbol);\n\n  final String symbol;\n}\n\nvoid main() {\n  final card = Suit.hearts;\n  print(card.symbol);        // H\n  print(card.index);         // 0\n  print(Suit.values.length); // 2\n}"
+    }
+   ]
+  },
+  {
+   "id": "null-safety",
+   "title": "Null Safety",
+   "description": "Optional values with safe calls, defaults, and flow-based promotion",
+   "snippets": [
+    {
+     "language": "dart",
+     "code": "void main() {\n  String? nickname;              // nullable, starts as null\n  final city = 'Recife';         // non-nullable\n\n  print(nickname?.length);         // null, call skipped\n  print(nickname ?? 'anonymous');  // anonymous\n  nickname ??= 'guest';\n  print(nickname);                 // guest\n\n  String? empty;\n  // print(empty.length); // compile error, empty can be null\n  if (empty != null) {\n    print(empty.length); // promoted to String here\n  }\n  print(city); // Recife\n}"
+    },
+    {
+     "language": "dart",
+     "code": "class Session {\n  Session(this.id);\n\n  final String id;\n  String? note;\n\n  int get noteLength => note?.length ?? 0;\n}\n\nclass TokenStore {\n  late String _token; // assigned before the first read\n\n  void load(String value) => _token = value;\n\n  String get token => _token;\n}\n\nvoid main() {\n  final session = Session('abc-123')..note = 'first login';\n  print(session.noteLength); // 11\n  print(session.id);         // abc-123\n\n  final store = TokenStore()..load('xyz');\n  print(store.token); // xyz\n}"
+    },
+    {
+     "language": "dart",
+     "code": "void main() {\n  final limits = <String, int?>{'read': 10, 'write': null};\n\n  print(limits['read'] ?? 0);  // 10\n  print(limits['write'] ?? 5); // 5\n  print(limits['delete']);     // null\n\n  // ! asserts non-null and throws when the value is null.\n  final forced = limits['read']!;\n  print(forced + 1); // 11\n\n  int? nothing;\n  // print(nothing!); // throws at runtime\n}"
+    }
+   ]
+  },
+  {
+   "id": "functions",
+   "title": "Functions",
+   "description": "Positional and named parameters, closures, and generic helpers",
+   "snippets": [
+    {
+     "language": "dart",
+     "code": "int add(int a, int b) => a + b;\n\nString greet(String name, [String greeting = 'hello']) =>\n    '$greeting, $name';\n\nvoid log(String message, {bool loud = false, String? tag}) {\n  final line = tag == null ? message : '[$tag] $message';\n  print(loud ? line.toUpperCase() : line);\n}\n\nvoid main() {\n  print(add(2, 3));          // 5\n  print(greet('Ada'));       // hello, Ada\n  print(greet('Ada', 'hi')); // hi, Ada\n  log('ready', tag: 'build'); // [build] ready\n  log('done', loud: true);    // DONE\n}"
+    },
+    {
+     "language": "dart",
+     "code": "typedef Mapper = int Function(int);\n\nList<int> transform(List<int> values, Mapper mapper) =>\n    [for (final value in values) mapper(value)];\n\nMapper multiplier(int factor) => (value) => value * factor;\n\nvoid main() {\n  final triple = multiplier(3);\n  print(transform([1, 2, 3], triple));        // [3, 6, 9]\n  print(transform([1, 2, 3], (v) => v + 10)); // [11, 12, 13]\n  print(triple.call(4));                      // 12\n}"
+    },
+    {
+     "language": "dart",
+     "code": "T largest<T extends Comparable<T>>(List<T> items) {\n  var best = items.first;\n  for (final item in items.skip(1)) {\n    if (item.compareTo(best) > 0) best = item;\n  }\n  return best;\n}\n\nvoid main() {\n  print(largest([3, 9, 4]));              // 9\n  print(largest(['pear', 'fig', 'kiwi'])); // pear\n}"
+    }
+   ]
+  },
+  {
+   "id": "classes",
+   "title": "Classes",
+   "description": "Constructors, inheritance, sealed hierarchies, and pattern dispatch",
+   "snippets": [
+    {
+     "language": "dart",
+     "code": "import 'dart:math' show sqrt;\n\nclass Point {\n  Point(this.x, this.y);\n\n  Point.origin()\n      : x = 0,\n        y = 0;\n\n  Point.fromJson(Map<String, num> json)\n      : x = json['x']!.toDouble(),\n        y = json['y']!.toDouble();\n\n  final double x;\n  final double y;\n\n  double get distance => sqrt(x * x + y * y);\n}\n\nvoid main() {\n  final origin = Point.origin();\n  final parsed = Point.fromJson({'x': 3, 'y': 4});\n  print(origin.x);        // 0.0\n  print(parsed.distance); // 5.0\n}"
+    },
+    {
+     "language": "dart",
+     "code": "abstract class Shape {\n  const Shape(this.name);\n\n  final String name;\n\n  double area();\n\n  @override\n  String toString() => '$name with area ${area().toStringAsFixed(2)}';\n}\n\nclass Circle extends Shape {\n  const Circle(this.radius) : super('circle');\n\n  final double radius;\n\n  @override\n  double area() => 3.14159 * radius * radius;\n}\n\nclass Square implements Shape {\n  const Square(this.side);\n\n  @override\n  final String name = 'square';\n  final double side;\n\n  @override\n  double area() => side * side;\n}\n\nvoid main() {\n  print(Circle(2)); // circle with area 12.57\n  print(Square(3)); // square with area 9.00\n}"
+    },
+    {
+     "language": "dart",
+     "code": "sealed class Payment {\n  const Payment();\n}\n\nfinal class CardPayment extends Payment {\n  const CardPayment(this.last4);\n\n  final String last4;\n}\n\nfinal class CashPayment extends Payment {\n  const CashPayment(this.amount);\n\n  final double amount;\n}\n\n// Sealed subclasses make this switch exhaustive.\nString describe(Payment payment) => switch (payment) {\n      CardPayment(:final last4) => 'card ending $last4',\n      CashPayment(:final amount) => 'cash ${amount.toStringAsFixed(2)}',\n    };\n\nvoid main() {\n  print(describe(CardPayment('4242'))); // card ending 4242\n  print(describe(CashPayment(19.9)));   // cash 19.90\n}"
+    }
+   ]
+  },
+  {
+   "id": "collections",
+   "title": "Collections",
+   "description": "Lists, sets, and maps plus the collection if, for, and spread forms",
+   "snippets": [
+    {
+     "language": "dart",
+     "code": "void main() {\n  final scores = <String, int>{'ada': 98, 'grace': 91};\n  final tags = <String>{'dart', 'flutter'};\n  final queue = <String>['build', 'test'];\n\n  scores['alan'] = 84;\n  tags.add('dart'); // already present, the set keeps one copy\n  queue.insert(0, 'lint');\n\n  print(scores['ada']);        // 98\n  print(scores['missing']);    // null\n  print(tags.length);          // 2\n  print(queue);                // [lint, build, test]\n  print(scores.keys.toList()); // [ada, grace, alan]\n}"
+    },
+    {
+     "language": "dart",
+     "code": "void main() {\n  final numbers = [4, 1, 7, 3, 9, 2];\n\n  final doubled = numbers.map((n) => n * 2).toList();\n  final evens = numbers.where((n) => n.isEven).toList();\n  final total = numbers.fold(0, (sum, n) => sum + n);\n  final sorted = [...numbers]..sort();\n\n  print(doubled);                  // [8, 2, 14, 6, 18, 4]\n  print(evens);                    // [4, 2]\n  print(total);                    // 26\n  print(sorted.first);             // 1\n  print(numbers.any((n) => n > 8)); // true\n}"
+    },
+    {
+     "language": "dart",
+     "code": "void main() {\n  final flags = [true, false, true];\n  final labels = <String>[\n    'start',\n    if (flags.contains(true)) 'has-true',\n    for (var i = 0; i < 2; i++) 'item-$i',\n    ...['end'],\n  ];\n  print(labels); // [start, has-true, item-0, item-1, end]\n\n  final counts = <String, int>{};\n  for (final word in ['a', 'b', 'a']) {\n    counts.update(word, (value) => value + 1, ifAbsent: () => 1);\n  }\n  print(counts); // {a: 2, b: 1}\n}"
+    }
+   ]
+  },
+  {
+   "id": "async",
+   "title": "Async and Futures",
+   "description": "Futures, await, parallel waits, and timeouts",
+   "snippets": [
+    {
+     "language": "dart",
+     "code": "Future<String> fetchUser(int id) async {\n  await Future<void>.delayed(const Duration(milliseconds: 200));\n  if (id <= 0) {\n    throw ArgumentError.value(id, 'id', 'must be positive');\n  }\n  return 'user-$id';\n}\n\nFuture<void> main() async {\n  print(await fetchUser(7)); // user-7\n\n  try {\n    await fetchUser(0);\n  } on ArgumentError catch (error) {\n    print(error.message); // must be positive\n  } finally {\n    print('done'); // done\n  }\n}"
+    },
+    {
+     "language": "dart",
+     "code": "Future<int> load(String name) async {\n  await Future<void>.delayed(\n    Duration(milliseconds: name.length * 10),\n  );\n  return name.length;\n}\n\nFuture<void> main() async {\n  // Both requests start together and finish together.\n  final lengths = await Future.wait([load('one'), load('three')]);\n  print(lengths); // [3, 5]\n\n  try {\n    await Future.wait([\n      load('ok'),\n      Future<int>.error(StateError('boom')),\n    ]);\n  } on StateError catch (error) {\n    print(error.message); // boom\n  }\n}"
+    },
+    {
+     "language": "dart",
+     "code": "import 'dart:async';\n\nFuture<int> slowTask() => Future<int>.delayed(\n      const Duration(seconds: 2),\n      () => 42,\n    );\n\nFuture<void> main() async {\n  try {\n    final value = await slowTask()\n        .timeout(const Duration(milliseconds: 500));\n    print(value);\n  } on TimeoutException {\n    print('gave up waiting'); // gave up waiting\n  }\n}"
+    }
+   ]
+  },
+  {
+   "id": "streams",
+   "title": "Streams",
+   "description": "Async generators, controllers, and event consumption",
+   "snippets": [
+    {
+     "language": "dart",
+     "code": "Stream<int> countdown(int from) async* {\n  for (var i = from; i > 0; i--) {\n    await Future<void>.delayed(const Duration(milliseconds: 100));\n    yield i;\n  }\n}\n\nFuture<void> main() async {\n  await for (final value in countdown(3)) {\n    print(value); // 3, then 2, then 1\n  }\n  print('liftoff'); // liftoff\n}"
+    },
+    {
+     "language": "dart",
+     "code": "import 'dart:async';\n\nFuture<void> main() async {\n  final controller = StreamController<String>();\n  final finished = Completer<void>();\n\n  controller.stream.listen(\n    (value) => print('data: $value'),\n    onError: (Object error) => print('error: $error'),\n    onDone: finished.complete,\n  );\n\n  controller.add('alpha');\n  controller.add('beta');\n  controller.addError(StateError('lost connection'));\n  await controller.close();\n  await finished.future;\n}"
+    },
+    {
+     "language": "dart",
+     "code": "import 'dart:async';\n\nFuture<void> main() async {\n  // take(3) closes the periodic stream after three events.\n  final ticks = Stream.periodic(\n    const Duration(milliseconds: 50),\n    (i) => i,\n  ).take(3);\n  print(await ticks.toList()); // [0, 1, 2]\n\n  await for (final tick in Stream.fromIterable([10, 20, 30])) {\n    print(tick); // 10, 20, 30\n  }\n}"
+    }
+   ]
+  },
+  {
+   "id": "mixins",
+   "title": "Mixins",
+   "description": "Reusable behaviour, on-clauses, and stack order",
+   "snippets": [
+    {
+     "language": "dart",
+     "code": "mixin Greeting {\n  String get name; // the host class must provide this\n\n  String greet() => 'hello, $name';\n\n  void wave() => print('$name waves');\n}\n\nclass User with Greeting {\n  User(this.name);\n\n  @override\n  final String name;\n}\n\nvoid main() {\n  final user = User('Ada');\n  print(user.greet()); // hello, Ada\n  user.wave();         // Ada waves\n}"
+    },
+    {
+     "language": "dart",
+     "code": "mixin Workout on Athlete {\n  void train() => print('$name trains');\n}\n\nclass Athlete {\n  Athlete(this.name);\n\n  final String name;\n}\n\nclass Runner extends Athlete with Workout {\n  Runner(super.name);\n}\n\nclass Swimmer extends Athlete with Workout {\n  Swimmer(super.name);\n\n  @override\n  void train() => print('$name swims');\n}\n\nvoid main() {\n  Runner('Grace').train();  // Grace trains\n  Swimmer('Katie').train(); // Katie swims\n}"
+    },
+    {
+     "language": "dart",
+     "code": "mixin A {\n  String describe() => 'A';\n}\n\nmixin B {\n  String describe() => 'B';\n}\n\nclass Plain {}\n\nclass Stacked extends Plain with A, B {}\n\nclass Reversed extends Plain with B, A {}\n\nvoid main() {\n  print(Stacked().describe());  // B, the last mixin wins\n  print(Reversed().describe()); // A\n}"
+    }
+   ]
+  },
+  {
+   "id": "extensions",
+   "title": "Extension Methods",
+   "description": "Adding members to existing types, including nullable receivers",
+   "snippets": [
+    {
+     "language": "dart",
+     "code": "extension StringExtras on String {\n  String get capitalized =>\n      isEmpty ? this : '${this[0].toUpperCase()}${substring(1)}';\n\n  String shout() => toUpperCase();\n}\n\nvoid main() {\n  print('dart'.capitalized);         // Dart\n  print('hi there'.shout());         // HI THERE\n  print(''.capitalized.isEmpty);     // true\n}"
+    },
+    {
+     "language": "dart",
+     "code": "extension FirstWhereOrNull<T> on Iterable<T> {\n  T? firstWhereOrNull(bool Function(T) test) {\n    for (final value in this) {\n      if (test(value)) return value;\n    }\n    return null;\n  }\n}\n\nextension Blank on String? {\n  bool get isBlank => this == null || this!.trim().isEmpty;\n}\n\nvoid main() {\n  print([4, 7, 9].firstWhereOrNull((n) => n.isEven)); // 4\n  print([1, 3].firstWhereOrNull((n) => n.isEven));    // null\n  String? empty;\n  print(empty.isBlank); // true\n  print('  '.isBlank);  // true\n  print('hi'.isBlank);  // false\n}"
+    },
+    {
+     "language": "dart",
+     "code": "extension type const Meters(double value) {\n  double get inFeet => value * 3.28084;\n}\n\nvoid main() {\n  const distance = Meters(100);\n  print(distance.value);                     // 100.0\n  print(distance.inFeet.toStringAsFixed(1)); // 328.1\n}"
+    }
+   ]
+  },
+  {
+   "id": "testing",
+   "title": "Testing",
+   "description": "package:test groups, matchers, and async cases",
+   "snippets": [
+    {
+     "language": "dart",
+     "code": "import 'package:test/test.dart';\n\nint parsePort(String raw) {\n  final port = int.parse(raw);\n  if (port < 1 || port > 65535) {\n    throw RangeError.range(port, 1, 65535, 'raw');\n  }\n  return port;\n}\n\nvoid main() {\n  group('parsePort', () {\n    test('accepts the usual range', () {\n      expect(parsePort('8080'), 8080);\n    });\n\n    test('rejects garbage', () {\n      expect(() => parsePort('http'), throwsFormatException);\n    });\n\n    test('rejects out of range', () {\n      expect(() => parsePort('70000'), throwsA(isA<RangeError>()));\n    });\n  });\n}"
+    },
+    {
+     "language": "dart",
+     "code": "import 'package:test/test.dart';\n\nclass Counter {\n  int value = 0;\n\n  void increment() => value++;\n}\n\nvoid main() {\n  late Counter counter;\n\n  setUp(() {\n    counter = Counter();\n  });\n\n  test('starts at zero', () {\n    expect(counter.value, 0);\n  });\n\n  test('grows after delayed work', () async {\n    await Future<void>.delayed(const Duration(milliseconds: 10));\n    counter.increment();\n    expect(counter.value, 1);\n  });\n}"
+    },
+    {
+     "language": "bash",
+     "code": "# Run every test under test/\ndart test\n\n# Run one file, or one case by name\ndart test test/parse_port_test.dart\ndart test --name \"rejects garbage\"\n\n# Pick a reporter when the output goes to CI logs\ndart test --reporter=expanded"
+    }
+   ]
+  },
+  {
+   "id": "flutter",
+   "title": "Flutter Basics",
+   "description": "Scaffolding an app, composing widgets, and rebuilding on state change",
+   "snippets": [
+    {
+     "language": "bash",
+     "code": "# Create an app with the default platform folders\nflutter create weather\ncd weather\n\n# See the devices that are ready to run\nflutter devices\n\n# Build and launch on the Linux desktop target\nflutter run -d linux\n\n# Run the widget tests under test/\nflutter test"
+    },
+    {
+     "language": "dart",
+     "code": "import 'package:flutter/material.dart';\n\nvoid main() => runApp(const TodoApp());\n\nclass TodoApp extends StatelessWidget {\n  const TodoApp({super.key});\n\n  static const todos = ['write tests', 'ship build', 'read logs'];\n\n  @override\n  Widget build(BuildContext context) {\n    return MaterialApp(\n      home: Scaffold(\n        appBar: AppBar(title: const Text('Todos')),\n        body: ListView.builder(\n          itemCount: todos.length,\n          itemBuilder: (context, index) => ListTile(\n            leading: CircleAvatar(child: Text('${index + 1}')),\n            title: Text(todos[index]),\n          ),\n        ),\n      ),\n    );\n  }\n}"
+    },
+    {
+     "language": "dart",
+     "code": "import 'package:flutter/material.dart';\n\nclass CounterPage extends StatefulWidget {\n  const CounterPage({super.key});\n\n  @override\n  State<CounterPage> createState() => _CounterPageState();\n}\n\nclass _CounterPageState extends State<CounterPage> {\n  int _count = 0;\n\n  void _increment() {\n    setState(() {\n      _count++;\n    });\n  }\n\n  @override\n  Widget build(BuildContext context) {\n    return Scaffold(\n      appBar: AppBar(title: const Text('Counter')),\n      body: Center(\n        child: Text(\n          '$_count',\n          style: Theme.of(context).textTheme.headlineMedium,\n        ),\n      ),\n      floatingActionButton: FloatingActionButton(\n        onPressed: _increment,\n        child: const Icon(Icons.add),\n      ),\n    );\n  }\n}"
+    }
+   ]
+  },
+  {
+   "id": "common-errors",
+   "title": "Common Errors",
+   "description": "Compile failures and runtime surprises that bite beginners",
+   "snippets": [
+    {
+     "language": "dart",
+     "code": "void main() {\n  String? maybe;\n  // print(maybe.length); // compile error, receiver can be null\n  print(maybe?.length ?? 0); // 0\n\n  late String token;\n  // print(token); // LateInitializationError at runtime\n  token = 'abc';\n  print(token); // abc\n}"
+    },
+    {
+     "language": "dart",
+     "code": "void main() {\n  print(7 / 2);     // 3.5, division always returns double\n  print(7 ~/ 2);    // 3, truncating division\n  print(0.1 + 0.2); // 0.30000000000000004\n\n  final ratio = 3; // inferred as int\n  // double value = ratio; // compile error, no implicit widening\n  print(ratio.toDouble()); // 3.0\n}"
+    },
+    {
+     "language": "dart",
+     "code": "Future<void> main() async {\n  final ids = [1, 2, 3];\n\n  // forEach does not await: the callbacks keep running after it returns.\n  ids.forEach((id) async {\n    await Future<void>.delayed(Duration(milliseconds: id * 10));\n  });\n  print('printed before the delays finish');\n\n  for (final id in ids) {\n    await Future<void>.delayed(Duration(milliseconds: id * 10));\n  }\n  print('printed after every delay');\n}"
+    }
+   ]
+  }
+ ]
+}

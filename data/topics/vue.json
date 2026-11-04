@@ -1,0 +1,248 @@
+{
+ "slug": "vue",
+ "title": "Vue",
+ "label": "Vue",
+ "group": "Framework",
+ "color": "#41B883",
+ "desc": "A progressive framework that pairs a declarative template layer with fine-grained reactivity.",
+ "sections": [
+  {
+   "id": "setup",
+   "title": "Setup",
+   "description": "Scaffold a project with Vite and mount the root component:",
+   "snippets": [
+    {
+     "language": "bash",
+     "code": "# Scaffold with the official starter (router and Pinia are prompts)\nnpm create vue@latest invoice-app\ncd invoice-app\nnpm install\nnpm run dev"
+    },
+    {
+     "language": "javascript",
+     "code": "// src/main.js\nimport { createApp } from 'vue'\nimport { createPinia } from 'pinia'\nimport App from './App.vue'\nimport router from './router'\n\nconst app = createApp(App)\napp.use(createPinia())\napp.use(router)\napp.mount('#app')"
+    }
+   ]
+  },
+  {
+   "id": "components",
+   "title": "Components",
+   "description": "Write single-file components and import them where they render:",
+   "snippets": [
+    {
+     "language": "vue",
+     "code": "<!-- src/components/PriorityBadge.vue -->\n<script setup>\nconst props = defineProps({\n  level: { type: String, default: 'normal' },\n})\n\nconst colors = {\n  low: '#6b7280',\n  normal: '#2563eb',\n  high: '#dc2626',\n}\n</script>\n\n<template>\n  <span :style=\"{ color: colors[props.level] ?? colors.normal }\">\n    {{ props.level }}\n  </span>\n</template>"
+    },
+    {
+     "language": "vue",
+     "code": "<!-- src/App.vue -->\n<script setup>\nimport PriorityBadge from './components/PriorityBadge.vue'\n</script>\n\n<template>\n  <p>Build failed <PriorityBadge level=\"high\" /></p>\n  <p>Docs updated <PriorityBadge level=\"low\" /></p>\n</template>"
+    }
+   ]
+  },
+  {
+   "id": "template-syntax",
+   "title": "Template Syntax",
+   "description": "Interpolate state, bind attributes and branch or loop in markup:",
+   "snippets": [
+    {
+     "language": "vue",
+     "code": "<!-- src/components/TaskSummary.vue -->\n<script setup>\nimport { computed, ref } from 'vue'\n\nconst tasks = ref([\n  { id: 1, title: 'Draft schema', done: true },\n  { id: 2, title: 'Wire the API', done: false },\n])\nconst showHint = ref(true)\nconst docsUrl = 'https://vuejs.org/guide/'\nconst finished = computed(() => tasks.value.filter((task) => task.done).length)\n</script>\n\n<template>\n  <h2>{{ tasks.length }} tasks</h2>\n\n  <a :href=\"docsUrl\" target=\"_blank\" rel=\"noreferrer\">Guide</a>\n\n  <p v-if=\"tasks.length === 0\">Nothing scheduled</p>\n  <p v-else-if=\"finished === tasks.length\">All clear</p>\n  <p v-else>{{ tasks.length - finished }} remaining</p>\n\n  <ul>\n    <li v-for=\"(task, index) in tasks\" :key=\"task.id\">\n      {{ index + 1 }}. {{ task.title }}\n    </li>\n  </ul>\n\n  <p v-show=\"showHint\">Click a row to edit it</p>\n</template>"
+    },
+    {
+     "language": "vue",
+     "code": "<!-- src/components/FlagButton.vue -->\n<script setup>\nimport { ref } from 'vue'\n\nconst flagged = ref(false)\nconst locked = ref(false)\n</script>\n\n<template>\n  <button\n    :class=\"{ flagged, locked }\"\n    :style=\"{ borderColor: flagged ? '#dc2626' : '#9ca3af' }\"\n    :disabled=\"locked\"\n    @click=\"flagged = !flagged\"\n  >\n    {{ flagged ? 'Unflag' : 'Flag' }}\n  </button>\n</template>\n\n<style scoped>\n.flagged { color: #dc2626; }\n.locked { opacity: 0.5; }\n</style>"
+    }
+   ]
+  },
+  {
+   "id": "reactivity",
+   "title": "Reactivity",
+   "description": "Declare reactive state with ref and reactive and keep objects in sync:",
+   "snippets": [
+    {
+     "language": "vue",
+     "code": "<!-- src/components/ResultList.vue -->\n<script setup>\nimport { reactive, ref } from 'vue'\n\nconst page = ref(1)                  // primitives live inside a ref\nconst filters = reactive({           // objects are proxied in place\n  query: '',\n  onlyOpen: true,\n})\nconst rows = ref([])\n\nfunction reset() {\n  page.value = 1\n  filters.query = ''\n  rows.value = []\n}\n</script>\n\n<template>\n  <input v-model=\"filters.query\" placeholder=\"Filter\" />\n  <label><input v-model=\"filters.onlyOpen\" type=\"checkbox\" /> Open only</label>\n  <p>Page {{ page }} · {{ rows.length }} rows</p>\n  <button @click=\"reset\">Reset</button>\n</template>"
+    },
+    {
+     "language": "vue",
+     "code": "<script setup>\nimport { reactive, toRefs } from 'vue'\n\nconst profile = reactive({ name: 'Ada', team: 'core' })\nconst { name, team } = toRefs(profile)   // refs stay linked to the source\n\n// Destructuring a plain reactive object would lose the link:\n// const { name } = profile\n\nfunction rename(next) {\n  name.value = next                      // also updates profile.name\n}\n</script>\n\n<template>\n  <p>{{ name }} on {{ team }}</p>\n  <button @click=\"rename('Grace')\">Rename</button>\n</template>"
+    }
+   ]
+  },
+  {
+   "id": "props",
+   "title": "Props",
+   "description": "Pass read-only data from a parent into a child and validate it:",
+   "snippets": [
+    {
+     "language": "vue",
+     "code": "<!-- src/components/InvoiceRow.vue -->\n<script setup>\nconst props = defineProps({\n  number: { type: String, required: true },\n  amount: { type: Number, default: 0 },\n  tags: { type: Array, default: () => [] },\n  paid: Boolean,\n})\n</script>\n\n<template>\n  <tr>\n    <td>{{ props.number }}</td>\n    <td>{{ props.amount.toFixed(2) }}</td>\n    <td>{{ props.paid ? 'paid' : 'open' }}</td>\n    <td>\n      <span v-for=\"tag in props.tags\" :key=\"tag\">{{ tag }}</span>\n    </td>\n  </tr>\n</template>"
+    },
+    {
+     "language": "vue",
+     "code": "<!-- src/components/UserChip.vue -->\n<script setup lang=\"ts\">\ninterface Props {\n  name: string\n  role?: 'admin' | 'editor' | 'viewer'\n  compact?: boolean\n}\n\nconst props = withDefaults(defineProps<Props>(), {\n  role: 'viewer',\n  compact: false,\n})\n</script>\n\n<template>\n  <span :class=\"{ compact: props.compact }\">\n    {{ props.name }} ({{ props.role }})\n  </span>\n</template>"
+    },
+    {
+     "language": "vue",
+     "code": "<!-- src/views/TeamView.vue -->\n<script setup>\nimport UserChip from '../components/UserChip.vue'\n\nconst members = [\n  { id: 1, name: 'Grace', role: 'admin' },\n  { id: 2, name: 'Alan', role: 'editor' },\n]\n</script>\n\n<template>\n  <UserChip\n    v-for=\"member in members\"\n    :key=\"member.id\"\n    :name=\"member.name\"\n    :role=\"member.role\"\n    compact\n  />\n</template>"
+    }
+   ]
+  },
+  {
+   "id": "events",
+   "title": "Events",
+   "description": "Declare emitted events in the child and listen to them in the parent:",
+   "snippets": [
+    {
+     "language": "vue",
+     "code": "<!-- src/components/SearchBox.vue -->\n<script setup>\nconst emit = defineEmits({\n  search: (term) => typeof term === 'string',\n  clear: null,\n})\n\nlet timer\n\nfunction onInput(event) {\n  clearTimeout(timer)\n  const term = event.target.value\n  timer = setTimeout(() => emit('search', term), 300)\n}\n</script>\n\n<template>\n  <input placeholder=\"Search invoices\" @input=\"onInput\" @keyup.esc=\"emit('clear')\" />\n</template>"
+    },
+    {
+     "language": "vue",
+     "code": "<!-- src/App.vue -->\n<script setup>\nimport { ref } from 'vue'\nimport SearchBox from './components/SearchBox.vue'\n\nconst term = ref('')\n\nfunction runSearch(value) {\n  term.value = value\n  console.log(`query: ${value}`)\n}\n</script>\n\n<template>\n  <SearchBox @search=\"runSearch\" @clear=\"term = ''\" />\n  <p v-if=\"term\">Showing matches for \"{{ term }}\"</p>\n</template>"
+    }
+   ]
+  },
+  {
+   "id": "computed",
+   "title": "Computed",
+   "description": "Derive cached values from reactive sources, including writable ones:",
+   "snippets": [
+    {
+     "language": "vue",
+     "code": "<script setup>\nimport { computed, ref } from 'vue'\n\nconst tasks = ref([\n  { id: 1, title: 'Write tests', done: true },\n  { id: 2, title: 'Ship release', done: false },\n])\nconst hideDone = ref(false)\n\nconst visible = computed(() =>\n  hideDone.value ? tasks.value.filter((task) => !task.done) : tasks.value,\n)\nconst remaining = computed(() => tasks.value.filter((task) => !task.done).length)\n</script>\n\n<template>\n  <label><input v-model=\"hideDone\" type=\"checkbox\" /> Hide done</label>\n  <p>{{ remaining }} open of {{ tasks.length }}</p>\n  <ul>\n    <li v-for=\"task in visible\" :key=\"task.id\">{{ task.title }}</li>\n  </ul>\n</template>"
+    },
+    {
+     "language": "vue",
+     "code": "<script setup>\nimport { computed, ref } from 'vue'\n\nconst first = ref('Ada')\nconst last = ref('Lovelace')\n\nconst fullName = computed({\n  get: () => `${first.value} ${last.value}`,\n  set: (value) => {\n    const [nextFirst, ...rest] = value.split(' ')\n    first.value = nextFirst\n    last.value = rest.join(' ')\n  },\n})\n</script>\n\n<template>\n  <input v-model=\"fullName\" />\n  <p>{{ fullName }}</p>\n</template>"
+    }
+   ]
+  },
+  {
+   "id": "watchers",
+   "title": "Watchers",
+   "description": "Run side effects when a source changes, with deep, eager or cleanup options:",
+   "snippets": [
+    {
+     "language": "vue",
+     "code": "<script setup>\nimport { ref, watch } from 'vue'\n\nconst userId = ref(1)\nconst profile = ref(null)\n\nwatch(\n  userId,\n  async (id) => {\n    const response = await fetch(`/api/users/${id}`)\n    profile.value = await response.json()\n  },\n  { immediate: true },\n)\n</script>\n\n<template>\n  <select v-model=\"userId\">\n    <option :value=\"1\">Ada</option>\n    <option :value=\"2\">Linus</option>\n  </select>\n  <p>{{ profile?.name ?? 'Loading…' }}</p>\n</template>"
+    },
+    {
+     "language": "vue",
+     "code": "<script setup>\nimport { reactive, watch } from 'vue'\n\nconst settings = reactive({\n  theme: 'dark',\n  font: 14,\n})\n\n// A reactive object is watched deeply by default.\nwatch(settings, (next) => {\n  localStorage.setItem('settings', JSON.stringify(next))\n})\n</script>"
+    },
+    {
+     "language": "vue",
+     "code": "<script setup>\nimport { ref, watchEffect } from 'vue'\n\nconst query = ref('router')\nconst hits = ref([])\n\nwatchEffect(async (onCleanup) => {\n  let cancelled = false\n  onCleanup(() => {\n    cancelled = true\n  })\n\n  const response = await fetch(`/api/search?q=${encodeURIComponent(query.value)}`)\n  const payload = await response.json()\n  if (!cancelled) hits.value = payload\n})\n</script>"
+    }
+   ]
+  },
+  {
+   "id": "lifecycle",
+   "title": "Lifecycle",
+   "description": "Hook into mount, update and unmount to set up and release resources:",
+   "snippets": [
+    {
+     "language": "vue",
+     "code": "<script setup>\nimport { onMounted, onUnmounted, ref } from 'vue'\n\nconst now = ref(new Date())\nlet timer\n\nonMounted(() => {\n  timer = setInterval(() => {\n    now.value = new Date()\n  }, 1000)\n})\n\nonUnmounted(() => {\n  clearInterval(timer)\n})\n</script>\n\n<template>\n  <time>{{ now.toLocaleTimeString() }}</time>\n</template>"
+    },
+    {
+     "language": "vue",
+     "code": "<!-- Options API equivalent -->\n<script>\nexport default {\n  data() {\n    return { width: window.innerWidth }\n  },\n  mounted() {\n    window.addEventListener('resize', this.onResize)\n  },\n  beforeUnmount() {\n    window.removeEventListener('resize', this.onResize)\n  },\n  methods: {\n    onResize() {\n      this.width = window.innerWidth\n    },\n  },\n}\n</script>"
+    }
+   ]
+  },
+  {
+   "id": "slots",
+   "title": "Slots",
+   "description": "Leave placeholders that the parent fills with its own markup:",
+   "snippets": [
+    {
+     "language": "vue",
+     "code": "<!-- src/components/Panel.vue -->\n<template>\n  <section class=\"panel\">\n    <header>\n      <slot name=\"heading\">Untitled panel</slot>\n    </header>\n\n    <slot />\n\n    <footer>\n      <slot name=\"actions\" />\n    </footer>\n  </section>\n</template>"
+    },
+    {
+     "language": "vue",
+     "code": "<!-- src/App.vue -->\n<script setup>\nimport Panel from './components/Panel.vue'\n</script>\n\n<template>\n  <Panel>\n    <template #heading>\n      <h2>Invoices</h2>\n    </template>\n\n    <p>3 unpaid invoices</p>\n\n    <template #actions>\n      <button>Send reminders</button>\n    </template>\n  </Panel>\n</template>"
+    },
+    {
+     "language": "vue",
+     "code": "<!-- Child: src/components/TaskList.vue -->\n<script setup>\ndefineProps({\n  tasks: { type: Array, required: true },\n})\n</script>\n\n<template>\n  <ul>\n    <li v-for=\"task in tasks\" :key=\"task.id\">\n      <slot :task=\"task\">{{ task.title }}</slot>\n    </li>\n  </ul>\n</template>\n\n<!-- Parent: scoped slot reads the data the child exposes -->\n<template>\n  <TaskList :tasks=\"tasks\">\n    <template #default=\"{ task }\">\n      <strong>{{ task.title }}</strong>\n      <em v-if=\"task.done\">finished</em>\n    </template>\n  </TaskList>\n</template>"
+    }
+   ]
+  },
+  {
+   "id": "router",
+   "title": "Vue Router",
+   "description": "Map URLs to views, link between them and navigate from script:",
+   "snippets": [
+    {
+     "language": "javascript",
+     "code": "// src/router/index.js\nimport { createRouter, createWebHistory } from 'vue-router'\nimport HomeView from '../views/HomeView.vue'\n\nconst router = createRouter({\n  history: createWebHistory(import.meta.env.BASE_URL),\n  routes: [\n    { path: '/', name: 'home', component: HomeView },\n    {\n      path: '/invoices',\n      name: 'invoices',\n      component: () => import('../views/InvoicesView.vue'),\n    },\n    {\n      path: '/invoices/:id',\n      name: 'invoice',\n      component: () => import('../views/InvoiceView.vue'),\n      props: true,\n    },\n    {\n      path: '/:pathMatch(.*)*',\n      name: 'not-found',\n      component: () => import('../views/NotFoundView.vue'),\n    },\n  ],\n})\n\nrouter.beforeEach((to) => {\n  if (to.name === 'invoice' && !localStorage.getItem('token')) {\n    return { name: 'home', query: { next: to.fullPath } }\n  }\n})\n\nexport default router"
+    },
+    {
+     "language": "vue",
+     "code": "<!-- src/App.vue -->\n<template>\n  <nav>\n    <RouterLink to=\"/\">Home</RouterLink>\n    <RouterLink :to=\"{ name: 'invoices' }\">Invoices</RouterLink>\n    <RouterLink :to=\"{ name: 'invoice', params: { id: 7 } }\">Invoice 7</RouterLink>\n  </nav>\n\n  <RouterView />\n</template>"
+    },
+    {
+     "language": "vue",
+     "code": "<!-- src/views/InvoiceView.vue -->\n<script setup>\nimport { computed } from 'vue'\nimport { useRoute, useRouter } from 'vue-router'\n\nconst route = useRoute()\nconst router = useRouter()\n\nconst invoiceId = computed(() => route.params.id)\n\nfunction close() {\n  router.push({ name: 'invoices' })\n}\n</script>\n\n<template>\n  <p>Invoice {{ invoiceId }}</p>\n  <button @click=\"close\">Back to list</button>\n</template>"
+    }
+   ]
+  },
+  {
+   "id": "pinia",
+   "title": "Pinia",
+   "description": "Define stores and read their state, getters and actions from components:",
+   "snippets": [
+    {
+     "language": "javascript",
+     "code": "// src/stores/cart.js\nimport { computed, ref } from 'vue'\nimport { defineStore } from 'pinia'\n\nexport const useCartStore = defineStore('cart', () => {\n  const items = ref([])\n\n  const total = computed(() =>\n    items.value.reduce((sum, item) => sum + item.price * item.quantity, 0),\n  )\n\n  function add(product) {\n    const existing = items.value.find((item) => item.id === product.id)\n    if (existing) existing.quantity += 1\n    else items.value.push({ ...product, quantity: 1 })\n  }\n\n  return { items, total, add }\n})"
+    },
+    {
+     "language": "vue",
+     "code": "<!-- src/components/CartSummary.vue -->\n<script setup>\nimport { storeToRefs } from 'pinia'\nimport { useCartStore } from '../stores/cart'\n\nconst cart = useCartStore()\nconst { items, total } = storeToRefs(cart)\n\nfunction addKeyboard() {\n  cart.add({ id: 7, name: 'Keyboard', price: 89 })\n}\n</script>\n\n<template>\n  <p>{{ items.length }} items · ${{ total.toFixed(2) }}</p>\n  <button @click=\"addKeyboard\">Add keyboard</button>\n</template>"
+    },
+    {
+     "language": "javascript",
+     "code": "// src/stores/session.js\nimport { defineStore } from 'pinia'\n\nexport const useSessionStore = defineStore('session', {\n  state: () => ({ user: null }),\n  getters: {\n    signedIn: (state) => state.user !== null,\n  },\n  actions: {\n    async signIn(email, password) {\n      const response = await fetch('/api/session', {\n        method: 'POST',\n        headers: { 'Content-Type': 'application/json' },\n        body: JSON.stringify({ email, password }),\n      })\n      this.user = await response.json()\n    },\n  },\n})"
+    }
+   ]
+  },
+  {
+   "id": "composables",
+   "title": "Composables",
+   "description": "Extract reusable reactive logic into plain functions that return refs:",
+   "snippets": [
+    {
+     "language": "javascript",
+     "code": "// src/composables/useWindowWidth.js\nimport { onMounted, onUnmounted, ref } from 'vue'\n\nexport function useWindowWidth() {\n  const width = ref(window.innerWidth)\n\n  function update() {\n    width.value = window.innerWidth\n  }\n\n  onMounted(() => window.addEventListener('resize', update))\n  onUnmounted(() => window.removeEventListener('resize', update))\n\n  return { width }\n}"
+    },
+    {
+     "language": "javascript",
+     "code": "// src/composables/useFetch.js\nimport { ref, watchEffect } from 'vue'\n\nexport function useFetch(url) {\n  const data = ref(null)\n  const error = ref(null)\n  const loading = ref(false)\n\n  watchEffect(async (onCleanup) => {\n    let cancelled = false\n    onCleanup(() => {\n      cancelled = true\n    })\n\n    loading.value = true\n    error.value = null\n    try {\n      const response = await fetch(url.value)\n      if (!response.ok) throw new Error(`HTTP ${response.status}`)\n      const payload = await response.json()\n      if (!cancelled) data.value = payload\n    } catch (caught) {\n      if (!cancelled) error.value = caught.message\n    } finally {\n      if (!cancelled) loading.value = false\n    }\n  })\n\n  return { data, error, loading }\n}"
+    },
+    {
+     "language": "vue",
+     "code": "<script setup>\nimport { computed, ref } from 'vue'\nimport { useFetch } from '../composables/useFetch'\n\nconst page = ref(1)\nconst { data, error, loading } = useFetch(\n  computed(() => `/api/tasks?page=${page.value}`),\n)\n</script>\n\n<template>\n  <p v-if=\"loading\">Loading…</p>\n  <p v-else-if=\"error\">Failed: {{ error }}</p>\n  <ul v-else-if=\"data\">\n    <li v-for=\"task in data.items\" :key=\"task.id\">{{ task.title }}</li>\n  </ul>\n  <button @click=\"page += 1\">Next page</button>\n</template>"
+    }
+   ]
+  },
+  {
+   "id": "testing",
+   "title": "Testing",
+   "description": "Mount components and stores with Vitest and Vue Test Utils:",
+   "snippets": [
+    {
+     "language": "bash",
+     "code": "# Add the runner, the component helpers and a DOM environment\nnpm install -D vitest @vue/test-utils jsdom"
+    },
+    {
+     "language": "javascript",
+     "code": "// src/components/__tests__/Panel.spec.js\nimport { describe, expect, it } from 'vitest'\nimport { mount } from '@vue/test-utils'\nimport Panel from '../Panel.vue'\n\ndescribe('Panel', () => {\n  it('renders the heading and default slots', () => {\n    const wrapper = mount(Panel, {\n      slots: {\n        heading: '<h2>Invoices</h2>',\n        default: '<p>3 unpaid invoices</p>',\n      },\n    })\n\n    expect(wrapper.get('h2').text()).toBe('Invoices')\n    expect(wrapper.text()).toContain('3 unpaid invoices')\n  })\n\n  it('shows the fallback when the heading slot is empty', () => {\n    expect(mount(Panel).text()).toContain('Untitled panel')\n  })\n})"
+    },
+    {
+     "language": "javascript",
+     "code": "// src/stores/__tests__/cart.spec.js\nimport { beforeEach, describe, expect, it } from 'vitest'\nimport { createPinia, setActivePinia } from 'pinia'\nimport { useCartStore } from '../cart'\n\ndescribe('cart store', () => {\n  beforeEach(() => {\n    setActivePinia(createPinia())\n  })\n\n  it('merges duplicate products and sums the total', () => {\n    const cart = useCartStore()\n\n    cart.add({ id: 3, name: 'Mouse', price: 25 })\n    cart.add({ id: 3, name: 'Mouse', price: 25 })\n\n    expect(cart.items).toHaveLength(1)\n    expect(cart.total).toBe(50)\n  })\n})"
+    }
+   ]
+  }
+ ]
+}

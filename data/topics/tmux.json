@@ -1,0 +1,192 @@
+{
+ "slug": "tmux",
+ "title": "tmux",
+ "label": "tmux",
+ "group": "Tool",
+ "color": "#1BB91F",
+ "desc": "Terminal multiplexer that keeps sessions alive and splits one terminal into panes.",
+ "sections": [
+  {
+   "id": "setup",
+   "title": "Setup",
+   "description": "Install tmux, open a first session and keep the config file within reach.",
+   "snippets": [
+    {
+     "language": "bash",
+     "code": "# Debian and Ubuntu\nsudo apt install tmux\n\n# Fedora and RHEL\nsudo dnf install tmux\n\n# Arch\nsudo pacman -S tmux\n\n# macOS\nbrew install tmux\n\n# Confirm the version; 3.2 and newer support terminal-features\ntmux -V"
+    },
+    {
+     "language": "bash",
+     "code": "# Start a named session in a project directory\ntmux new-session -s work -c ~/Projects/cheatrs\n\n# Create it detached, attach when the terminal is free\ntmux new-session -d -s work -c ~/Projects/cheatrs\ntmux attach-session -t work\n\n# Attach to work if it exists, create it otherwise\ntmux new-session -A -s work\n\n# The config is read at startup; apply edits without a restart\nvim ~/.tmux.conf\ntmux source-file ~/.tmux.conf"
+    }
+   ]
+  },
+  {
+   "id": "sessions",
+   "title": "Sessions",
+   "description": "A session owns its windows and survives the terminal that started it.",
+   "snippets": [
+    {
+     "language": "text",
+     "code": "C-b d          detach, the session keeps running\nC-b s          list sessions, arrows and Enter to switch\nC-b $          rename the current session\nC-b (   C-b )  previous and next session\nC-b L          jump back to the last session"
+    },
+    {
+     "language": "bash",
+     "code": "tmux ls                                # every session and its window count\ntmux attach -t work                    # reattach from any terminal\ntmux rename-session -t work deploy     # rename while it runs\ntmux kill-session -t deploy            # close one session\ntmux kill-session -a -t work           # close every session except work\ntmux kill-server                       # close everything on this socket"
+    },
+    {
+     "language": "bash",
+     "code": "# Reuse one session from a script instead of stacking duplicates\ntmux has-session -t work 2>/dev/null || tmux new-session -d -s work\n\n# A session created for one command closes when that command ends\ntmux new-session -d -s tests 'cargo test 2>&1 | tee ~/tests.log'"
+    }
+   ]
+  },
+  {
+   "id": "windows",
+   "title": "Windows",
+   "description": "A window fills the screen and holds a layout of panes.",
+   "snippets": [
+    {
+     "language": "text",
+     "code": "C-b c        new window in the current directory\nC-b ,        rename this window\nC-b &        close it, after a confirmation\nC-b n  C-b p next and previous window\nC-b 3        jump to window 3\nC-b l        the window you were on before\nC-b w        tree of the windows in this session\nC-b f        find a window by name\nC-b .        move this window to another index"
+    },
+    {
+     "language": "bash",
+     "code": "# Open a window already named, in a directory, running a command\ntmux new-window -t work -n logs -c /var/log 'tail -f syslog'\n\n# Send window 2 to index 5, or exchange two windows\ntmux move-window -s work:2 -t work:5\ntmux swap-window -s work:1 -t work:3\n\n# The same window shown in a second session\ntmux link-window -s work:1 -t backup:1"
+    }
+   ]
+  },
+  {
+   "id": "panes",
+   "title": "Panes",
+   "description": "Panes split one window, and each pane runs its own shell.",
+   "snippets": [
+    {
+     "language": "text",
+     "code": "C-b %          split left and right\nC-b \"          split top and bottom\nC-b o          next pane in order\nC-b ;          the pane you were on before\nC-b q          show pane numbers, press one to jump\nC-b z          zoom this pane, press again to restore\nC-b x          close this pane, after a confirmation\nC-b {   C-b }  swap this pane with the previous or next\nC-b Space      cycle the layouts"
+    },
+    {
+     "language": "bash",
+     "code": "# The new pane takes 30 percent of the width\ntmux split-window -h -p 30\n\n# Fixed size: 20 columns wide, or 12 lines tall\ntmux split-window -h -l 20\ntmux split-window -v -l 12\n\n# Resize the current pane ten cells to the left\ntmux resize-pane -L 10\n\n# Spread the panes evenly\ntmux select-layout tiled"
+    },
+    {
+     "language": "bash",
+     "code": "# Type once, run in every pane of one window\ntmux set-window-option -t work:0 synchronize-panes on\ntmux set-window-option -t work:0 synchronize-panes off\n\n# Detach a pane into a window of its own\ntmux break-pane -d -s work:0.1\n\n# Move pane 0 of window 2 into window 1\ntmux join-pane -s work:2.0 -t work:1"
+    }
+   ]
+  },
+  {
+   "id": "navigation",
+   "title": "Navigation",
+   "description": "The prefix turns one keystroke into a tmux command, then the next key chooses what.",
+   "snippets": [
+    {
+     "language": "text",
+     "code": "C-b :        command prompt, type any tmux command\nC-b ?        every binding for the current mode\nC-b d        detach and leave the session running\nC-b t        a large clock in the pane\nC-b C-o      rotate the panes in this window\nC-b PageUp   scroll back into the history"
+    },
+    {
+     "language": "text",
+     "code": "C-b C-b      send a literal C-b to the program in the pane\nC-b Left     move to the pane on the left\nC-b Right    move to the pane on the right\nC-b Up       move to the pane above\nC-b Down     move to the pane below"
+    },
+    {
+     "language": "bash",
+     "code": "# What the prefix is bound to, and what copy mode does\ntmux list-keys -T prefix\ntmux list-keys -T copy-mode-vi\n\n# Where am I? Print it instead of reading the status bar\ntmux display-message -p '#{session_name}:#{window_index}.#{pane_index}'\ntmux display-message -p '#{client_width}x#{client_height}'\n\n# Search the command table\ntmux list-commands | grep split"
+    }
+   ]
+  },
+  {
+   "id": "copy-mode",
+   "title": "Copy Mode",
+   "description": "Copy mode freezes the pane so its scrollback can be read and selected.",
+   "snippets": [
+    {
+     "language": "text",
+     "code": "C-b [        enter copy mode\nq  Escape    leave it\nSpace        start a selection\nEnter        copy the selection and leave copy mode\nC-b ]        paste the newest buffer into the pane\nC-b =        pick a buffer to paste\nC-b #        list every buffer"
+    },
+    {
+     "language": "bash",
+     "code": "# vi keys instead of the emacs defaults\ntmux set-window-option -g mode-keys vi\n\n# Let the terminal handle OSC 52, so a plain copy reaches the clipboard\ntmux set-option -g set-clipboard on\n\n# Or hand the selection to the desktop clipboard on the way out\ntmux bind-key -T copy-mode-vi y send-keys -X copy-pipe-and-cancel \"wl-copy\""
+    },
+    {
+     "language": "text",
+     "code": "v            start a character selection\nV            select whole lines\ny            copy and leave copy mode\n/ or ?       search, n and N for the next and previous hit\ng  G         top and bottom of the history\nC-u  C-d     half a page up and down"
+    }
+   ]
+  },
+  {
+   "id": "config",
+   "title": "Configuration",
+   "description": "Every option and binding lives in one file that is read at startup.",
+   "snippets": [
+    {
+     "language": "bash",
+     "code": "# The file tmux reads at startup, and how to reapply it\nvim ~/.tmux.conf\ntmux source-file ~/.tmux.conf\n\n# What is active right now\ntmux show-options -g\ntmux show-window-options -g\n\n# Start with no config at all, to see the defaults\ntmux -f /dev/null new-session -s scratch"
+    },
+    {
+     "language": "bash",
+     "code": "# A more comfortable prefix, with C-b still reachable\nset -g prefix C-a\nunbind C-b\nbind C-a send-prefix\n\n# Faster escape for vim, deeper scrollback, real mouse support\nset -s escape-time 10\nset -g history-limit 50000\nset -g mouse on\n\n# Count from one, like the keyboard does\nset -g base-index 1\nset-window-option -g pane-base-index 1\nset -g renumber-windows on\n\n# Correct terminfo for the applications inside tmux\nset -g default-terminal \"tmux-256color\"\nset -as terminal-features \",xterm-256color:RGB\""
+    },
+    {
+     "language": "bash",
+     "code": "# Apply edits from inside tmux; the backslash keeps \\; in one command\nbind r source-file ~/.tmux.conf \\; display-message \"config reloaded\"\n\n# Per-machine overrides, loaded only when the file exists\nif-shell \"test -f ~/.tmux.local\" \"source-file ~/.tmux.local\""
+    }
+   ]
+  },
+  {
+   "id": "status-bar",
+   "title": "Status Bar",
+   "description": "Two format strings and a window list, refreshed on a timer.",
+   "snippets": [
+    {
+     "language": "bash",
+     "code": "# Dark bar, refreshed every five seconds\nset -g status-style \"bg=colour235,fg=colour250\"\nset -g status-interval 5\n\n# Room for long session names and a full clock\nset -g status-left-length 40\nset -g status-right-length 60"
+    },
+    {
+     "language": "bash",
+     "code": "# #S is the session, #I the window index, #W its name, #P the pane\nset -g status-left \"#[bg=colour34,fg=colour232,bold] #S #[fg=colour250,bg=colour235] \"\n\n# Current command, a prefix indicator and the time\nset -g status-right \"#[fg=colour250]#{pane_current_command} #{?client_prefix,#[fg=colour160]PREFIX ,}#[fg=colour34]%H:%M\""
+    },
+    {
+     "language": "bash",
+     "code": "# Window tabs: index and name, highlighted when current\nset-window-option -g window-status-format \" #I:#W \"\nset-window-option -g window-status-current-format \"#[bg=colour34,fg=colour232,bold] #I:#W \"\nset-window-option -g window-status-separator \"\"\n\n# Mark windows that changed while you were elsewhere\nset-window-option -g monitor-activity on\nset -g visual-activity on"
+    }
+   ]
+  },
+  {
+   "id": "scripting",
+   "title": "Scripting",
+   "description": "Every action is a command, so a shell script can build and drive a layout.",
+   "snippets": [
+    {
+     "language": "bash",
+     "code": "#!/usr/bin/env bash\nset -euo pipefail\n\nname=dev\n\nif ! tmux has-session -t \"$name\" 2>/dev/null; then\n  tmux new-session -d -s \"$name\" -c \"$HOME/Projects/cheatrs\"\n  tmux new-window  -t \"$name\" -n server\n  tmux new-window  -t \"$name\" -n tests\n  tmux select-window -t \"$name:1\"\nfi\n\ntmux attach-session -t \"$name\""
+    },
+    {
+     "language": "bash",
+     "code": "# Type into a specific pane; C-m is Enter\ntmux send-keys -t dev:0.1 'cargo watch -x test' C-m\n\n# Read the last 200 lines of a pane without attaching\ntmux capture-pane -p -t dev:0.1 -S -200 | tail -n 20\n\n# List every pane with its working directory\ntmux list-panes -a -F '#{session_name}:#{window_index}.#{pane_index} #{pane_current_path}'\n\n# Two splits, then an even grid\ntmux split-window -t dev:0 -h\ntmux split-window -t dev:0 -v\ntmux select-layout -t dev:0 tiled"
+    },
+    {
+     "language": "bash",
+     "code": "# Wait for a background job instead of sleeping\ntmux new-session -d -s build 'cargo build --release; tmux wait-for -S build-done'\ntmux wait-for build-done\ntmux kill-session -t build\n\n# Ask tmux for a value in a script\nsocket=$(tmux display-message -p '#{socket_path}')\necho \"tmux socket: $socket\""
+    }
+   ]
+  },
+  {
+   "id": "plugins",
+   "title": "Plugins",
+   "description": "TPM clones, loads and updates the plugins declared in the config.",
+   "snippets": [
+    {
+     "language": "bash",
+     "code": "# The plugin manager is cloned once, outside the config\ngit clone https://github.com/tmux-plugins/tpm ~/.tmux/plugins/tpm"
+    },
+    {
+     "language": "bash",
+     "code": "# Declared at the end of ~/.tmux.conf, before the run line\nset -g @plugin 'tmux-plugins/tpm'\nset -g @plugin 'tmux-plugins/tmux-sensible'\nset -g @plugin 'tmux-plugins/tmux-resurrect'\nset -g @plugin 'tmux-plugins/tmux-continuum'\nset -g @plugin 'tmux-plugins/tmux-yank'\n\n# Restore the layout after a reboot and keep the scrollback\nset -g @continuum-restore 'on'\nset -g @resurrect-capture-pane-contents 'on'\n\nrun '~/.tmux/plugins/tpm/tpm'"
+    },
+    {
+     "language": "bash",
+     "code": "# Inside tmux: prefix + I installs, prefix + U updates, prefix + M-u removes\n\n# The same actions from a shell\n~/.tmux/plugins/tpm/bin/install_plugins\n~/.tmux/plugins/tpm/bin/update_plugins all\n~/.tmux/plugins/tpm/bin/clean_plugins"
+    }
+   ]
+  }
+ ]
+}

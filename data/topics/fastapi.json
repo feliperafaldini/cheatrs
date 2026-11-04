@@ -1,0 +1,216 @@
+{
+ "slug": "fastapi",
+ "title": "FastAPI",
+ "label": "FastAPI",
+ "group": "Framework",
+ "color": "#009688",
+ "desc": "A modern Python framework for building typed HTTP APIs with automatic OpenAPI docs.",
+ "sections": [
+  {
+   "id": "setup",
+   "title": "Setup",
+   "description": "Install FastAPI and start a development server.",
+   "snippets": [
+    {
+     "language": "bash",
+     "code": "# Create a virtual environment and install FastAPI with the CLI extras\npython3 -m venv .venv\nsource .venv/bin/activate\npip install \"fastapi[standard]\"\n\n# Start the development server with reload enabled\nfastapi dev main.py\n\n# Production-style start with several uvicorn workers\nuvicorn main:app --host 0.0.0.0 --port 8000 --workers 4"
+    }
+   ]
+  },
+  {
+   "id": "app",
+   "title": "Application",
+   "description": "Create the application object and manage startup and shutdown.",
+   "snippets": [
+    {
+     "language": "python",
+     "code": "from fastapi import FastAPI\n\napp = FastAPI(\n    title=\"Inventory API\",\n    version=\"2.1.0\",\n    description=\"Tracks warehouse stock.\",\n    docs_url=\"/docs\",\n    redoc_url=\"/redoc\",\n)\n\n@app.get(\"/health\")\ndef health() -> dict[str, str]:\n    return {\"status\": \"ok\"}"
+    },
+    {
+     "language": "python",
+     "code": "from contextlib import asynccontextmanager\nfrom fastapi import FastAPI\n\n@asynccontextmanager\nasync def lifespan(app: FastAPI):\n    app.state.connection_pool = {\"size\": 10}  # created once at startup\n    yield\n    app.state.connection_pool = None          # released at shutdown\n\napp = FastAPI(lifespan=lifespan)"
+    }
+   ]
+  },
+  {
+   "id": "routes",
+   "title": "Routes",
+   "description": "Register HTTP operations with decorators or routers.",
+   "snippets": [
+    {
+     "language": "python",
+     "code": "from fastapi import FastAPI, status\n\napp = FastAPI()\n\n@app.get(\"/items\", tags=[\"items\"])\ndef list_items():\n    return [{\"id\": 1, \"name\": \"Ladder\"}]\n\n@app.post(\"/items\", status_code=status.HTTP_201_CREATED, tags=[\"items\"])\ndef create_item(name: str):\n    return {\"id\": 2, \"name\": name}\n\n@app.delete(\"/items/{item_id}\", status_code=status.HTTP_204_NO_CONTENT, tags=[\"items\"])\ndef delete_item(item_id: int) -> None:\n    return None"
+    },
+    {
+     "language": "python",
+     "code": "from fastapi import APIRouter, FastAPI\n\napp = FastAPI()\nrouter = APIRouter(prefix=\"/orders\", tags=[\"orders\"])\n\n@router.get(\"\")\ndef list_orders():\n    return [{\"id\": 10, \"total\": 42.5}]\n\n@router.post(\"\", status_code=201)\ndef create_order(customer: str):\n    return {\"id\": 11, \"customer\": customer, \"total\": 0.0}\n\napp.include_router(router)"
+    }
+   ]
+  },
+  {
+   "id": "path-params",
+   "title": "Path Parameters",
+   "description": "Capture typed values from the URL path.",
+   "snippets": [
+    {
+     "language": "python",
+     "code": "from enum import Enum\nfrom typing import Annotated\nfrom fastapi import FastAPI, Path\n\napp = FastAPI()\n\nclass Shelf(str, Enum):\n    cold = \"cold\"\n    dry = \"dry\"\n\n@app.get(\"/items/{item_id}\")\ndef read_item(item_id: int):\n    return {\"item_id\": item_id}\n\n@app.get(\"/shelves/{shelf}/items/{position}\")\ndef read_shelf_item(\n    shelf: Shelf,\n    position: Annotated[int, Path(ge=1, le=50, description=\"Slot on the shelf\")],\n):\n    return {\"shelf\": shelf, \"position\": position}"
+    },
+    {
+     "language": "python",
+     "code": "from fastapi import FastAPI\n\napp = FastAPI()\n\n@app.get(\"/files/{file_path:path}\")\ndef read_file(file_path: str):\n    return {\"file_path\": file_path}\n\n# GET /files/reports/2026/q1.csv returns\n# {\"file_path\": \"reports/2026/q1.csv\"}"
+    }
+   ]
+  },
+  {
+   "id": "query-params",
+   "title": "Query Parameters",
+   "description": "Declare optional and constrained URL query values.",
+   "snippets": [
+    {
+     "language": "python",
+     "code": "from typing import Annotated\nfrom fastapi import FastAPI, Query\n\napp = FastAPI()\n\n@app.get(\"/products\")\ndef search_products(\n    q: Annotated[str | None, Query(max_length=60)] = None,\n    page: Annotated[int, Query(ge=1)] = 1,\n    per_page: Annotated[int, Query(ge=1, le=100)] = 20,\n    tags: Annotated[list[str] | None, Query()] = None,\n):\n    return {\"q\": q, \"page\": page, \"per_page\": per_page, \"tags\": tags or []}"
+    },
+    {
+     "language": "python",
+     "code": "from typing import Annotated\nfrom fastapi import FastAPI, Query\n\napp = FastAPI()\n\n@app.get(\"/search\")\ndef search(\n    term: Annotated[str, Query(min_length=2, alias=\"q\")],\n    sort: Annotated[str, Query(pattern=\"^(price|name)$\")] = \"name\",\n):\n    return {\"term\": term, \"sort\": sort}\n\n# GET /search?q=drill&sort=price"
+    }
+   ]
+  },
+  {
+   "id": "models",
+   "title": "Pydantic Models",
+   "description": "Describe request and response bodies with Pydantic.",
+   "snippets": [
+    {
+     "language": "python",
+     "code": "from pydantic import BaseModel, Field\n\nclass Address(BaseModel):\n    street: str\n    city: str\n    postal_code: str = Field(pattern=r\"^\\d{5}$\")\n\nclass Customer(BaseModel):\n    id: int\n    name: str = Field(min_length=1, max_length=80)\n    email: str\n    address: Address\n    tags: list[str] = []\n\ncustomer = Customer(\n    id=7,\n    name=\"Ana Lima\",\n    email=\"ana@example.com\",\n    address={\n        \"street\": \"Rua das Flores 12\",\n        \"city\": \"Porto Alegre\",\n        \"postal_code\": \"90010\",\n    },\n    tags=[\"vip\"],\n)\nprint(customer.address.city)"
+    },
+    {
+     "language": "python",
+     "code": "from pydantic import BaseModel, Field\n\nclass Product(BaseModel):\n    model_config = {\"extra\": \"forbid\", \"str_strip_whitespace\": True}\n\n    sku: str\n    price: float = Field(gt=0)\n    currency: str = \"BRL\"\n\nproduct = Product(sku=\"  CHAIR-01  \", price=249.9)\nprint(product.sku)  # CHAIR-01\nprint(product.model_dump())  # {'sku': 'CHAIR-01', 'price': 249.9, 'currency': 'BRL'}"
+    }
+   ]
+  },
+  {
+   "id": "validation",
+   "title": "Validation",
+   "description": "Reject bad input before the handler runs.",
+   "snippets": [
+    {
+     "language": "python",
+     "code": "from typing import Annotated\nfrom fastapi import FastAPI\nfrom pydantic import BaseModel, Field, field_validator\n\napp = FastAPI()\n\nclass Signup(BaseModel):\n    username: str\n    age: Annotated[int, Field(ge=18)]\n\n    @field_validator(\"username\")\n    @classmethod\n    def reject_spaces(cls, value: str) -> str:\n        if \" \" in value:\n            raise ValueError(\"username must not contain spaces\")\n        return value\n\n@app.post(\"/signup\")\ndef signup(payload: Signup):\n    return {\"username\": payload.username}"
+    },
+    {
+     "language": "json",
+     "code": "{\n  \"detail\": [\n    {\n      \"type\": \"greater_than_equal\",\n      \"loc\": [\"body\", \"age\"],\n      \"msg\": \"Input should be greater than or equal to 18\",\n      \"input\": 16,\n      \"ctx\": {\"ge\": 18}\n    }\n  ]\n}"
+    }
+   ]
+  },
+  {
+   "id": "dependencies",
+   "title": "Dependencies",
+   "description": "Share logic and resources across handlers.",
+   "snippets": [
+    {
+     "language": "python",
+     "code": "from typing import Annotated\nfrom fastapi import Depends, FastAPI, Header, HTTPException\n\napp = FastAPI()\n\ndef get_token(x_api_key: Annotated[str, Header()]) -> str:\n    if x_api_key != \"secret-key\":\n        raise HTTPException(status_code=401, detail=\"Invalid API key\")\n    return x_api_key\n\n@app.get(\"/private\")\ndef private(token: Annotated[str, Depends(get_token)]):\n    return {\"token_length\": len(token)}"
+    },
+    {
+     "language": "python",
+     "code": "from typing import Annotated\nfrom fastapi import Depends, FastAPI\n\napp = FastAPI()\n\nclass Pagination:\n    def __init__(self, page: int = 1, size: int = 25):\n        self.offset = (page - 1) * size\n        self.limit = size\n\n@app.get(\"/events\")\ndef list_events(paging: Annotated[Pagination, Depends(Pagination)]):\n    return {\"offset\": paging.offset, \"limit\": paging.limit}"
+    }
+   ]
+  },
+  {
+   "id": "responses",
+   "title": "Responses",
+   "description": "Shape, filter, and customize outgoing responses.",
+   "snippets": [
+    {
+     "language": "python",
+     "code": "from fastapi import FastAPI\nfrom pydantic import BaseModel\n\napp = FastAPI()\n\nclass Item(BaseModel):\n    id: int\n    name: str\n    cost: float\n\nclass ItemPublic(BaseModel):\n    id: int\n    name: str\n\n@app.get(\"/items/{item_id}\", response_model=ItemPublic)\ndef read_item(item_id: int):\n    # response_model hides cost from the payload\n    return {\"id\": item_id, \"name\": \"Drill\", \"cost\": 189.0}"
+    },
+    {
+     "language": "python",
+     "code": "from fastapi import FastAPI\nfrom fastapi.responses import JSONResponse\n\napp = FastAPI()\n\n@app.get(\"/raw\")\ndef raw():\n    return JSONResponse(\n        status_code=202,\n        content={\"queued\": True},\n        headers={\"X-Job-Id\": \"7f3a\"},\n    )"
+    }
+   ]
+  },
+  {
+   "id": "errors",
+   "title": "Error Handling",
+   "description": "Raise HTTP errors and map domain exceptions.",
+   "snippets": [
+    {
+     "language": "python",
+     "code": "from fastapi import FastAPI, HTTPException\n\napp = FastAPI()\n\n@app.get(\"/orders/{order_id}\")\ndef get_order(order_id: int):\n    if order_id != 42:\n        raise HTTPException(status_code=404, detail=\"Order not found\")\n    return {\"id\": order_id, \"status\": \"shipped\"}"
+    },
+    {
+     "language": "python",
+     "code": "from fastapi import FastAPI, Request\nfrom fastapi.responses import JSONResponse\n\napp = FastAPI()\n\nclass OutOfStock(Exception):\n    def __init__(self, sku: str):\n        self.sku = sku\n\n@app.exception_handler(OutOfStock)\nasync def out_of_stock_handler(request: Request, exc: OutOfStock):\n    return JSONResponse(\n        status_code=409,\n        content={\"detail\": f\"{exc.sku} is out of stock\"},\n    )"
+    }
+   ]
+  },
+  {
+   "id": "async",
+   "title": "Async",
+   "description": "Use async handlers and keep the event loop free.",
+   "snippets": [
+    {
+     "language": "python",
+     "code": "import httpx\nfrom fastapi import FastAPI\n\napp = FastAPI()\n\n@app.get(\"/rates\")\nasync def rates():\n    async with httpx.AsyncClient(timeout=5.0) as client:\n        response = await client.get(\"https://api.example.com/rates\")\n        response.raise_for_status()\n        return response.json()"
+    },
+    {
+     "language": "python",
+     "code": "from fastapi import FastAPI\nfrom fastapi.concurrency import run_in_threadpool\n\napp = FastAPI()\n\ndef build_report(year: int) -> list[dict[str, int]]:\n    return [{\"year\": year, \"rows\": 128}]\n\n@app.get(\"/report\")\nasync def report():\n    # Blocking SDK calls run in a worker thread, not on the event loop\n    data = await run_in_threadpool(build_report, 2026)\n    return {\"rows\": len(data)}"
+    }
+   ]
+  },
+  {
+   "id": "database",
+   "title": "Database",
+   "description": "Provide SQLAlchemy sessions through dependencies.",
+   "snippets": [
+    {
+     "language": "python",
+     "code": "from collections.abc import Generator\nfrom fastapi import Depends, FastAPI\nfrom sqlalchemy import create_engine, select\nfrom sqlalchemy.orm import DeclarativeBase, Mapped, Session, mapped_column, sessionmaker\n\nclass Base(DeclarativeBase):\n    pass\n\nclass Book(Base):\n    __tablename__ = \"books\"\n\n    id: Mapped[int] = mapped_column(primary_key=True)\n    title: Mapped[str]\n\nengine = create_engine(\n    \"sqlite:///library.db\",\n    connect_args={\"check_same_thread\": False},\n)\nSessionLocal = sessionmaker(bind=engine, expire_on_commit=False)\n\ndef get_db() -> Generator[Session, None, None]:\n    with SessionLocal() as session:\n        yield session\n\napp = FastAPI()\n\n@app.get(\"/books\")\ndef list_books(db: Session = Depends(get_db)):\n    books = db.scalars(select(Book)).all()\n    return [{\"id\": book.id, \"title\": book.title} for book in books]"
+    },
+    {
+     "language": "python",
+     "code": "from collections.abc import AsyncIterator\nfrom typing import Annotated\nfrom fastapi import Depends\nfrom sqlalchemy import select\nfrom sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine\n\nengine = create_async_engine(\"postgresql+asyncpg://app:secret@localhost/inventory\")\nAsyncSessionLocal = async_sessionmaker(engine, expire_on_commit=False)\n\nasync def get_session() -> AsyncIterator[AsyncSession]:\n    async with AsyncSessionLocal() as session:\n        yield session\n\n@app.get(\"/books-async\")\nasync def list_books_async(\n    session: Annotated[AsyncSession, Depends(get_session)],\n):\n    books = (await session.execute(select(Book))).scalars().all()\n    return [{\"id\": book.id, \"title\": book.title} for book in books]"
+    }
+   ]
+  },
+  {
+   "id": "auth",
+   "title": "Authentication",
+   "description": "Issue and verify bearer tokens for protected routes.",
+   "snippets": [
+    {
+     "language": "python",
+     "code": "from datetime import datetime, timedelta, timezone\nimport jwt\nfrom fastapi import Depends, FastAPI, HTTPException, status\nfrom fastapi.security import OAuth2PasswordBearer\n\nSECRET = \"change-this-in-production\"\nALGORITHM = \"HS256\"\noauth2_scheme = OAuth2PasswordBearer(tokenUrl=\"token\")\n\napp = FastAPI()\n\ndef create_access_token(subject: str) -> str:\n    payload = {\n        \"sub\": subject,\n        \"exp\": datetime.now(timezone.utc) + timedelta(minutes=30),\n    }\n    return jwt.encode(payload, SECRET, algorithm=ALGORITHM)\n\ndef current_user(token: str = Depends(oauth2_scheme)) -> str:\n    try:\n        claims = jwt.decode(token, SECRET, algorithms=[ALGORITHM])\n    except jwt.InvalidTokenError:\n        raise HTTPException(\n            status_code=status.HTTP_401_UNAUTHORIZED,\n            detail=\"Invalid token\",\n            headers={\"WWW-Authenticate\": \"Bearer\"},\n        )\n    return claims[\"sub\"]\n\n@app.get(\"/me\")\ndef me(user: str = Depends(current_user)):\n    return {\"user\": user}"
+    },
+    {
+     "language": "python",
+     "code": "# Continues from the previous snippet\nfrom fastapi import Depends, HTTPException\nfrom fastapi.security import OAuth2PasswordRequestForm\n\n@app.post(\"/token\")\ndef login(form: OAuth2PasswordRequestForm = Depends()):\n    if form.username != \"ana\" or form.password != \"correct-horse\":\n        raise HTTPException(status_code=400, detail=\"Bad credentials\")\n    return {\n        \"access_token\": create_access_token(form.username),\n        \"token_type\": \"bearer\",\n    }"
+    }
+   ]
+  },
+  {
+   "id": "testing",
+   "title": "Testing",
+   "description": "Exercise the app with an in-process test client.",
+   "snippets": [
+    {
+     "language": "python",
+     "code": "from fastapi.testclient import TestClient\nfrom main import app\n\nclient = TestClient(app)\n\ndef test_health():\n    response = client.get(\"/health\")\n    assert response.status_code == 200\n    assert response.json() == {\"status\": \"ok\"}\n\ndef test_create_item():\n    response = client.post(\"/items\", params={\"name\": \"Ladder\"})\n    assert response.status_code == 201\n    assert response.json()[\"name\"] == \"Ladder\""
+    },
+    {
+     "language": "python",
+     "code": "import pytest\nfrom fastapi.testclient import TestClient\nfrom main import app, current_user\n\ndef fake_user() -> str:\n    return \"test-user\"\n\n@pytest.fixture\ndef client():\n    app.dependency_overrides[current_user] = fake_user\n    with TestClient(app) as test_client:\n        yield test_client\n    app.dependency_overrides.clear()\n\ndef test_me(client: TestClient):\n    response = client.get(\"/me\")\n    assert response.json() == {\"user\": \"test-user\"}"
+    }
+   ]
+  }
+ ]
+}

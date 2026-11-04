@@ -1,0 +1,397 @@
+{
+ "slug": "git",
+ "title": "Git",
+ "label": "Git",
+ "group": "Tool",
+ "color": "#F05032",
+ "desc": "Distributed version control: snapshots, branches and history you can rewrite.",
+ "sections": [
+  {
+   "id": "setup",
+   "title": "Setup",
+   "description": "Install Git, check the version and set the identity used by every commit.",
+   "snippets": [
+    {
+     "language": "bash",
+     "code": "# Check what is already installed\ngit --version\n\n# Debian and Ubuntu\nsudo apt install git\n\n# macOS\nbrew install git\n\n# Windows\nwinget install --id Git.Git -e"
+    },
+    {
+     "language": "bash",
+     "code": "# Name and email are recorded in every commit, so set them first\ngit config --global user.name \"Felipe Souza\"\ngit config --global user.email \"felipe@example.com\"\n\n# New repositories start on main instead of master\ngit config --global init.defaultBranch main\n\n# Offline manual for any command\ngit help rebase\ngit help -g"
+    }
+   ]
+  },
+  {
+   "id": "config",
+   "title": "Configuration",
+   "description": "Read and write settings in the system, global and local scopes.",
+   "snippets": [
+    {
+     "language": "bash",
+     "code": "# Every value with the file it came from\ngit config --list --show-origin\n\n# Read one value\ngit config user.email\n\n# Write to system, global and repository scope\ngit config --system core.pager \"less -FRX\"\ngit config --global core.editor \"nvim\"\ngit config --local pull.rebase true"
+    },
+    {
+     "language": "bash",
+     "code": "# Short names for the commands typed all day\ngit config --global alias.st \"status -sb\"\ngit config --global alias.lg \"log --oneline --graph --decorate --all\"\ngit config --global alias.unstage \"restore --staged\"\ngit config --global alias.last \"show --stat HEAD\"\n\n# Then: git st, git lg, git unstage notes.md, git last"
+    },
+    {
+     "language": "bash",
+     "code": "# Edit the global config file directly\ngit config --global --edit\n\n# Windows checkouts keep CRLF, the repository keeps LF\ngit config --global core.autocrlf true\n\n# Ignore patterns shared by every repository on this machine\ngit config --global core.excludesFile ~/.config/git/ignore\n\n# Cache credentials for an hour\ngit config --global credential.helper \"cache --timeout=3600\""
+    }
+   ]
+  },
+  {
+   "id": "init-clone",
+   "title": "Init and Clone",
+   "description": "Create a repository or copy an existing one over HTTPS or SSH.",
+   "snippets": [
+    {
+     "language": "bash",
+     "code": "# Repository in the current folder, with the initial branch named\ngit init -b main\n\n# Folder and repository in one call\ngit init cheatrs\n\n# Bare repository to serve over SSH\ngit init --bare /srv/git/cheatrs.git"
+    },
+    {
+     "language": "bash",
+     "code": "# Full clone over HTTPS\ngit clone https://github.com/cheatrs/cheatrs.git\n\n# SSH clone into a specific folder\ngit clone git@github.com:cheatrs/cheatrs.git cheatrs-work\n\n# Last commit only, enough for CI and build images\ngit clone --depth 1 --single-branch --branch main https://github.com/cheatrs/cheatrs.git"
+    },
+    {
+     "language": "bash",
+     "code": "# Bring submodules along\ngit clone --recurse-submodules https://github.com/cheatrs/cheatrs.git\n\n# Clone from a local folder, sharing objects instead of copying them\ngit clone --local ~/Projects/cheatrs ~/backup/cheatrs"
+    }
+   ]
+  },
+  {
+   "id": "snapshot",
+   "title": "Snapshots",
+   "description": "Inspect the working tree, the index and how branches differ.",
+   "snippets": [
+    {
+     "language": "bash",
+     "code": "# Short status with branch and tracking info\ngit status -sb\n\n# Unstaged changes\ngit diff\n\n# Staged changes, exactly what the next commit would record\ngit diff --staged\n\n# Ignore whitespace noise while reviewing\ngit diff -w"
+    },
+    {
+     "language": "bash",
+     "code": "# Commits on feature/login that main does not have\ngit diff main...feature/login\n\n# One commit with its full patch\ngit show 4f2a1c3\n\n# The same file compared across two branches\ngit diff main:src/main.rs feature/login:src/main.rs"
+    },
+    {
+     "language": "bash",
+     "code": "# Stable, script-friendly output\ngit status --porcelain=v1\n\n# Summary of the last three commits instead of the patch\ngit diff --stat HEAD~3\n\n# Stage everything, then review it before committing\ngit add -A\ngit diff --staged --stat"
+    }
+   ]
+  },
+  {
+   "id": "staging",
+   "title": "Staging",
+   "description": "Choose what goes into the next commit, hunk by hunk if needed.",
+   "snippets": [
+    {
+     "language": "bash",
+     "code": "# Stage one file and a whole folder\ngit add src/main.rs\ngit add tests/\n\n# Stage every change in the repository, deletions included\ngit add -A\n\n# Stage only some hunks of a file\ngit add -p src/data.rs"
+    },
+    {
+     "language": "bash",
+     "code": "# Unstage a file but keep the edits in the working tree\ngit restore --staged src/main.rs\n\n# Same effect with the older spelling\ngit reset HEAD src/main.rs\n\n# Discard unstaged edits of one file\ngit restore src/main.rs"
+    },
+    {
+     "language": "bash",
+     "code": "# Renames and deletions are recorded by the index\ngit mv old_name.rs new_name.rs\ngit rm docs/draft.md\n\n# Stop tracking a file but keep it on disk\ngit rm --cached secrets.env"
+    }
+   ]
+  },
+  {
+   "id": "commits",
+   "title": "Commits",
+   "description": "Record changes and fix the last commit before it is published.",
+   "snippets": [
+    {
+     "language": "bash",
+     "code": "# Stage tracked edits and commit in one step\ngit commit -am \"fix: handle empty config file\"\n\n# Multi-line message written in the editor\ngit commit\n\n# Show the diff while writing the message\ngit commit -v"
+    },
+    {
+     "language": "bash",
+     "code": "# Rewrite the message of the last local commit\ngit commit --amend -m \"fix: handle missing config file\"\n\n# Add a forgotten file, keeping the message\ngit add src/config.rs\ngit commit --amend --no-edit\n\n# Change the author of the last commit\ngit commit --amend --author=\"Felipe Souza <felipe@example.com>\" --no-edit"
+    },
+    {
+     "language": "bash",
+     "code": "# Empty commit, useful to trigger a pipeline\ngit commit --allow-empty -m \"ci: rerun pipeline\"\n\n# Mark this change as a fixup for a later autosquash rebase\ngit commit --fixup 9c1e0b2"
+    }
+   ]
+  },
+  {
+   "id": "history",
+   "title": "History",
+   "description": "Browse commits by branch, path, message, content and date.",
+   "snippets": [
+    {
+     "language": "bash",
+     "code": "# Compact graph of every branch\ngit log --oneline --graph --decorate --all\n\n# Last five commits by one author\ngit log --author=\"Felipe\" -5 --oneline\n\n# History of a single path, following renames\ngit log --follow --oneline src/data.rs"
+    },
+    {
+     "language": "bash",
+     "code": "# Commits that added or removed the string retry_limit\ngit log -S \"retry_limit\" --oneline\n\n# Commits whose message matches a pattern\ngit log --grep=\"fix:\" --oneline\n\n# Line-by-line authorship of a range\ngit blame -L 40,60 src/main.rs"
+    },
+    {
+     "language": "bash",
+     "code": "# Commits inside a date window\ngit log --since=\"2026-01-01\" --until=\"2026-06-30\" --oneline\n\n# Who changed how much, ignoring merge commits\ngit shortlog -sn --no-merges"
+    }
+   ]
+  },
+  {
+   "id": "branching",
+   "title": "Branching",
+   "description": "Create, list, rename and delete branches.",
+   "snippets": [
+    {
+     "language": "bash",
+     "code": "# Local branches with upstream and last commit\ngit branch -vv\n\n# Create and switch in one step\ngit switch -c feature/login\n\n# Jump back to the previous branch\ngit switch -"
+    },
+    {
+     "language": "bash",
+     "code": "# Delete a branch already merged\ngit branch -d feature/login\n\n# Delete a branch that was never merged\ngit branch -D experiment/spike\n\n# Rename the current branch\ngit branch -m feature/login feature/auth"
+    },
+    {
+     "language": "bash",
+     "code": "# Branches already contained in main\ngit branch --merged main\n\n# Branches with commits main does not have\ngit branch --no-merged main\n\n# Remote-tracking branches\ngit branch -r"
+    }
+   ]
+  },
+  {
+   "id": "merging",
+   "title": "Merging",
+   "description": "Bring another branch in, with or without a merge commit.",
+   "snippets": [
+    {
+     "language": "bash",
+     "code": "# Merge feature/login into the current branch\ngit switch main\ngit merge feature/login\n\n# Always keep a merge commit, even when fast-forward is possible\ngit merge --no-ff feature/login -m \"merge: feature/login\"\n\n# Refuse to merge unless it is a fast-forward\ngit merge --ff-only origin/main"
+    },
+    {
+     "language": "bash",
+     "code": "# Preview what the merge would bring\ngit log --oneline HEAD..feature/login\n\n# Combine the branch into a single staged change\ngit merge --squash feature/login\ngit commit -m \"feat: add login screen\"\n\n# Stop a merge in progress\ngit merge --abort"
+    },
+    {
+     "language": "bash",
+     "code": "# Finish a merge after resolving the conflicts\ngit add src/auth.rs\ngit commit\n\n# Or let Git continue with the prepared message\ngit merge --continue"
+    }
+   ]
+  },
+  {
+   "id": "rebase",
+   "title": "Rebasing",
+   "description": "Replay commits on a new base and reshape local history.",
+   "snippets": [
+    {
+     "language": "bash",
+     "code": "# Replay the current branch on top of main\ngit switch feature/login\ngit rebase main\n\n# Squash and reorder the last four commits\ngit rebase -i HEAD~4\n\n# Fold fixup commits into their targets\ngit rebase -i --autosquash main"
+    },
+    {
+     "language": "bash",
+     "code": "# Move only the commits after 3f9c2a1 onto main\ngit rebase --onto main 3f9c2a1 feature/login\n\n# Update branches that point at rebased commits (Git 2.38+)\ngit rebase --update-refs main\n\n# Give up and return to the state before the rebase\ngit rebase --abort"
+    },
+    {
+     "language": "bash",
+     "code": "# Linear pulls instead of merge commits\ngit config --global pull.rebase true\ngit pull --rebase origin main\n\n# Skip one commit and keep going\ngit rebase --skip\n\n# Amend the conflict resolution of the current step\ngit add src/auth.rs\ngit rebase --continue"
+    }
+   ]
+  },
+  {
+   "id": "remotes",
+   "title": "Remotes",
+   "description": "Manage the repositories this clone talks to.",
+   "snippets": [
+    {
+     "language": "bash",
+     "code": "# Remotes with their URLs\ngit remote -v\n\n# Add, rename, change URL and remove\ngit remote add origin git@github.com:cheatrs/cheatrs.git\ngit remote rename origin upstream\ngit remote set-url origin https://github.com/cheatrs/cheatrs.git\ngit remote remove backup"
+    },
+    {
+     "language": "bash",
+     "code": "# Publish a branch and set its upstream\ngit push -u origin feature/login\n\n# Later pushes only need the remote and the branch\ngit push origin feature/login\n\n# Delete a branch on the remote\ngit push origin --delete feature/login"
+    },
+    {
+     "language": "bash",
+     "code": "# Fetch every remote and drop branches deleted upstream\ngit fetch --all --prune\n\n# Start tracking a remote branch that already exists\ngit switch -c feature/docs origin/feature/docs\n\n# See what a fetch would bring, without changing anything\ngit fetch --dry-run origin"
+    }
+   ]
+  },
+  {
+   "id": "tags",
+   "title": "Tags",
+   "description": "Mark releases with lightweight or annotated tags.",
+   "snippets": [
+    {
+     "language": "bash",
+     "code": "# Lightweight tag on the current commit\ngit tag v1.0.0\n\n# Annotated tag with message, author and date\ngit tag -a v1.4.0 -m \"release 1.4.0\"\n\n# Tag an older commit\ngit tag -a v1.3.0 8b7d2f1 -m \"release 1.3.0\""
+    },
+    {
+     "language": "bash",
+     "code": "# Tags matching a pattern\ngit tag -l \"v1.*\"\n\n# Tag data and the commit it points to\ngit show v1.4.0\n\n# Push one tag, or all of them\ngit push origin v1.4.0\ngit push origin --tags"
+    },
+    {
+     "language": "bash",
+     "code": "# Delete locally, then on the remote\ngit tag -d v1.3.0\ngit push origin --delete v1.3.0\n\n# Inspect the code at a release (detached HEAD)\ngit switch --detach v1.4.0"
+    }
+   ]
+  },
+  {
+   "id": "stash",
+   "title": "Stashing",
+   "description": "Park unfinished work and come back to it later.",
+   "snippets": [
+    {
+     "language": "bash",
+     "code": "# Save the working tree with a label\ngit stash push -m \"wip: login validation\"\n\n# Include untracked files\ngit stash push -u -m \"wip: new endpoint\"\n\n# Keep the changes in place and stash a copy\ngit stash push -k -m \"wip: keep both\""
+    },
+    {
+     "language": "bash",
+     "code": "# Stack of saved states\ngit stash list\n\n# Patch of the newest entry\ngit stash show -p stash@{0}\n\n# Apply the newest entry and remove it\ngit stash pop"
+    },
+    {
+     "language": "bash",
+     "code": "# Apply without removing from the stack\ngit stash apply stash@{1}\n\n# Move a stash onto its own branch\ngit stash branch fix/login-crash stash@{0}\n\n# Drop one entry, or all of them\ngit stash drop stash@{2}\ngit stash clear"
+    }
+   ]
+  },
+  {
+   "id": "undoing",
+   "title": "Undoing Things",
+   "description": "Take back commits and edits, locally or after they were published.",
+   "snippets": [
+    {
+     "language": "bash",
+     "code": "# Unstage everything, files stay edited\ngit reset\n\n# Move the branch back one commit, changes stay staged\ngit reset --soft HEAD~1\n\n# Move back one commit and discard the changes\ngit reset --hard HEAD~1"
+    },
+    {
+     "language": "bash",
+     "code": "# Undo a published commit with a new commit\ngit revert 4f2a1c3\ngit revert --no-edit HEAD\n\n# Revert a merge commit against its first parent\ngit revert -m 1 9b3c7d1"
+    },
+    {
+     "language": "bash",
+     "code": "# Every position HEAD has had, the way back after a bad reset\ngit reflog\ngit reset --hard HEAD@{2}\n\n# Restore a file from an older commit\ngit restore --source=HEAD~1 src/deleted.rs"
+    }
+   ]
+  },
+  {
+   "id": "conflicts",
+   "title": "Conflicts",
+   "description": "Find conflicted files, pick a side and close the operation.",
+   "snippets": [
+    {
+     "language": "bash",
+     "code": "# Files left unresolved\ngit diff --name-only --diff-filter=U\n\n# Short status marks them with U\ngit status --short\n\n# See the markers inside one file\ngit diff src/auth.rs"
+    },
+    {
+     "language": "bash",
+     "code": "# Keep this branch's version or the incoming one\ngit restore --ours src/auth.rs\ngit restore --theirs src/auth.rs\n\n# During a rebase the sides are swapped:\n# --ours is main, --theirs is the commit being replayed"
+    },
+    {
+     "language": "bash",
+     "code": "# Resolve file by file with the configured tool\ngit mergetool src/auth.rs\n\n# Mark resolved and finish the operation\ngit add src/auth.rs\ngit merge --continue   # or: git rebase --continue\n\n# Reuse previous resolutions of the same conflict\ngit config --global rerere.enabled true"
+    }
+   ]
+  },
+  {
+   "id": "cherry-pick",
+   "title": "Cherry-pick",
+   "description": "Copy individual commits onto the current branch.",
+   "snippets": [
+    {
+     "language": "bash",
+     "code": "# Apply one commit from another branch\ngit cherry-pick 4f2a1c3\n\n# Record the source hash in the new message\ngit cherry-pick -x 4f2a1c3\n\n# Apply without committing, to edit first\ngit cherry-pick -n 4f2a1c3"
+    },
+    {
+     "language": "bash",
+     "code": "# Commits after 8b7d2f1 up to 4f2a1c3\ngit cherry-pick 8b7d2f1..4f2a1c3\n\n# Change of a merge commit relative to its first parent\ngit cherry-pick -m 1 9b3c7d1\n\n# Give up when a pick hits conflicts\ngit cherry-pick --abort"
+    }
+   ]
+  },
+  {
+   "id": "bisect",
+   "title": "Bisect",
+   "description": "Binary search the history to find the commit that broke something.",
+   "snippets": [
+    {
+     "language": "bash",
+     "code": "# Start a session and mark the ends\ngit bisect start\ngit bisect bad\ngit bisect good v1.3.0"
+    },
+    {
+     "language": "bash",
+     "code": "# Let the test decide: exit 0 is good, 1 is bad, 125 is skipped\ngit bisect run cargo test --quiet --test regression"
+    },
+    {
+     "language": "bash",
+     "code": "# Print the session log\ngit bisect log\n\n# Finish and return to the original branch\ngit bisect reset"
+    }
+   ]
+  },
+  {
+   "id": "worktrees",
+   "title": "Worktrees",
+   "description": "Check out several branches at once from a single repository.",
+   "snippets": [
+    {
+     "language": "bash",
+     "code": "# Second checkout of the same repository, on another branch\ngit worktree add ../cheatrs-hotfix hotfix/login\n\n# New branch in a new folder\ngit worktree add -b feature/docs ../cheatrs-docs main\n\n# Detached worktree to inspect a release\ngit worktree add --detach ../cheatrs-v1 v1.4.0"
+    },
+    {
+     "language": "bash",
+     "code": "# Worktrees and the branch each one holds\ngit worktree list\n\n# Remove one, then clean administrative leftovers\ngit worktree remove ../cheatrs-hotfix\ngit worktree prune"
+    }
+   ]
+  },
+  {
+   "id": "ignoring",
+   "title": "Ignoring Files",
+   "description": "Keep build output, secrets and editor noise out of the index.",
+   "snippets": [
+    {
+     "language": "text",
+     "code": "# Build output\ntarget/\ndist/\n\n# Environment files, but keep the example\n.env\n.env.*\n!.env.example\n\n# Editor and OS noise\n.idea/\n.vscode/\n.DS_Store\n\n# Ignore logs while keeping the folder\nlogs/*\n!logs/.gitkeep"
+    },
+    {
+     "language": "bash",
+     "code": "# Which rule is hiding this path\ngit check-ignore -v target/debug/build\n\n# Ignore a file only on this machine\necho \"notes.local.md\" >> .git/info/exclude\n\n# Same patterns in every repository\ngit config --global core.excludesFile ~/.config/git/ignore"
+    },
+    {
+     "language": "bash",
+     "code": "# A committed file stays tracked even after being ignored\ngit rm --cached config/production.yml\ngit commit -m \"chore: stop tracking production config\"\n\n# Preview what would be removed from the index\ngit rm --cached -n config/production.yml"
+    }
+   ]
+  },
+  {
+   "id": "hooks",
+   "title": "Hooks",
+   "description": "Run scripts automatically before commits and pushes.",
+   "snippets": [
+    {
+     "language": "bash",
+     "code": "#!/bin/sh\n# .git/hooks/pre-commit - refuse commits with unformatted code\n\ncargo fmt --check || {\n  echo \"run cargo fmt before committing\"\n  exit 1\n}"
+    },
+    {
+     "language": "bash",
+     "code": "#!/bin/sh\n# .git/hooks/commit-msg - require a conventional prefix\n\nmsg=$(head -n 1 \"$1\")\ncase \"$msg\" in\n  feat:*|fix:*|docs:*|refactor:*|test:*|chore:*) exit 0 ;;\n  *) echo \"message must start with feat:, fix:, docs:, refactor:, test: or chore:\" ; exit 1 ;;\nesac"
+    },
+    {
+     "language": "bash",
+     "code": "# Hooks only run when they are executable\nchmod +x .git/hooks/pre-commit .git/hooks/commit-msg\n\n# Share hooks through the repository instead of .git/hooks\ngit config core.hooksPath .githooks\n\n# Skip hooks for a single command\ngit commit --no-verify -m \"wip: skip hooks\""
+    }
+   ]
+  },
+  {
+   "id": "recipes",
+   "title": "Common Recipes",
+   "description": "Small sequences for the situations that come up most.",
+   "snippets": [
+    {
+     "language": "bash",
+     "code": "# Undo the last commit but keep the work staged\ngit reset --soft HEAD~1\n\n# Fix the message of the last local commit\ngit commit --amend\n\n# Match the remote exactly, discarding local commits and edits\ngit fetch origin\ngit reset --hard origin/main"
+    },
+    {
+     "language": "bash",
+     "code": "# Delete local branches already merged into main\ngit branch --merged main | grep -v -E '^\\*|main' | xargs -r git branch -d\n\n# Remove untracked files, preview first\ngit clean -nd\ngit clean -fd"
+    },
+    {
+     "language": "bash",
+     "code": "# Keep a fork in sync with the original project\ngit remote add upstream https://github.com/original/project.git\ngit fetch upstream\ngit switch main\ngit merge --ff-only upstream/main\ngit push origin main"
+    }
+   ]
+  }
+ ]
+}

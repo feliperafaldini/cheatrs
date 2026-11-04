@@ -1,0 +1,287 @@
+{
+ "slug": "csharp",
+ "title": "C#",
+ "label": "C#",
+ "group": "Language",
+ "color": "#512BD4",
+ "desc": "Statically typed .NET language with LINQ, async/await, and a large standard library.",
+ "sections": [
+  {
+   "id": "setup",
+   "title": "Setup",
+   "description": "Install the SDK, scaffold a project, and build, run, and publish it.",
+   "snippets": [
+    {
+     "language": "bash",
+     "code": "# List the installed SDKs; 10.0 is the current LTS line\ndotnet --list-sdks\n\n# Scaffold a console project in its own folder\ndotnet new console -n Greeter --framework net10.0\ncd Greeter\n\n# Restore, build and run\ndotnet run\n\n# Run every test project in the solution\ndotnet test\n\n# Publish a self-contained binary for linux-x64\ndotnet publish -c Release -r linux-x64 --self-contained true -o out"
+    },
+    {
+     "language": "xml",
+     "code": "<Project Sdk=\"Microsoft.NET.Sdk\">\n  <PropertyGroup>\n    <OutputType>Exe</OutputType>\n    <TargetFramework>net10.0</TargetFramework>\n    <ImplicitUsings>enable</ImplicitUsings>\n    <Nullable>enable</Nullable>\n    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>\n  </PropertyGroup>\n</Project>"
+    },
+    {
+     "language": "cs",
+     "code": "// Top-level statements: the entry point without a Main method\nConsole.WriteLine(\"Greeter ready\");\n\nvar name = args.Length > 0 ? args[0] : \"world\";\nConsole.WriteLine($\"hello, {name}\");"
+    }
+   ]
+  },
+  {
+   "id": "syntax",
+   "title": "Syntax",
+   "description": "File layout, comments, string forms, and pattern-based switch expressions.",
+   "snippets": [
+    {
+     "language": "cs",
+     "code": "using System.Globalization;\n\nnamespace Inventory.Cli;\n\n/// <summary>Formats values for the command-line output.</summary>\npublic static class Format\n{\n    // Expression-bodied members keep one-line logic compact\n    public static string Count(int value) =>\n        value.ToString(\"N0\", CultureInfo.InvariantCulture);   // 1,250\n}"
+    },
+    {
+     "language": "cs",
+     "code": "var city = \"Recife\";\nvar temperature = 31.5;\n\n// Interpolation with a format specifier\nvar summary = $\"{city}: {temperature:F1} C\";\n\n// Raw string literal: quotes need no escaping, common indentation is stripped\nvar payload = \"\"\"\n    { \"city\": \"Recife\", \"temperature\": 31.5 }\n    \"\"\";\n\n// Switch expression with relational patterns\nvar band = temperature switch\n{\n    < 15 => \"cold\",\n    < 25 => \"mild\",\n    _ => \"hot\",\n};\n\nConsole.WriteLine(summary);   // Recife: 31.5 C\nConsole.WriteLine(band);      // hot\nConsole.WriteLine(payload);"
+    }
+   ]
+  },
+  {
+   "id": "types",
+   "title": "Types",
+   "description": "Built-in value types, nullability, reference semantics, and enums.",
+   "snippets": [
+    {
+     "language": "cs",
+     "code": "int count = 42;                       // 32-bit signed integer\nlong population = 8_200_000_000L;     // 64-bit, L suffix\ndouble ratio = 0.75;                  // binary floating point\ndecimal price = 19.99m;               // base-10, exact for money\nchar grade = 'A';                     // one UTF-16 code unit\nbool active = true;\nstring name = \"Ada\";                  // immutable reference type\n\nDateTimeOffset createdAt = DateTimeOffset.Parse(\"2026-03-14T09:30:00Z\");\nGuid id = Guid.Parse(\"8f14e45f-ceea-467a-9a3e-1b7c1c2a9d10\");\n\n// Nullable value type: int? also accepts null\nint? retries = null;\nConsole.WriteLine(retries ?? 3);      // 3\nConsole.WriteLine($\"{count} {population} {ratio} {price} {grade} {active}\");\nConsole.WriteLine($\"{name} {createdAt:u} {id}\");"
+    },
+    {
+     "language": "cs",
+     "code": "// Value types copy on assignment\nvar point = (X: 3, Y: 7);\nvar moved = point;\nmoved.X = 10;\nConsole.WriteLine($\"{point.X} {moved.X}\");   // 3 10\n\n// Reference types copy the reference, so both names see one list\nvar first = new List<string> { \"ada\", \"grace\" };\nvar second = first;\nsecond.Add(\"linus\");\nConsole.WriteLine(first.Count);              // 3\n\n// Strings look like value types but are immutable references\nvar greeting = \"hello\";\nvar shout = greeting.ToUpperInvariant();\nConsole.WriteLine($\"{greeting} {shout}\");    // hello HELLO"
+    },
+    {
+     "language": "cs",
+     "code": "public static class OrderDemo\n{\n    private enum Status { Pending, Paid, Shipped, Cancelled }\n\n    [Flags]\n    private enum Permissions\n    {\n        None = 0,\n        Read = 1,\n        Write = 2,\n        Delete = 4,\n        ReadWrite = Read | Write,\n    }\n\n    public static void Main()\n    {\n        var status = Status.Paid;\n        var access = Permissions.Read | Permissions.Write;\n\n        Console.WriteLine((int)status);                        // 1\n        Console.WriteLine(access.HasFlag(Permissions.Write));  // True\n        Console.WriteLine(access);                             // ReadWrite\n\n        long big = 4_000_000_000;\n        int narrowed = unchecked((int)big);\n        Console.WriteLine(narrowed);                           // -294967296\n    }\n}"
+    }
+   ]
+  },
+  {
+   "id": "classes",
+   "title": "Classes",
+   "description": "Constructors, properties, initialization rules, inheritance, and records.",
+   "snippets": [
+    {
+     "language": "cs",
+     "code": "public class BankAccount\n{\n    private decimal _balance;\n\n    public BankAccount(string owner, decimal openingBalance)\n    {\n        Owner = owner;\n        _balance = openingBalance;\n    }\n\n    public string Owner { get; }\n    public decimal Balance => _balance;\n\n    public void Deposit(decimal amount)\n    {\n        if (amount <= 0)\n        {\n            throw new ArgumentOutOfRangeException(nameof(amount), \"deposit must be positive\");\n        }\n        _balance += amount;\n    }\n}\n\npublic static class BankDemo\n{\n    public static void Main()\n    {\n        var account = new BankAccount(\"Ada\", 250.00m);\n        account.Deposit(75.50m);\n        Console.WriteLine($\"{account.Owner}: {account.Balance:C}\");   // currency symbol follows the current culture\n    }\n}"
+    },
+    {
+     "language": "cs",
+     "code": "public class Server\n{\n    public required string Host { get; init; }\n    public int Port { get; init; } = 8080;\n    public bool UseTls { get; init; }\n}\n\npublic static class ServerDemo\n{\n    public static void Main()\n    {\n        var server = new Server\n        {\n            Host = \"api.example.com\",\n            UseTls = true,\n        };\n\n        // server.Host = \"other\";   // error: init-only outside initialization\n        Console.WriteLine($\"{server.Host}:{server.Port} tls={server.UseTls}\");\n        // api.example.com:8080 tls=True\n    }\n}"
+    },
+    {
+     "language": "cs",
+     "code": "public abstract class Shape\n{\n    protected Shape(string name) => Name = name;\n\n    public string Name { get; }\n    public abstract double Area();\n}\n\npublic sealed class Circle : Shape\n{\n    private readonly double _radius;\n\n    public Circle(double radius) : base(\"circle\") => _radius = radius;\n\n    public override double Area() => Math.PI * _radius * _radius;\n}\n\npublic record Money(decimal Amount, string Currency)\n{\n    public Money Add(Money other) => other.Currency == Currency\n        ? this with { Amount = Amount + other.Amount }\n        : throw new InvalidOperationException(\"currency mismatch\");\n}\n\npublic static class ShapeDemo\n{\n    public static void Main()\n    {\n        Shape shape = new Circle(2.0);\n        Console.WriteLine($\"{shape.Name} area {shape.Area():F2}\");   // circle area 12.57\n\n        var total = new Money(19.99m, \"BRL\").Add(new Money(5.01m, \"BRL\"));\n        Console.WriteLine($\"{total.Amount:F2} {total.Currency}\");     // 25.00 BRL\n        Console.WriteLine(total == new Money(25.00m, \"BRL\"));         // True\n    }\n}"
+    }
+   ]
+  },
+  {
+   "id": "interfaces",
+   "title": "Interfaces",
+   "description": "Contracts, default members, and explicit implementations.",
+   "snippets": [
+    {
+     "language": "cs",
+     "code": "public interface INotifier\n{\n    void Send(string message);\n}\n\npublic sealed class ConsoleNotifier : INotifier\n{\n    public void Send(string message) => Console.WriteLine($\"[console] {message}\");\n}\n\npublic sealed class NullNotifier : INotifier\n{\n    public void Send(string message)\n    {\n        // Intentionally does nothing, useful in tests\n    }\n}\n\npublic static class NotifierDemo\n{\n    public static void Main()\n    {\n        INotifier notifier = new ConsoleNotifier();\n        notifier.Send(\"deploy finished\");\n    }\n}"
+    },
+    {
+     "language": "cs",
+     "code": "public interface IClock\n{\n    DateTimeOffset UtcNow { get; }\n\n    // Default implementation: implementers only supply the property\n    DateTimeOffset Tomorrow() => UtcNow.AddDays(1);\n}\n\npublic sealed class FixedClock(DateTimeOffset now) : IClock\n{\n    public DateTimeOffset UtcNow { get; } = now;\n}\n\npublic static class ClockDemo\n{\n    public static void Main()\n    {\n        // Default members are reached through the interface type\n        IClock clock = new FixedClock(DateTimeOffset.Parse(\"2026-11-04T12:00:00Z\"));\n        Console.WriteLine(clock.UtcNow.ToString(\"O\"));       // 2026-11-04T12:00:00.0000000+00:00\n        Console.WriteLine(clock.Tomorrow().ToString(\"O\"));   // 2026-11-05T12:00:00.0000000+00:00\n    }\n}"
+    },
+    {
+     "language": "cs",
+     "code": "public interface IReader\n{\n    string Read();\n}\n\npublic interface IWriter\n{\n    void Write(string text);\n}\n\npublic sealed class Buffer : IReader, IWriter\n{\n    private string _text = \"\";\n\n    // Explicit implementation: reachable only through IReader\n    string IReader.Read() => _text;\n\n    void IWriter.Write(string text) => _text = text;\n}\n\npublic static class BufferDemo\n{\n    public static void Main()\n    {\n        var buffer = new Buffer();\n        IWriter writer = buffer;\n        writer.Write(\"draft\");\n        IReader reader = buffer;\n        Console.WriteLine(reader.Read());   // draft\n    }\n}"
+    }
+   ]
+  },
+  {
+   "id": "generics",
+   "title": "Generics",
+   "description": "Type parameters, constraints, and reusable result types.",
+   "snippets": [
+    {
+     "language": "cs",
+     "code": "public class Cache<TKey, TValue> where TKey : notnull\n{\n    private readonly Dictionary<TKey, TValue> _items = new();\n\n    public int Count => _items.Count;\n\n    public void Set(TKey key, TValue value) => _items[key] = value;\n\n    public TValue Get(TKey key) =>\n        _items.TryGetValue(key, out var value)\n            ? value\n            : throw new KeyNotFoundException($\"missing key: {key}\");\n}\n\npublic static class CacheDemo\n{\n    public static void Main()\n    {\n        var cache = new Cache<string, int>();\n        cache.Set(\"retries\", 3);\n        cache.Set(\"timeout\", 30);\n        Console.WriteLine($\"{cache.Count} {cache.Get(\"retries\")}\");   // 2 3\n    }\n}"
+    },
+    {
+     "language": "cs",
+     "code": "public static class Guards\n{\n    // class constraint: reference types only, and null is rejected\n    public static T Require<T>(T? value, string name) where T : class =>\n        value ?? throw new ArgumentNullException(name);\n\n    // new() constraint: the type needs a public parameterless constructor\n    public static T Create<T>() where T : new() => new();\n}\n\npublic static class GuardDemo\n{\n    public static void Main()\n    {\n        var label = Guards.Require(\"Ada\", \"label\");\n        Console.WriteLine(label.Length);   // 3\n\n        var builder = Guards.Create<System.Text.StringBuilder>();\n        builder.Append(\"ok\");\n        Console.WriteLine(builder);        // ok\n    }\n}"
+    },
+    {
+     "language": "cs",
+     "code": "public readonly record struct Result<T>(T? Value, string? Error)\n{\n    public bool IsSuccess => Error is null;\n\n    public static Result<T> Ok(T value) => new(value, null);\n    public static Result<T> Fail(string error) => new(default, error);\n}\n\npublic static class ResultDemo\n{\n    public static void Main()\n    {\n        var parsed = int.TryParse(\"42\", out var number)\n            ? Result<int>.Ok(number)\n            : Result<int>.Fail(\"not a number\");\n\n        Console.WriteLine(parsed.IsSuccess ? $\"double: {parsed.Value * 2}\" : parsed.Error);\n        // double: 84\n    }\n}"
+    }
+   ]
+  },
+  {
+   "id": "linq",
+   "title": "LINQ",
+   "description": "Query and method syntax over in-memory sequences.",
+   "snippets": [
+    {
+     "language": "cs",
+     "code": "var staff = new[]\n{\n    new Employee(\"Ana\", \"platform\", 8200),\n    new Employee(\"Bruno\", \"platform\", 7400),\n    new Employee(\"Carla\", \"data\", 9100),\n    new Employee(\"Davi\", \"data\", 6800),\n};\n\nvar wellPaid = staff\n    .Where(employee => employee.Salary > 7000)\n    .OrderByDescending(employee => employee.Salary)\n    .Select(employee => $\"{employee.Name} ({employee.Salary})\")\n    .ToList();\n\nConsole.WriteLine(string.Join(\", \", wellPaid));\n// Carla (9100), Ana (8200), Bruno (7400)\n\npublic record Employee(string Name, string Team, int Salary);"
+    },
+    {
+     "language": "cs",
+     "code": "var staff = new[]\n{\n    new Employee(\"Ana\", \"platform\", 8200),\n    new Employee(\"Bruno\", \"platform\", 7400),\n    new Employee(\"Carla\", \"data\", 9100),\n    new Employee(\"Davi\", \"data\", 6800),\n};\n\nvar byTeam = staff\n    .GroupBy(employee => employee.Team)\n    .Select(group => new\n    {\n        Team = group.Key,\n        People = group.Count(),\n        Average = group.Average(employee => employee.Salary),\n    })\n    .OrderBy(row => row.Team);\n\nforeach (var row in byTeam)\n{\n    Console.WriteLine($\"{row.Team}: {row.People} people, avg {row.Average:F0}\");\n}\n// data: 2 people, avg 7950\n// platform: 2 people, avg 7800\n\nConsole.WriteLine($\"payroll {staff.Sum(employee => employee.Salary)}\");   // payroll 31500\nConsole.WriteLine(staff.MaxBy(employee => employee.Salary)?.Name);       // Carla\n\npublic record Employee(string Name, string Team, int Salary);"
+    },
+    {
+     "language": "cs",
+     "code": "var numbers = new[] { 4, 8, 15, 16, 23, 42 };\n\nvar squares =\n    from number in numbers\n    where number % 2 == 0\n    orderby number descending\n    select number * number;\n\n// Deferred: changing the source changes the next enumeration\nnumbers[0] = 6;\nConsole.WriteLine(string.Join(\", \", squares));   // 1764, 256, 64, 36"
+    }
+   ]
+  },
+  {
+   "id": "collections",
+   "title": "Collections",
+   "description": "Lists, dictionaries, sets, queues, and stacks.",
+   "snippets": [
+    {
+     "language": "cs",
+     "code": "var names = new List<string> { \"Ada\", \"Grace\", \"Linus\" };\nnames.Add(\"Margaret\");\nnames.Remove(\"Linus\");\n\nvar stock = new Dictionary<string, int>\n{\n    [\"apple\"] = 12,\n    [\"pear\"] = 7,\n};\nstock[\"apple\"] += 3;                    // 15\n\nif (stock.TryGetValue(\"pear\", out var pears))\n{\n    Console.WriteLine($\"pears: {pears}\");   // pears: 7\n}\n\nvar tags = new HashSet<string> { \"backend\", \"backend\", \"dotnet\" };\nConsole.WriteLine($\"{names.Count} {stock[\"apple\"]} {tags.Count}\");   // 3 15 2"
+    },
+    {
+     "language": "cs",
+     "code": "var queue = new Queue<string>();\nqueue.Enqueue(\"first\");\nqueue.Enqueue(\"second\");\nConsole.WriteLine(queue.Dequeue());   // first\n\nvar undo = new Stack<string>();\nundo.Push(\"type\");\nundo.Push(\"delete\");\nConsole.WriteLine(undo.Pop());        // delete\n\n// Collection expressions work for arrays, lists and spans (C# 12)\nint[] primes = [2, 3, 5, 7];\nList<string> languages = [\"csharp\", \"rust\"];\nConsole.WriteLine($\"{primes.Length} {languages.Count}\");   // 4 2"
+    },
+    {
+     "language": "cs",
+     "code": "var scores = new Dictionary<string, int>\n{\n    [\"ana\"] = 87,\n    [\"bruno\"] = 74,\n    [\"carla\"] = 91,\n};\n\nforeach (var (name, score) in scores.OrderByDescending(pair => pair.Value))\n{\n    Console.WriteLine($\"{name}: {score}\");\n}\n// carla: 91\n// ana: 87\n// bruno: 74"
+    }
+   ]
+  },
+  {
+   "id": "async",
+   "title": "Async and Await",
+   "description": "Task-based work, cancellation, and async streams.",
+   "snippets": [
+    {
+     "language": "cs",
+     "code": "using var client = new HttpClient();\n\nvar urls = new[] { \"https://example.com\", \"https://example.org\" };\n\n// WhenAll starts every request, then waits for all of them\nvar pages = await Task.WhenAll(urls.Select(url => client.GetStringAsync(url)));\nConsole.WriteLine(pages.Length);            // 2\nConsole.WriteLine(pages[0].Length > 0);     // True"
+    },
+    {
+     "language": "cs",
+     "code": "static async Task<int> DoubleAfterDelayAsync(int value, CancellationToken token)\n{\n    await Task.Delay(100, token);\n    return value * 2;\n}\n\nusing var cts = new CancellationTokenSource(TimeSpan.FromSeconds(5));\n\nvar results = new List<int>();\nforeach (var value in new[] { 1, 2, 3 })\n{\n    results.Add(await DoubleAfterDelayAsync(value, cts.Token));\n}\n\nConsole.WriteLine(string.Join(\", \", results));   // 2, 4, 6"
+    },
+    {
+     "language": "cs",
+     "code": "static async IAsyncEnumerable<int> CountdownAsync(int start)\n{\n    for (var value = start; value > 0; value--)\n    {\n        await Task.Delay(50);\n        yield return value;\n    }\n}\n\nawait foreach (var value in CountdownAsync(3))\n{\n    Console.WriteLine(value);   // 3, 2, 1\n}"
+    }
+   ]
+  },
+  {
+   "id": "exceptions",
+   "title": "Exceptions",
+   "description": "Catch, filter, wrap, and define domain exceptions.",
+   "snippets": [
+    {
+     "language": "cs",
+     "code": "static int ParsePort(string raw)\n{\n    try\n    {\n        var port = int.Parse(raw);\n        return port is >= 1 and <= 65535\n            ? port\n            : throw new ArgumentOutOfRangeException(nameof(raw), \"port must be 1-65535\");\n    }\n    catch (FormatException error)\n    {\n        // Wrap the failure and keep the original exception as the cause\n        throw new ArgumentException($\"not a number: {raw}\", nameof(raw), error);\n    }\n}\n\ntry\n{\n    Console.WriteLine(ParsePort(\"8080\"));\n    Console.WriteLine(ParsePort(\"eighty\"));\n}\ncatch (Exception error) when (error is ArgumentException or FormatException)\n{\n    Console.WriteLine($\"bad input: {error.Message}\");\n}\nfinally\n{\n    Console.WriteLine(\"done\");\n}"
+    },
+    {
+     "language": "cs",
+     "code": "public sealed class InsufficientFundsException : Exception\n{\n    public InsufficientFundsException(decimal requested, decimal available)\n        : base($\"cannot withdraw {requested:F2}; balance is {available:F2}\")\n    {\n        Requested = requested;\n        Available = available;\n    }\n\n    public decimal Requested { get; }\n    public decimal Available { get; }\n}\n\npublic static class TransferDemo\n{\n    public static void Main()\n    {\n        try\n        {\n            throw new InsufficientFundsException(120.00m, 35.50m);\n        }\n        catch (InsufficientFundsException error)\n        {\n            Console.WriteLine(error.Message);   // cannot withdraw 120.00; balance is 35.50\n            Console.WriteLine(error.Available); // 35.50\n        }\n    }\n}"
+    }
+   ]
+  },
+  {
+   "id": "files",
+   "title": "Files",
+   "description": "Read, write, enumerate, and stream text files.",
+   "snippets": [
+    {
+     "language": "cs",
+     "code": "var directory = Path.Combine(AppContext.BaseDirectory, \"output\");\nDirectory.CreateDirectory(directory);\n\nvar path = Path.Combine(directory, \"notes.txt\");\nawait File.WriteAllTextAsync(path, \"first line\\nsecond line\\n\");\n\nvar content = await File.ReadAllTextAsync(path);\nConsole.WriteLine(content.Split('\\n', StringSplitOptions.RemoveEmptyEntries).Length);   // 2\nConsole.WriteLine(Path.GetFileName(path));   // notes.txt"
+    },
+    {
+     "language": "cs",
+     "code": "var path = \"events.log\";\nawait File.WriteAllLinesAsync(path, [\"boot\", \"ready\", \"shutdown\"]);\n\nforeach (var line in File.ReadLines(path))\n{\n    Console.WriteLine(line);\n}\n\n// Every .log file in the current directory\nforeach (var file in Directory.EnumerateFiles(\".\", \"*.log\"))\n{\n    Console.WriteLine(Path.GetFileName(file));\n}\n\nvar info = new FileInfo(path);\nConsole.WriteLine($\"size {info.Length} bytes, modified {info.LastWriteTimeUtc:u}\");"
+    },
+    {
+     "language": "cs",
+     "code": "using var stream = File.OpenRead(\"events.log\");\nusing var reader = new StreamReader(stream);\n\nwhile (reader.ReadLine() is { } line)\n{\n    Console.WriteLine(line);\n}"
+    }
+   ]
+  },
+  {
+   "id": "aspnet",
+   "title": "ASP.NET Core",
+   "description": "Minimal APIs, dependency injection, and controllers.",
+   "snippets": [
+    {
+     "language": "cs",
+     "code": "// The Web SDK enables implicit usings for builder, HTTP, and hosting\nvar builder = WebApplication.CreateBuilder(args);\nvar app = builder.Build();\n\napp.MapGet(\"/\", () => \"inventory service\");\n\napp.MapGet(\"/products/{id:int}\", (int id) =>\n    id <= 0\n        ? Results.BadRequest(\"id must be positive\")\n        : Results.Ok(new { Id = id, Name = \"coffee mug\", Price = 12.50m }));\n\napp.Run();"
+    },
+    {
+     "language": "cs",
+     "code": "// The Web SDK enables implicit usings for builder, HTTP, and hosting\nvar builder = WebApplication.CreateBuilder(args);\nbuilder.Services.AddSingleton<ProductCatalog>();\n\nvar app = builder.Build();\n\napp.MapPost(\"/products\", (CreateProduct request, ProductCatalog catalog) =>\n{\n    var errors = new Dictionary<string, string[]>();\n    if (string.IsNullOrWhiteSpace(request.Name))\n    {\n        errors[\"name\"] = [\"name is required\"];\n    }\n    if (request.Price <= 0)\n    {\n        errors[\"price\"] = [\"price must be positive\"];\n    }\n    if (errors.Count > 0)\n    {\n        return Results.ValidationProblem(errors);\n    }\n\n    var product = catalog.Add(request.Name, request.Price);\n    return Results.Created($\"/products/{product.Id}\", product);\n});\n\napp.Run();\n\npublic sealed class ProductCatalog\n{\n    private readonly List<Product> _items = [];\n    private int _nextId = 1;\n\n    public Product Add(string name, decimal price)\n    {\n        var product = new Product(_nextId++, name, price);\n        _items.Add(product);\n        return product;\n    }\n\n    public Product? Find(int id) => _items.FirstOrDefault(item => item.Id == id);\n}\n\npublic record Product(int Id, string Name, decimal Price);\npublic record CreateProduct(string Name, decimal Price);"
+    },
+    {
+     "language": "cs",
+     "code": "using Microsoft.AspNetCore.Mvc;\n\n// Register the store in Program.cs:\n// builder.Services.AddSingleton<ProductCatalog>();\n\n[ApiController]\n[Route(\"api/[controller]\")]\npublic sealed class ProductsController : ControllerBase\n{\n    private readonly ProductCatalog _catalog;\n\n    public ProductsController(ProductCatalog catalog) => _catalog = catalog;\n\n    [HttpGet(\"{id:int}\")]\n    public ActionResult<Product> Get(int id)\n    {\n        if (_catalog.Find(id) is { } product)\n        {\n            return product;\n        }\n        return NotFound();\n    }\n\n    [HttpPost]\n    public ActionResult<Product> Create(CreateProduct request)\n    {\n        var product = _catalog.Add(request.Name, request.Price);\n        return CreatedAtAction(nameof(Get), new { id = product.Id }, product);\n    }\n}\n\npublic sealed class ProductCatalog\n{\n    private readonly List<Product> _items = [];\n    private int _nextId = 1;\n\n    public Product Add(string name, decimal price)\n    {\n        var product = new Product(_nextId++, name, price);\n        _items.Add(product);\n        return product;\n    }\n\n    public Product? Find(int id) => _items.FirstOrDefault(item => item.Id == id);\n}\n\npublic record Product(int Id, string Name, decimal Price);\npublic record CreateProduct(string Name, decimal Price);"
+    }
+   ]
+  },
+  {
+   "id": "efcore",
+   "title": "Entity Framework Core",
+   "description": "Model a database, query it, save changes, and run migrations.",
+   "snippets": [
+    {
+     "language": "cs",
+     "code": "using Microsoft.EntityFrameworkCore;\n\npublic class ShopContext(DbContextOptions<ShopContext> options) : DbContext(options)\n{\n    public DbSet<Product> Products => Set<Product>();\n    public DbSet<Order> Orders => Set<Order>();\n\n    protected override void OnModelCreating(ModelBuilder modelBuilder)\n    {\n        base.OnModelCreating(modelBuilder);\n\n        modelBuilder.Entity<Product>(entity =>\n        {\n            entity.HasKey(product => product.Id);\n            entity.Property(product => product.Name).HasMaxLength(120).IsRequired();\n            entity.Property(product => product.Price).HasPrecision(10, 2);\n            entity.HasIndex(product => product.Name).IsUnique();\n        });\n    }\n}\n\npublic class Product\n{\n    public int Id { get; set; }\n    public string Name { get; set; } = \"\";\n    public decimal Price { get; set; }\n    public List<Order> Orders { get; set; } = [];\n}\n\npublic class Order\n{\n    public int Id { get; set; }\n    public int ProductId { get; set; }\n    public Product Product { get; set; } = null!;\n    public int Quantity { get; set; }\n}"
+    },
+    {
+     "language": "cs",
+     "code": "using Microsoft.EntityFrameworkCore;\n\nvar options = new DbContextOptionsBuilder<ShopContext>()\n    .UseSqlite(\"Data Source=shop.db\")\n    .Options;\n\n// A DbContext is not thread-safe: await one operation at a time\nawait using var context = new ShopContext(options);\n\nvar cheap = await context.Products\n    .AsNoTracking()\n    .Where(product => product.Price < 20m)\n    .OrderBy(product => product.Name)\n    .Select(product => new { product.Id, product.Name })\n    .ToListAsync();\n\nConsole.WriteLine($\"cheap products: {cheap.Count}\");\n\nvar mug = await context.Products\n    .Include(product => product.Orders)\n    .SingleAsync(product => product.Name == \"coffee mug\");\n\nmug.Price = 14.90m;\ncontext.Orders.Add(new Order { ProductId = mug.Id, Quantity = 3 });\n\nawait context.SaveChangesAsync();"
+    },
+    {
+     "language": "bash",
+     "code": "# Add the provider and the design-time package to the project\ndotnet add package Microsoft.EntityFrameworkCore.Sqlite\ndotnet add package Microsoft.EntityFrameworkCore.Design\n\n# Install the EF command-line tool once\ndotnet tool install --global dotnet-ef\n\n# Create a migration from the current model and apply it\ndotnet ef migrations add InitialCreate\ndotnet ef database update\n\n# Inspect the migration history\ndotnet ef migrations list"
+    }
+   ]
+  },
+  {
+   "id": "testing",
+   "title": "Testing",
+   "description": "xUnit facts, theories, and filtered test runs.",
+   "snippets": [
+    {
+     "language": "cs",
+     "code": "using Xunit;\n\npublic static class Calculator\n{\n    public static int Divide(int left, int right) =>\n        right == 0 ? throw new DivideByZeroException() : left / right;\n}\n\npublic class CalculatorTests\n{\n    [Fact]\n    public void Divide_ReturnsQuotient()\n    {\n        Assert.Equal(4, Calculator.Divide(12, 3));\n    }\n\n    [Fact]\n    public void Divide_ByZero_Throws()\n    {\n        Assert.Throws<DivideByZeroException>(() => Calculator.Divide(1, 0));\n    }\n}"
+    },
+    {
+     "language": "cs",
+     "code": "using Xunit;\n\npublic class GradeTests\n{\n    [Theory]\n    [InlineData(95, \"A\")]\n    [InlineData(85, \"B\")]\n    [InlineData(75, \"C\")]\n    [InlineData(40, \"F\")]\n    public void MapsPointsToGrade(int points, string expected)\n    {\n        Assert.Equal(expected, Grade(points));\n    }\n\n    private static string Grade(int points) => points switch\n    {\n        >= 90 => \"A\",\n        >= 80 => \"B\",\n        >= 70 => \"C\",\n        _ => \"F\",\n    };\n}"
+    },
+    {
+     "language": "bash",
+     "code": "# Run every test project in the solution\ndotnet test\n\n# Narrow to one test class, then to one method\ndotnet test --filter \"FullyQualifiedName~CalculatorTests\"\ndotnet test --filter \"FullyQualifiedName~CalculatorTests.Divide_ByZero_Throws\"\n\n# Collect coverage when coverlet.collector is referenced\ndotnet test --collect:\"XPlat Code Coverage\""
+    }
+   ]
+  },
+  {
+   "id": "common-errors",
+   "title": "Common Errors",
+   "description": "Runtime failures that compile cleanly, and the fix for each.",
+   "snippets": [
+    {
+     "language": "cs",
+     "code": "string? nickname = null;\n\n// NullReferenceException when the warning is ignored\n// Console.WriteLine(nickname.Length);\n\nConsole.WriteLine(nickname?.Length ?? 0);   // 0\n\nstring? fromEnv = Environment.GetEnvironmentVariable(\"APP_NAME\");\n\n// The null-forgiving operator only silences the compiler\nvar claimed = fromEnv!;\nConsole.WriteLine(claimed ?? \"unset\");      // unset when the variable is missing"
+    },
+    {
+     "language": "cs",
+     "code": "var scores = new[] { 87, 74, 91 };\n\nvar top = scores.First(score => score > 90);              // 91\nvar none = scores.FirstOrDefault(score => score > 100);   // 0\n\nConsole.WriteLine($\"{top} {none}\");\n\ntry\n{\n    // InvalidOperationException: more than one element matches\n    var duplicate = scores.Single(score => score > 80);\n    Console.WriteLine(duplicate);\n}\ncatch (InvalidOperationException error)\n{\n    Console.WriteLine(error.Message);   // Sequence contains more than one matching element\n}"
+    },
+    {
+     "language": "cs",
+     "code": "var names = new List<string> { \"ana\", \"bruno\", \"carla\" };\n\ntry\n{\n    foreach (var name in names)\n    {\n        if (name.StartsWith('b'))\n        {\n            names.Remove(name);   // InvalidOperationException\n        }\n    }\n}\ncatch (InvalidOperationException error)\n{\n    Console.WriteLine(error.Message);\n    // Collection was modified; enumeration operation may not execute.\n}\n\n// Remove in one pass instead of mutating during enumeration\nnames.RemoveAll(name => name.StartsWith('b'));\nConsole.WriteLine(string.Join(\", \", names));   // ana, carla"
+    }
+   ]
+  }
+ ]
+}

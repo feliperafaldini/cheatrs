@@ -1,0 +1,326 @@
+{
+ "slug": "php",
+ "title": "PHP",
+ "label": "PHP",
+ "group": "Language",
+ "color": "#777BB4",
+ "desc": "Server-side scripting for forms, sessions, files, and databases.",
+ "sections": [
+  {
+   "id": "setup",
+   "title": "Setup",
+   "description": "Check the runtime, run a file, and start the built-in web server.",
+   "snippets": [
+    {
+     "language": "bash",
+     "code": "# Version and loaded extensions\nphp -v\nphp -m\n\n# Execute a file or a one-off expression\nphp app.php\nphp -r 'echo PHP_VERSION;'\n\n# Serve the working tree on localhost\nphp -S localhost:8080 -t public"
+    },
+    {
+     "language": "php",
+     "code": "<?php\n// info.php: what the current process sees\nheader('Content-Type: text/plain');\n\necho 'SAPI: ', PHP_SAPI, PHP_EOL;\necho 'Config: ', php_ini_loaded_file(), PHP_EOL;\necho 'Memory limit: ', ini_get('memory_limit'), PHP_EOL;"
+    }
+   ]
+  },
+  {
+   "id": "basic-syntax",
+   "title": "Basic Syntax",
+   "description": "PHP tags, statements, comments, and output.",
+   "snippets": [
+    {
+     "language": "php",
+     "code": "<?php\n\ndeclare(strict_types=1);\n\n// A file starts in HTML mode until the opening tag\n$name = 'Ada';\necho \"Hello {$name}\", PHP_EOL;\n\n/* Block comments cover\n   more than one line */\n$languages = ['php', 'sql'];\n\nforeach ($languages as $language) {\n    echo strtoupper($language), ' ';\n}\n?>\n<p>Back in HTML mode</p>"
+    },
+    {
+     "language": "php",
+     "code": "<?php\n$stock = 4;\n\n// The short echo tag prints an expression\n?>\n<strong><?= $stock > 0 ? 'Available' : 'Sold out' ?></strong>"
+    }
+   ]
+  },
+  {
+   "id": "variables",
+   "title": "Variables",
+   "description": "Assignment, constants, and references that share one value.",
+   "snippets": [
+    {
+     "language": "php",
+     "code": "<?php\n$quantity = 3;\n$unitPrice = 4.5;\n$currency = 'EUR';\n\n// Variables are dynamically typed\n$quantity = 'three';\n\n// Constants cannot be reassigned\nconst TAX_RATE = 0.23;\ndefine('SHOP_NAME', 'Corner Store');\n\necho $currency, ' ', TAX_RATE, ' ', SHOP_NAME, PHP_EOL;\nvar_dump($quantity);"
+    },
+    {
+     "language": "php",
+     "code": "<?php\n$balance = 100;\n\n// The ampersand makes both names point at the same value\n$alias = &$balance;\n$alias -= 25;\necho $balance, PHP_EOL; // 75\n\nfunction deposit(int &$amount, int $cents): void\n{\n    $amount += $cents;\n}\n\ndeposit($balance, 50);\necho $balance, PHP_EOL; // 125"
+    }
+   ]
+  },
+  {
+   "id": "types",
+   "title": "Types",
+   "description": "Scalars, arrays, nullable values, unions, and enums.",
+   "snippets": [
+    {
+     "language": "php",
+     "code": "<?php\ndeclare(strict_types=1);\n\n$seats = 24;              // int\n$rating = 4.6;            // float\n$city = 'Lisbon';         // string\n$open = true;             // bool\n$closedAt = null;         // null\n$menu = ['soup', 'fish']; // array\n\nvar_dump($seats, $rating, $city, $open, $closedAt, $menu);\n\n// Loose comparison converts, strict comparison does not\nvar_dump('24' == 24);  // true\nvar_dump('24' === 24); // false"
+    },
+    {
+     "language": "php",
+     "code": "<?php\nenum OrderState: string\n{\n    case Draft = 'draft';\n    case Paid = 'paid';\n    case Shipped = 'shipped';\n}\n\nfunction describe(int|string $reference, ?OrderState $state = null): string\n{\n    $suffix = $state?->value ?? 'unknown';\n    return \"order {$reference}: {$suffix}\";\n}\n\necho describe(1042), PHP_EOL;                       // order 1042: unknown\necho describe('A-9', OrderState::Shipped), PHP_EOL; // order A-9: shipped"
+    }
+   ]
+  },
+  {
+   "id": "strings",
+   "title": "Strings",
+   "description": "Interpolation, heredoc blocks, and common string helpers.",
+   "snippets": [
+    {
+     "language": "php",
+     "code": "<?php\n$user = 'Ada';\n$role = 'admin';\n\n// Double quotes expand variables, single quotes keep them literal\necho \"Signed in as {$user} ({$role})\", PHP_EOL;\necho 'Signed in as $user', PHP_EOL;\n\n// Heredoc keeps line breaks and interpolates\n$notice = <<<MESSAGE\nHello {$user},\nyour access level is {$role}.\nMESSAGE;\n\necho $notice, PHP_EOL;"
+    },
+    {
+     "language": "php",
+     "code": "<?php\n$path = '/srv/app/public/index.php';\n\necho basename($path), PHP_EOL;                    // index.php\necho str_pad('7', 3, '0', STR_PAD_LEFT), PHP_EOL; // 007\necho substr_count($path, '/'), PHP_EOL;           // 4\necho str_replace('public', 'src', $path), PHP_EOL;\necho str_contains($path, 'app') ? 'yes' : 'no', PHP_EOL;\necho implode('-', ['php', '8', '3']), PHP_EOL;    // php-8-3\necho trim('  padded  '), PHP_EOL;"
+    }
+   ]
+  },
+  {
+   "id": "arrays",
+   "title": "Arrays",
+   "description": "Indexed and keyed arrays, plus the helpers used every day.",
+   "snippets": [
+    {
+     "language": "php",
+     "code": "<?php\n$queue = ['first', 'second'];\n$queue[] = 'third';            // append at the end\narray_unshift($queue, 'zero'); // insert at the front\n\n$config = [\n    'host' => 'db.internal',\n    'port' => 5432,\n    'retry' => ['limit' => 3, 'delay' => 2],\n];\n\necho $config['retry']['delay'], PHP_EOL; // 2\necho count($queue), PHP_EOL;             // 4\nvar_dump(in_array('third', $queue, true)); // true"
+    },
+    {
+     "language": "php",
+     "code": "<?php\n$prices = ['pen' => 2, 'book' => 15, 'bag' => 40];\n\n$withTax = array_map(static fn (int $p): float => $p * 1.2, $prices);\n$cheap = array_filter($prices, static fn (int $p): bool => $p < 20);\nksort($withTax);\n\n[$pen, $book] = array_values($cheap);\necho $pen, ' ', $book, PHP_EOL;   // 2 15\necho array_key_last($withTax), PHP_EOL; // pen\necho implode(',', array_keys($prices)), PHP_EOL; // pen,book,bag"
+    }
+   ]
+  },
+  {
+   "id": "control-flow",
+   "title": "Control Flow",
+   "description": "Branches that return values, strict match arms, and loops.",
+   "snippets": [
+    {
+     "language": "php",
+     "code": "<?php\n$score = 87;\n\nif ($score >= 90) {\n    $grade = 'A';\n} elseif ($score >= 80) {\n    $grade = 'B';\n} else {\n    $grade = 'C';\n}\n\n// match compares strictly and produces a value\n$summary = match (true) {\n    $score >= 90 => 'outstanding',\n    $score >= 80 => 'solid',\n    default => 'needs work',\n};\n\necho $grade, ' ', $summary, PHP_EOL;"
+    },
+    {
+     "language": "php",
+     "code": "<?php\nfor ($step = 1; $step <= 3; $step++) {\n    echo $step, ' ';\n}\n\n$files = ['notes.txt', 'photo.jpg'];\nforeach ($files as $position => $file) {\n    echo \"{$position}: {$file}\", PHP_EOL;\n}\n\n$attempts = 0;\nwhile ($attempts < 2) {\n    $attempts++;\n}\n\ndo {\n    $attempts--;\n} while ($attempts > 0);\n\necho $attempts, PHP_EOL; // 0"
+    },
+    {
+     "language": "php",
+     "code": "<?php\n$status = 'paused';\n\nswitch ($status) {\n    case 'running':\n        echo 'go', PHP_EOL;\n        break;\n    case 'paused':\n        echo 'wait', PHP_EOL;\n        break;\n    default:\n        echo 'unknown', PHP_EOL;\n}"
+    }
+   ]
+  },
+  {
+   "id": "functions",
+   "title": "Functions",
+   "description": "Typed parameters, defaults, named arguments, and variadics.",
+   "snippets": [
+    {
+     "language": "php",
+     "code": "<?php\ndeclare(strict_types=1);\n\nfunction area(float $width, float $height = 1.0): float\n{\n    return $width * $height;\n}\n\nfunction total(int ...$cents): int\n{\n    return array_sum($cents);\n}\n\necho area(3.5), PHP_EOL;                  // 3.5\necho area(height: 2, width: 4), PHP_EOL;  // 8\necho total(120, 75, 300), PHP_EOL;        // 495"
+    },
+    {
+     "language": "php",
+     "code": "<?php\nfunction slugify(string $text): string\n{\n    return strtolower(str_replace(' ', '-', trim($text)));\n}\n\n// First-class callable syntax, PHP 8.1+\n$makeSlug = slugify(...);\n\necho $makeSlug('Hello World'), PHP_EOL; // hello-world\necho strlen(slugify('PHP 8.3')), PHP_EOL; // 7"
+    }
+   ]
+  },
+  {
+   "id": "closures",
+   "title": "Closures and Callbacks",
+   "description": "Anonymous functions, captured state, and arrow shorthand.",
+   "snippets": [
+    {
+     "language": "php",
+     "code": "<?php\n$rate = 0.2;\n\n$gross = function (float $net) use ($rate): float {\n    return $net * (1 + $rate);\n};\n\necho $gross(50.0), PHP_EOL; // 60\n\n// Arrow functions capture outer values by value\n$double = fn (int $n): int => $n * 2;\necho implode(',', array_map($double, [1, 2, 3])), PHP_EOL; // 2,4,6"
+    },
+    {
+     "language": "php",
+     "code": "<?php\n$numbers = [4, 1, 7, 3];\n\nusort($numbers, static fn (int $a, int $b): int => $a <=> $b);\necho implode(' ', $numbers), PHP_EOL; // 1 3 4 7\n\n$prefix = 'item-';\n$labels = array_map(static fn (int $n): string => $prefix . $n, $numbers);\nprint_r($labels);\n\n$even = array_filter($numbers, static fn (int $n): bool => $n % 2 === 0);\nprint_r(array_values($even));"
+    }
+   ]
+  },
+  {
+   "id": "classes",
+   "title": "Classes",
+   "description": "Promoted properties, readonly state, methods, and factories.",
+   "snippets": [
+    {
+     "language": "php",
+     "code": "<?php\ndeclare(strict_types=1);\n\nfinal class Invoice\n{\n    public function __construct(\n        private readonly string $number,\n        private int $amountCents,\n    ) {\n    }\n\n    public function amount(): float\n    {\n        return $this->amountCents / 100;\n    }\n\n    public function addItem(int $cents): static\n    {\n        $this->amountCents += $cents;\n        return $this;\n    }\n\n    public static function fromTotal(float $total): self\n    {\n        return new self('INV-001', (int) round($total * 100));\n    }\n}\n\n$invoice = Invoice::fromTotal(19.99)->addItem(500);\necho $invoice->amount(), PHP_EOL; // 24.99"
+    },
+    {
+     "language": "php",
+     "code": "<?php\nfinal class Counter\n{\n    private static int $instances = 0;\n    private int $value = 0;\n\n    public function __construct()\n    {\n        self::$instances++;\n    }\n\n    public function next(): int\n    {\n        return ++$this->value;\n    }\n\n    public static function created(): int\n    {\n        return self::$instances;\n    }\n}\n\n$a = new Counter();\n$b = new Counter();\necho $a->next(), $b->next(), PHP_EOL; // 11\necho Counter::created(), PHP_EOL;     // 2"
+    }
+   ]
+  },
+  {
+   "id": "inheritance",
+   "title": "Inheritance and Interfaces",
+   "description": "Contracts, abstract bases, and swapping implementations.",
+   "snippets": [
+    {
+     "language": "php",
+     "code": "<?php\ninterface Printable\n{\n    public function render(): string;\n}\n\nabstract class Document implements Printable\n{\n    public function __construct(protected string $title)\n    {\n    }\n\n    public function render(): string\n    {\n        return sprintf('[%s] %s', $this->kind(), $this->title);\n    }\n\n    abstract protected function kind(): string;\n}\n\nfinal class Report extends Document\n{\n    protected function kind(): string\n    {\n        return 'report';\n    }\n}\n\necho (new Report('Q3 revenue'))->render(), PHP_EOL; // [report] Q3 revenue"
+    },
+    {
+     "language": "php",
+     "code": "<?php\ninterface Notifier\n{\n    public function send(string $to, string $body): bool;\n}\n\nfinal class MailNotifier implements Notifier\n{\n    public function send(string $to, string $body): bool\n    {\n        return str_contains($to, '@') && $body !== '';\n    }\n}\n\nfunction dispatch(Notifier $notifier): string\n{\n    $sent = $notifier->send('ada@example.com', 'Build finished');\n    return $sent ? 'sent' : 'rejected';\n}\n\necho dispatch(new MailNotifier()), PHP_EOL; // sent"
+    }
+   ]
+  },
+  {
+   "id": "traits",
+   "title": "Traits",
+   "description": "Reuse behaviour across unrelated classes and resolve collisions.",
+   "snippets": [
+    {
+     "language": "php",
+     "code": "<?php\ntrait Timestamps\n{\n    private ?DateTimeImmutable $changedAt = null;\n\n    public function touch(): void\n    {\n        $this->changedAt = new DateTimeImmutable();\n    }\n\n    public function lastChange(): ?string\n    {\n        return $this->changedAt?->format('Y-m-d H:i:s');\n    }\n}\n\nfinal class Note\n{\n    use Timestamps;\n}\n\n$note = new Note();\n$note->touch();\necho $note->lastChange() !== null ? 'tracked' : 'untracked', PHP_EOL;"
+    },
+    {
+     "language": "php",
+     "code": "<?php\ntrait Loud\n{\n    public function speak(): string\n    {\n        return 'LOUD';\n    }\n}\n\ntrait Quiet\n{\n    public function speak(): string\n    {\n        return 'quiet';\n    }\n}\n\nfinal class Voice\n{\n    use Loud, Quiet {\n        Loud::speak insteadof Quiet;\n        Quiet::speak as whisper;\n    }\n}\n\n$voice = new Voice();\necho $voice->speak(), PHP_EOL;   // LOUD\necho $voice->whisper(), PHP_EOL; // quiet"
+    }
+   ]
+  },
+  {
+   "id": "namespaces",
+   "title": "Namespaces and Autoload",
+   "description": "Namespaced classes plus a PSR-4 map that Composer can follow.",
+   "snippets": [
+    {
+     "language": "php",
+     "code": "<?php\nnamespace App\\Http;\n\nuse DateTimeImmutable;\nuse InvalidArgumentException;\n\nfinal class RequestId\n{\n    public function __construct(private string $value)\n    {\n        if ($value === '') {\n            throw new InvalidArgumentException('empty request id');\n        }\n    }\n\n    public static function now(): self\n    {\n        return new self((new DateTimeImmutable())->format('YmdHis'));\n    }\n\n    public function __toString(): string\n    {\n        return $this->value;\n    }\n}\n\necho RequestId::now(), PHP_EOL;"
+    },
+    {
+     "language": "json",
+     "code": "{\n  \"autoload\": {\n    \"psr-4\": {\n      \"App\\\\\": \"src/\"\n    }\n  }\n}"
+    },
+    {
+     "language": "bash",
+     "code": "# Regenerate the autoloader after adding a class\ncomposer dump-autoload -o\n\n# Confirm the class is reachable through the map\nphp -r 'require \"vendor/autoload.php\"; var_dump(class_exists(\"App\\\\Http\\\\RequestId\"));'"
+    }
+   ]
+  },
+  {
+   "id": "exceptions",
+   "title": "Exceptions",
+   "description": "Throw custom errors, catch specific types, and always clean up.",
+   "snippets": [
+    {
+     "language": "php",
+     "code": "<?php\ndeclare(strict_types=1);\n\nfinal class InsufficientFunds extends RuntimeException\n{\n    public function __construct(public readonly int $shortfall)\n    {\n        parent::__construct(\"Missing {$shortfall} cents\");\n    }\n}\n\nfunction withdraw(int $balance, int $amount): int\n{\n    if ($amount > $balance) {\n        throw new InsufficientFunds($amount - $balance);\n    }\n    return $balance - $amount;\n}\n\ntry {\n    echo withdraw(500, 800), PHP_EOL;\n} catch (InsufficientFunds $error) {\n    echo $error->getMessage(), PHP_EOL; // Missing 300 cents\n} finally {\n    echo 'attempt finished', PHP_EOL;\n}"
+    },
+    {
+     "language": "php",
+     "code": "<?php\ntry {\n    $data = json_decode('{\"broken\":', true, 512, JSON_THROW_ON_ERROR);\n} catch (JsonException $error) {\n    error_log('invalid payload: ' . $error->getMessage());\n} catch (Throwable $error) {\n    throw $error;\n} finally {\n    unset($data);\n}\n\n// Exceptions also surface as objects for inspection\n$bad = new LogicException('rule 12 failed', 12);\necho get_class($bad), ' ', $bad->getCode(), PHP_EOL;"
+    }
+   ]
+  },
+  {
+   "id": "files",
+   "title": "Files",
+   "description": "Read, write, stream, and remove files with the standard library.",
+   "snippets": [
+    {
+     "language": "php",
+     "code": "<?php\n$log = '/srv/app/storage/activity.log';\n\nfile_put_contents($log, \"started\\n\", FILE_APPEND | LOCK_EX);\n$contents = file_get_contents($log);\necho strlen($contents), PHP_EOL;\n\n// Stream line by line instead of loading everything\n$handle = fopen($log, 'r');\nwhile (($line = fgets($handle)) !== false) {\n    echo trim($line), PHP_EOL;\n}\nfclose($handle);"
+    },
+    {
+     "language": "php",
+     "code": "<?php\n$csv = new SplFileObject('/srv/app/data/users.csv', 'r');\n$csv->setFlags(SplFileObject::READ_CSV | SplFileObject::SKIP_EMPTY);\n\nforeach ($csv as $row) {\n    if ($row === [null]) {\n        continue; // blank trailing line\n    }\n    echo $row[0], PHP_EOL;\n}\n\n$tmp = tempnam(sys_get_temp_dir(), 'report');\nfile_put_contents($tmp, 'draft');\necho filesize($tmp), PHP_EOL; // 5\nunlink($tmp);"
+    }
+   ]
+  },
+  {
+   "id": "pdo",
+   "title": "PDO and Databases",
+   "description": "One API for MySQL, PostgreSQL, and SQLite with prepared statements.",
+   "snippets": [
+    {
+     "language": "php",
+     "code": "<?php\n$dsn = 'mysql:host=127.0.0.1;port=3306;dbname=shop;charset=utf8mb4';\n\n$pdo = new PDO($dsn, 'app', 'secret', [\n    PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,\n    PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,\n    PDO::ATTR_EMULATE_PREPARES => false,\n]);\n\n$stmt = $pdo->prepare('SELECT id, name FROM products WHERE price > :min ORDER BY price');\n$stmt->execute(['min' => 10]);\n\nforeach ($stmt as $row) {\n    echo $row['id'], ' ', $row['name'], PHP_EOL;\n}"
+    },
+    {
+     "language": "php",
+     "code": "<?php\n$pdo = new PDO('sqlite:' . sys_get_temp_dir() . '/shop.sqlite', null, null, [\n    PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,\n]);\n$pdo->exec('CREATE TABLE IF NOT EXISTS orders (id INTEGER PRIMARY KEY, total NUMERIC)');\n\n$pdo->beginTransaction();\ntry {\n    $insert = $pdo->prepare('INSERT INTO orders (total) VALUES (:total)');\n    $insert->execute(['total' => 249.90]);\n    $orderId = (int) $pdo->lastInsertId();\n\n    $pdo->prepare('UPDATE orders SET total = total + 1 WHERE id = :id')\n        ->execute(['id' => $orderId]);\n\n    $pdo->commit();\n    echo \"order {$orderId}\", PHP_EOL;\n} catch (Throwable $error) {\n    $pdo->rollBack();\n    throw $error;\n}"
+    }
+   ]
+  },
+  {
+   "id": "json",
+   "title": "JSON",
+   "description": "Encode, decode, fail loudly on bad input, and shape custom payloads.",
+   "snippets": [
+    {
+     "language": "php",
+     "code": "<?php\n$payload = ['id' => 12, 'tags' => ['php', 'api'], 'active' => true];\n\n$json = json_encode($payload, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);\necho $json, PHP_EOL;\n\n$decoded = json_decode($json, true, 512, JSON_THROW_ON_ERROR);\necho $decoded['tags'][1], PHP_EOL; // api\nvar_dump(json_last_error() === JSON_ERROR_NONE); // true"
+    },
+    {
+     "language": "php",
+     "code": "<?php\nfinal class Money implements JsonSerializable\n{\n    public function __construct(private int $cents)\n    {\n    }\n\n    public function jsonSerialize(): array\n    {\n        return ['amount' => $this->cents / 100, 'currency' => 'EUR'];\n    }\n}\n\necho json_encode(new Money(1999), JSON_THROW_ON_ERROR), PHP_EOL;\n\n// Missing keys become null when decoding to arrays\n$row = json_decode('{\"name\":\"Ada\"}', true, 512, JSON_THROW_ON_ERROR);\nvar_dump($row['nickname'] ?? null); // NULL"
+    }
+   ]
+  },
+  {
+   "id": "composer",
+   "title": "Composer",
+   "description": "Declare packages and autoloading in composer.json, then drive it from the CLI.",
+   "snippets": [
+    {
+     "language": "json",
+     "code": "{\n  \"name\": \"acme/shop\",\n  \"type\": \"project\",\n  \"require\": {\n    \"php\": \"8.3.*\",\n    \"monolog/monolog\": \"3.7.0\"\n  },\n  \"require-dev\": {\n    \"phpunit/phpunit\": \"11.2.0\"\n  },\n  \"autoload\": {\n    \"psr-4\": {\n      \"Acme\\\\Shop\\\\\": \"src/\"\n    }\n  },\n  \"scripts\": {\n    \"test\": \"phpunit\"\n  }\n}"
+    },
+    {
+     "language": "bash",
+     "code": "# Install exactly what the lock file pins\ncomposer install\n\n# Add a package and keep the constraint honest\ncomposer require guzzlehttp/guzzle:^7.9\n\n# Inspect what would change without touching vendor/\ncomposer update --dry-run\ncomposer validate --strict\ncomposer run test"
+    }
+   ]
+  },
+  {
+   "id": "security",
+   "title": "Security",
+   "description": "Password hashing, output escaping, and form tokens compared in constant time.",
+   "snippets": [
+    {
+     "language": "php",
+     "code": "<?php\n$hash = password_hash('correct horse battery', PASSWORD_DEFAULT);\n\nif (password_verify('correct horse battery', $hash)) {\n    echo 'login accepted', PHP_EOL;\n}\n\n// Rehash when the default algorithm changes\nif (password_needs_rehash($hash, PASSWORD_DEFAULT)) {\n    $hash = password_hash('correct horse battery', PASSWORD_DEFAULT);\n}\n\n$algo = password_get_info($hash)['algoName'];\necho $algo, PHP_EOL; // default algorithm, bcrypt today"
+    },
+    {
+     "language": "php",
+     "code": "<?php\n$comment = '<script>alert(1)</script>';\n\n// Escape on output, never trust stored text\necho htmlspecialchars($comment, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8'), PHP_EOL;\n\n$email = filter_var('ada@example.com', FILTER_VALIDATE_EMAIL);\nvar_dump($email); // string(15) \"ada@example.com\"\n\nvar_dump(filter_var('not-an-email', FILTER_VALIDATE_EMAIL)); // false"
+    },
+    {
+     "language": "php",
+     "code": "<?php\nsession_start();\n\n// One token per form, unpredictable\n$token = bin2hex(random_bytes(32));\n$_SESSION['csrf'] = $token;\necho $token, PHP_EOL;\n\n$submitted = $_POST['csrf'] ?? '';\n\n// hash_equals avoids timing leaks\nif (!hash_equals($_SESSION['csrf'], $submitted)) {\n    http_response_code(419);\n    exit('stale form');\n}"
+    }
+   ]
+  },
+  {
+   "id": "testing",
+   "title": "Testing",
+   "description": "PHPUnit cases, data providers, and the commands that run them.",
+   "snippets": [
+    {
+     "language": "php",
+     "code": "<?php\nuse PHPUnit\\Framework\\TestCase;\n\nfinal class CartTest extends TestCase\n{\n    public function testTotalAddsItems(): void\n    {\n        $cart = new Cart();\n        $cart->add('tea', 350);\n        $cart->add('cake', 600);\n\n        $this->assertSame(950, $cart->totalCents());\n    }\n\n    public function testEmptyCartStartsAtZero(): void\n    {\n        $this->assertSame(0, (new Cart())->totalCents());\n    }\n}"
+    },
+    {
+     "language": "php",
+     "code": "<?php\nuse PHPUnit\\Framework\\Attributes\\DataProvider;\nuse PHPUnit\\Framework\\TestCase;\n\nfinal class SlugTest extends TestCase\n{\n    #[DataProvider('inputs')]\n    public function testSlug(string $raw, string $expected): void\n    {\n        $this->assertSame($expected, slugify($raw));\n    }\n\n    public static function inputs(): iterable\n    {\n        yield ['Hello World', 'hello-world'];\n        yield ['  PHP 8.3  ', 'php-8-3'];\n    }\n}"
+    },
+    {
+     "language": "bash",
+     "code": "# Run the whole suite with readable names\nvendor/bin/phpunit --testdox\n\n# Narrow down to one class or method\nvendor/bin/phpunit --filter CartTest\nvendor/bin/phpunit --filter testEmptyCartStartsAtZero\n\n# Terminal coverage report\nvendor/bin/phpunit --coverage-text"
+    }
+   ]
+  }
+ ]
+}

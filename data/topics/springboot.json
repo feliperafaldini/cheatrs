@@ -1,0 +1,221 @@
+{
+ "slug": "springboot",
+ "title": "SpringBoot",
+ "label": "SpringBoot",
+ "group": "Framework",
+ "color": "#6DB33F",
+ "desc": "An opinionated Spring platform that auto-configures a production-ready Java service around plain Spring components.",
+ "sections": [
+  {
+   "id": "setup",
+   "title": "Setup",
+   "description": "Generate a project from start.spring.io, then run it with the bundled wrapper.",
+   "snippets": [
+    {
+     "language": "bash",
+     "code": "# Generate a Maven project with the starters used in this sheet\ncurl -fsSL https://start.spring.io/starter.tgz \\\n  -d type=maven-project \\\n  -d language=java \\\n  -d bootVersion=3.5.0 \\\n  -d javaVersion=21 \\\n  -d groupId=com.example \\\n  -d artifactId=catalog \\\n  -d dependencies=web,data-jpa,validation,actuator,flyway,postgresql \\\n  | tar -xz\n\n# Start the app on port 8080 with the Maven wrapper\ncd catalog\n./mvnw spring-boot:run\n\n# Build the executable jar and run it on its own\n./mvnw clean package\njava -jar target/catalog-0.0.1-SNAPSHOT.jar\n\n# Override any property from the command line\njava -jar target/catalog-0.0.1-SNAPSHOT.jar --server.port=9000 --spring.profiles.active=local"
+    },
+    {
+     "language": "xml",
+     "code": "<project xmlns=\"http://maven.apache.org/POM/4.0.0\"\n         xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\"\n         xsi:schemaLocation=\"http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd\">\n  <modelVersion>4.0.0</modelVersion>\n\n  <parent>\n    <groupId>org.springframework.boot</groupId>\n    <artifactId>spring-boot-starter-parent</artifactId>\n    <version>3.5.0</version>\n    <relativePath/>\n  </parent>\n\n  <groupId>com.example</groupId>\n  <artifactId>catalog</artifactId>\n  <version>0.0.1-SNAPSHOT</version>\n\n  <properties>\n    <java.version>21</java.version>\n  </properties>\n\n  <dependencies>\n    <dependency>\n      <groupId>org.springframework.boot</groupId>\n      <artifactId>spring-boot-starter-web</artifactId>\n    </dependency>\n    <dependency>\n      <groupId>org.springframework.boot</groupId>\n      <artifactId>spring-boot-starter-data-jpa</artifactId>\n    </dependency>\n    <dependency>\n      <groupId>org.springframework.boot</groupId>\n      <artifactId>spring-boot-starter-validation</artifactId>\n    </dependency>\n    <dependency>\n      <groupId>org.springframework.boot</groupId>\n      <artifactId>spring-boot-starter-actuator</artifactId>\n    </dependency>\n    <dependency>\n      <groupId>org.flywaydb</groupId>\n      <artifactId>flyway-core</artifactId>\n    </dependency>\n    <dependency>\n      <groupId>org.flywaydb</groupId>\n      <artifactId>flyway-database-postgresql</artifactId>\n    </dependency>\n    <dependency>\n      <groupId>org.postgresql</groupId>\n      <artifactId>postgresql</artifactId>\n      <scope>runtime</scope>\n    </dependency>\n    <dependency>\n      <groupId>org.springframework.boot</groupId>\n      <artifactId>spring-boot-starter-test</artifactId>\n      <scope>test</scope>\n    </dependency>\n  </dependencies>\n\n  <build>\n    <plugins>\n      <plugin>\n        <groupId>org.springframework.boot</groupId>\n        <artifactId>spring-boot-maven-plugin</artifactId>\n      </plugin>\n    </plugins>\n  </build>\n</project>"
+    }
+   ]
+  },
+  {
+   "id": "structure",
+   "title": "Project Structure",
+   "description": "Package by feature so each slice holds its own entity, repository, service and controller.",
+   "snippets": [
+    {
+     "language": "text",
+     "code": "catalog/\n  pom.xml\n  mvnw\n  src/\n    main/\n      java/com/example/catalog/\n        CatalogApplication.java        # @SpringBootApplication entry point\n        product/\n          Product.java                 # JPA entity\n          ProductRepository.java       # Spring Data interface\n          ProductService.java          # Transactional business rules\n          ProductController.java       # HTTP layer\n          ProductRequest.java          # Validated input record\n          ProductResponse.java         # Output record\n        config/\n          CatalogProperties.java       # Typed configuration\n          SecurityConfiguration.java\n        common/\n          ApiExceptionHandler.java     # @RestControllerAdvice\n      resources/\n        application.yml                # Default configuration\n        db/migration/\n          V1__create_product.sql       # Flyway owns the schema\n    test/\n      java/com/example/catalog/\n        product/\n          ProductControllerTest.java\n          ProductServiceTest.java"
+    },
+    {
+     "language": "java",
+     "code": "package com.example.catalog;\n\nimport org.springframework.boot.SpringApplication;\nimport org.springframework.boot.autoconfigure.SpringBootApplication;\nimport org.springframework.boot.context.properties.ConfigurationPropertiesScan;\n\n// One annotation: component scan, auto-configuration and property binding\n@SpringBootApplication\n@ConfigurationPropertiesScan\npublic class CatalogApplication {\n\n    public static void main(String[] args) {\n        SpringApplication.run(CatalogApplication.class, args);\n    }\n}"
+    }
+   ]
+  },
+  {
+   "id": "controllers",
+   "title": "Controllers",
+   "description": "Map HTTP verbs to methods and return explicit status codes.",
+   "snippets": [
+    {
+     "language": "java",
+     "code": "package com.example.catalog.product;\n\nimport jakarta.validation.Valid;\nimport java.net.URI;\nimport java.util.List;\nimport org.springframework.http.ResponseEntity;\nimport org.springframework.web.bind.annotation.DeleteMapping;\nimport org.springframework.web.bind.annotation.GetMapping;\nimport org.springframework.web.bind.annotation.PathVariable;\nimport org.springframework.web.bind.annotation.PostMapping;\nimport org.springframework.web.bind.annotation.RequestBody;\nimport org.springframework.web.bind.annotation.RequestMapping;\nimport org.springframework.web.bind.annotation.RequestParam;\nimport org.springframework.web.bind.annotation.RestController;\n\n@RestController\n@RequestMapping(\"/api/products\")\npublic class ProductController {\n\n    private final ProductService service;\n\n    // Constructor injection keeps the field final and the class testable\n    public ProductController(ProductService service) {\n        this.service = service;\n    }\n\n    @GetMapping\n    public List<ProductResponse> list(@RequestParam(defaultValue = \"0\") int page) {\n        return service.list(page, 20);\n    }\n\n    @GetMapping(\"/{id}\")\n    public ProductResponse get(@PathVariable long id) {\n        return service.get(id);\n    }\n\n    @PostMapping\n    public ResponseEntity<ProductResponse> create(@Valid @RequestBody ProductRequest request) {\n        ProductResponse created = service.create(request);\n        return ResponseEntity.created(URI.create(\"/api/products/\" + created.id())).body(created);\n    }\n\n    @DeleteMapping(\"/{id}\")\n    public ResponseEntity<Void> delete(@PathVariable long id) {\n        service.delete(id);\n        return ResponseEntity.noContent().build();\n    }\n}"
+    },
+    {
+     "language": "java",
+     "code": "package com.example.catalog.product;\n\n// A record gives an immutable body: constructor, accessors, equals and toString\npublic record ProductResponse(long id, String name, long priceCents, int stock) {\n\n    static ProductResponse from(Product product) {\n        return new ProductResponse(\n                product.getId(),\n                product.getName(),\n                product.getPriceCents(),\n                product.getStock());\n    }\n}"
+    }
+   ]
+  },
+  {
+   "id": "services",
+   "title": "Services",
+   "description": "Hold business rules in transactional beans and keep controllers thin.",
+   "snippets": [
+    {
+     "language": "java",
+     "code": "package com.example.catalog.product;\n\nimport java.util.List;\nimport org.springframework.data.domain.PageRequest;\nimport org.springframework.stereotype.Service;\nimport org.springframework.transaction.annotation.Transactional;\n\n@Service\npublic class ProductService {\n\n    private final ProductRepository repository;\n\n    public ProductService(ProductRepository repository) {\n        this.repository = repository;\n    }\n\n    // Read-only transactions skip dirty checking and can hit a replica\n    @Transactional(readOnly = true)\n    public List<ProductResponse> list(int page, int size) {\n        return repository.findAll(PageRequest.of(page, size))\n                .map(ProductResponse::from)\n                .getContent();\n    }\n\n    @Transactional(readOnly = true)\n    public List<ProductResponse> search(String term, int limit) {\n        return repository.findByNameContainingIgnoreCase(term).stream()\n                .limit(limit)\n                .map(ProductResponse::from)\n                .toList();\n    }\n\n    @Transactional(readOnly = true)\n    public ProductResponse get(long id) {\n        return repository.findById(id)\n                .map(ProductResponse::from)\n                .orElseThrow(() -> new ProductNotFoundException(id));\n    }\n\n    @Transactional\n    public ProductResponse create(ProductRequest request) {\n        Product product = new Product(request.name(), request.priceCents(), request.stock());\n        return ProductResponse.from(repository.save(product));\n    }\n\n    @Transactional\n    public void delete(long id) {\n        if (!repository.existsById(id)) {\n            throw new ProductNotFoundException(id);\n        }\n        repository.deleteById(id);\n    }\n}"
+    },
+    {
+     "language": "java",
+     "code": "package com.example.catalog.product;\n\nimport org.springframework.stereotype.Service;\nimport org.springframework.transaction.annotation.Propagation;\nimport org.springframework.transaction.annotation.Transactional;\n\n@Service\npublic class StockService {\n\n    private final ProductRepository repository;\n    private final AuditService audit;\n\n    public StockService(ProductRepository repository, AuditService audit) {\n        this.repository = repository;\n        this.audit = audit;\n    }\n\n    // The stock update and the audit row commit or roll back together\n    @Transactional\n    public void reserve(long productId, int quantity) {\n        Product product = repository.findById(productId)\n                .orElseThrow(() -> new ProductNotFoundException(productId));\n\n        product.reserve(quantity);\n        audit.record(\"reserved \" + quantity + \" of product \" + productId);\n    }\n\n    // REQUIRES_NEW survives even when the caller later rolls back\n    @Transactional(propagation = Propagation.REQUIRES_NEW)\n    public void recordRejection(long productId) {\n        audit.record(\"reservation rejected for product \" + productId);\n    }\n}"
+    }
+   ]
+  },
+  {
+   "id": "repositories",
+   "title": "Repositories",
+   "description": "Declare query methods and let Spring Data generate the implementation.",
+   "snippets": [
+    {
+     "language": "java",
+     "code": "package com.example.catalog.product;\n\nimport java.util.List;\nimport java.util.Optional;\nimport org.springframework.data.domain.Page;\nimport org.springframework.data.domain.Pageable;\nimport org.springframework.data.jpa.repository.JpaRepository;\nimport org.springframework.data.jpa.repository.Modifying;\nimport org.springframework.data.jpa.repository.Query;\nimport org.springframework.data.repository.query.Param;\n\npublic interface ProductRepository extends JpaRepository<Product, Long> {\n\n    // Derived query: where name = ?\n    Optional<Product> findByName(String name);\n\n    // Derived query: where lower(name) like lower(?)\n    List<Product> findByNameContainingIgnoreCase(String term);\n\n    boolean existsByNameAndPriceCents(String name, long priceCents);\n\n    Page<Product> findByStockGreaterThan(int stock, Pageable pageable);\n\n    // JPQL uses entity names and fields, not table and column names\n    @Query(\"select p from Product p where p.priceCents between :min and :max order by p.priceCents\")\n    List<Product> findInPriceRange(@Param(\"min\") long min, @Param(\"max\") long max);\n\n    // Native SQL is opt-in and uses the real schema names\n    @Query(value = \"select * from product where stock = 0\", nativeQuery = true)\n    List<Product> findOutOfStock();\n\n    // Bulk update: it bypasses the persistence context, so callers are transactional\n    @Modifying(clearAutomatically = true)\n    @Query(\"update Product p set p.stock = p.stock - :quantity \"\n            + \"where p.id = :id and p.stock >= :quantity\")\n    int decrementStock(@Param(\"id\") long id, @Param(\"quantity\") int quantity);\n}"
+    },
+    {
+     "language": "java",
+     "code": "package com.example.catalog.product;\n\nimport java.util.List;\nimport org.springframework.data.jpa.repository.JpaRepository;\n\npublic interface ProductSummaryRepository extends JpaRepository<Product, Long> {\n\n    // Closed projection: the query selects only name and price_cents\n    interface ProductSummary {\n        String getName();\n\n        long getPriceCents();\n    }\n\n    List<ProductSummary> findByStockGreaterThan(int stock);\n}"
+    }
+   ]
+  },
+  {
+   "id": "entities",
+   "title": "Entities",
+   "description": "Map tables with JPA annotations and expose state through behaviour.",
+   "snippets": [
+    {
+     "language": "java",
+     "code": "package com.example.catalog.product;\n\nimport jakarta.persistence.Column;\nimport jakarta.persistence.Entity;\nimport jakarta.persistence.GeneratedValue;\nimport jakarta.persistence.GenerationType;\nimport jakarta.persistence.Id;\nimport jakarta.persistence.Table;\nimport jakarta.persistence.UniqueConstraint;\nimport jakarta.persistence.Version;\nimport java.time.Instant;\n\n@Entity\n@Table(name = \"product\", uniqueConstraints = @UniqueConstraint(columnNames = \"name\"))\npublic class Product {\n\n    @Id\n    @GeneratedValue(strategy = GenerationType.IDENTITY)\n    private Long id;\n\n    @Column(nullable = false, length = 120)\n    private String name;\n\n    @Column(name = \"price_cents\", nullable = false)\n    private long priceCents;\n\n    @Column(nullable = false)\n    private int stock;\n\n    // Optimistic locking: a concurrent update fails with OptimisticLockException\n    @Version\n    private long version;\n\n    @Column(name = \"created_at\", nullable = false, updatable = false)\n    private Instant createdAt = Instant.now();\n\n    protected Product() {\n        // Required by JPA; application code uses the public constructor\n    }\n\n    public Product(String name, long priceCents, int stock) {\n        this.name = name;\n        this.priceCents = priceCents;\n        this.stock = stock;\n    }\n\n    public Long getId() {\n        return id;\n    }\n\n    public String getName() {\n        return name;\n    }\n\n    public long getPriceCents() {\n        return priceCents;\n    }\n\n    public int getStock() {\n        return stock;\n    }\n\n    public void reserve(int quantity) {\n        if (quantity > stock) {\n            throw new IllegalStateException(\"not enough stock for \" + name);\n        }\n        stock -= quantity;\n    }\n}"
+    },
+    {
+     "language": "java",
+     "code": "package com.example.catalog.product;\n\nimport jakarta.persistence.Column;\nimport jakarta.persistence.EntityListeners;\nimport jakarta.persistence.MappedSuperclass;\nimport java.time.Instant;\nimport org.springframework.data.annotation.CreatedDate;\nimport org.springframework.data.annotation.LastModifiedDate;\nimport org.springframework.data.jpa.domain.support.AuditingEntityListener;\n\n// Shared timestamp columns, an alternative to declaring them per entity;\n// enable with @EnableJpaAuditing on a configuration class\n@MappedSuperclass\n@EntityListeners(AuditingEntityListener.class)\npublic abstract class AuditedEntity {\n\n    @CreatedDate\n    @Column(name = \"created_at\", nullable = false, updatable = false)\n    private Instant createdAt;\n\n    @LastModifiedDate\n    @Column(name = \"updated_at\", nullable = false)\n    private Instant updatedAt;\n\n    public Instant getCreatedAt() {\n        return createdAt;\n    }\n\n    public Instant getUpdatedAt() {\n        return updatedAt;\n    }\n}"
+    }
+   ]
+  },
+  {
+   "id": "config",
+   "title": "Configuration",
+   "description": "Bind YAML keys to a record and register beans in explicit configuration classes.",
+   "snippets": [
+    {
+     "language": "java",
+     "code": "package com.example.catalog.config;\n\nimport java.net.URI;\nimport java.time.Duration;\nimport org.springframework.boot.context.properties.ConfigurationProperties;\n\n// Kebab-case keys under catalog.* bind to these components by name\n@ConfigurationProperties(\"catalog\")\npublic record CatalogProperties(\n        String defaultCurrency,\n        int pageSize,\n        Duration cacheTtl,\n        URI inventoryUrl) {\n}"
+    },
+    {
+     "language": "java",
+     "code": "package com.example.catalog.config;\n\nimport java.time.Clock;\nimport org.springframework.context.annotation.Bean;\nimport org.springframework.context.annotation.Configuration;\nimport org.springframework.web.client.RestClient;\n\n@Configuration\npublic class CatalogConfiguration {\n\n    @Bean\n    Clock clock() {\n        return Clock.systemUTC();\n    }\n\n    // RestClient.Builder is auto-configured with the application's converters\n    @Bean\n    RestClient inventoryClient(RestClient.Builder builder, CatalogProperties properties) {\n        // CatalogProperties is registered by @ConfigurationPropertiesScan\n        return builder.baseUrl(properties.inventoryUrl().toString()).build();\n    }\n}"
+    },
+    {
+     "language": "yaml",
+     "code": "catalog:\n  default-currency: BRL\n  page-size: 20\n  cache-ttl: 10m\n  inventory-url: http://inventory.internal:8081"
+    }
+   ]
+  },
+  {
+   "id": "validation",
+   "title": "Validation",
+   "description": "Reject malformed input at the boundary with Jakarta Bean Validation.",
+   "snippets": [
+    {
+     "language": "java",
+     "code": "package com.example.catalog.product;\n\nimport jakarta.validation.constraints.Max;\nimport jakarta.validation.constraints.Min;\nimport jakarta.validation.constraints.NotBlank;\nimport jakarta.validation.constraints.Positive;\nimport jakarta.validation.constraints.Size;\n\n// Constraints live on the record components and are checked by @Valid\npublic record ProductRequest(\n        @NotBlank(message = \"name is required\")\n        @Size(max = 120, message = \"name must have at most 120 characters\")\n        String name,\n\n        @Positive(message = \"price must be greater than zero\")\n        long priceCents,\n\n        @Min(value = 0, message = \"stock cannot be negative\")\n        int stock) {\n}"
+    },
+    {
+     "language": "java",
+     "code": "package com.example.catalog.product;\n\nimport jakarta.validation.constraints.Max;\nimport jakarta.validation.constraints.Size;\nimport java.util.List;\nimport org.springframework.validation.annotation.Validated;\nimport org.springframework.web.bind.annotation.GetMapping;\nimport org.springframework.web.bind.annotation.RequestParam;\nimport org.springframework.web.bind.annotation.RestController;\n\n@RestController\n@Validated\npublic class SearchController {\n\n    private final ProductService service;\n\n    public SearchController(ProductService service) {\n        this.service = service;\n    }\n\n    // Method validation applies to parameters that are not request bodies\n    @GetMapping(\"/api/products/search\")\n    public List<ProductResponse> search(\n            @RequestParam @Size(min = 3, max = 40) String term,\n            @RequestParam(defaultValue = \"20\") @Max(100) int limit) {\n        return service.search(term, limit);\n    }\n}"
+    }
+   ]
+  },
+  {
+   "id": "exceptions",
+   "title": "Exception Handling",
+   "description": "Turn exceptions into RFC 9457 problem details from one advice class.",
+   "snippets": [
+    {
+     "language": "java",
+     "code": "package com.example.catalog.common;\n\nimport org.springframework.http.HttpStatus;\nimport org.springframework.web.bind.annotation.ResponseStatus;\n\n@ResponseStatus(HttpStatus.NOT_FOUND)\npublic class ProductNotFoundException extends RuntimeException {\n\n    public ProductNotFoundException(long id) {\n        super(\"product \" + id + \" not found\");\n    }\n}"
+    },
+    {
+     "language": "java",
+     "code": "package com.example.catalog.common;\n\nimport java.net.URI;\nimport org.springframework.dao.DataIntegrityViolationException;\nimport org.springframework.http.HttpStatus;\nimport org.springframework.http.ProblemDetail;\nimport org.springframework.web.bind.MethodArgumentNotValidException;\nimport org.springframework.web.bind.annotation.ExceptionHandler;\nimport org.springframework.web.bind.annotation.RestControllerAdvice;\n\n@RestControllerAdvice\npublic class ApiExceptionHandler {\n\n    @ExceptionHandler(ProductNotFoundException.class)\n    ProblemDetail handleNotFound(ProductNotFoundException error) {\n        ProblemDetail problem = ProblemDetail.forStatusAndDetail(\n                HttpStatus.NOT_FOUND, error.getMessage());\n        problem.setTitle(\"Product not found\");\n        problem.setType(URI.create(\"https://catalog.example.com/problems/product-not-found\"));\n        return problem;\n    }\n\n    @ExceptionHandler(MethodArgumentNotValidException.class)\n    ProblemDetail handleInvalidBody(MethodArgumentNotValidException error) {\n        ProblemDetail problem = ProblemDetail.forStatusAndDetail(\n                HttpStatus.BAD_REQUEST, \"request body failed validation\");\n\n        // One property per rejected field so clients can highlight inputs\n        error.getBindingResult().getFieldErrors().forEach(field ->\n                problem.setProperty(field.getField(), field.getDefaultMessage()));\n        return problem;\n    }\n\n    @ExceptionHandler(DataIntegrityViolationException.class)\n    ProblemDetail handleConflict(DataIntegrityViolationException error) {\n        ProblemDetail problem = ProblemDetail.forStatusAndDetail(\n                HttpStatus.CONFLICT, \"the request violates a database constraint\");\n        problem.setTitle(\"Constraint violation\");\n        return problem;\n    }\n}"
+    }
+   ]
+  },
+  {
+   "id": "security",
+   "title": "Security",
+   "description": "Declare a stateless filter chain and hash passwords with BCrypt.",
+   "snippets": [
+    {
+     "language": "java",
+     "code": "package com.example.catalog.config;\n\nimport org.springframework.context.annotation.Bean;\nimport org.springframework.context.annotation.Configuration;\nimport org.springframework.http.HttpMethod;\nimport org.springframework.security.config.Customizer;\nimport org.springframework.security.config.annotation.web.builders.HttpSecurity;\nimport org.springframework.security.config.http.SessionCreationPolicy;\nimport org.springframework.security.core.userdetails.User;\nimport org.springframework.security.core.userdetails.UserDetailsService;\nimport org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;\nimport org.springframework.security.crypto.password.PasswordEncoder;\nimport org.springframework.security.provisioning.InMemoryUserDetailsManager;\nimport org.springframework.security.web.SecurityFilterChain;\n\n@Configuration\npublic class SecurityConfiguration {\n\n    @Bean\n    SecurityFilterChain apiFilterChain(HttpSecurity http) throws Exception {\n        http\n            // CSRF protection is only safe to drop for token-based clients\n            .csrf(csrf -> csrf.disable())\n            .sessionManagement(session ->\n                session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))\n            .authorizeHttpRequests(auth -> auth\n                .requestMatchers(\"/actuator/health/**\").permitAll()\n                .requestMatchers(HttpMethod.GET, \"/api/products/**\").permitAll()\n                .requestMatchers(HttpMethod.POST, \"/api/products/**\").hasRole(\"ADMIN\")\n                .anyRequest().authenticated())\n            .httpBasic(Customizer.withDefaults());\n        return http.build();\n    }\n\n    @Bean\n    UserDetailsService users(PasswordEncoder encoder) {\n        return new InMemoryUserDetailsManager(\n                User.withUsername(\"ana\")\n                        .password(encoder.encode(\"s3cret-pass\"))\n                        .roles(\"ADMIN\")\n                        .build(),\n                User.withUsername(\"bruno\")\n                        .password(encoder.encode(\"read-only-pass\"))\n                        .roles(\"USER\")\n                        .build());\n    }\n\n    @Bean\n    PasswordEncoder passwordEncoder() {\n        return new BCryptPasswordEncoder();\n    }\n}"
+    },
+    {
+     "language": "java",
+     "code": "package com.example.catalog.config;\n\nimport org.springframework.context.annotation.Configuration;\nimport org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;\n\n// Enables @PreAuthorize and @PostAuthorize on beans\n@Configuration\n@EnableMethodSecurity\npublic class MethodSecurityConfiguration {\n}"
+    },
+    {
+     "language": "java",
+     "code": "package com.example.catalog.report;\n\nimport java.util.List;\nimport org.springframework.security.access.prepost.PreAuthorize;\nimport org.springframework.stereotype.Service;\n\n@Service\npublic class ReportService {\n\n    public record Report(String ownerId, int rows) {\n    }\n\n    @PreAuthorize(\"hasRole('ADMIN')\")\n    public List<Report> all() {\n        return List.of();\n    }\n\n    // authentication.name is the principal, so users only read their own rows\n    @PreAuthorize(\"#userId == authentication.name\")\n    public Report forUser(String userId) {\n        return new Report(userId, 42);\n    }\n}"
+    }
+   ]
+  },
+  {
+   "id": "database",
+   "title": "Database",
+   "description": "Connect to PostgreSQL, let Flyway migrate and Hibernate only validate.",
+   "snippets": [
+    {
+     "language": "yaml",
+     "code": "spring:\n  datasource:\n    url: jdbc:postgresql://localhost:5432/catalog\n    username: catalog\n    password: ${DB_PASSWORD}\n    hikari:\n      maximum-pool-size: 10\n      connection-timeout: 3000\n  jpa:\n    open-in-view: false\n    hibernate:\n      ddl-auto: validate\n    properties:\n      hibernate:\n        jdbc:\n          time_zone: UTC\n  flyway:\n    enabled: true\n    locations: classpath:db/migration"
+    },
+    {
+     "language": "sql",
+     "code": "-- src/main/resources/db/migration/V1__create_product.sql\ncreate table product (\n    id          bigserial primary key,\n    name        varchar(120) not null unique,\n    price_cents bigint       not null check (price_cents > 0),\n    stock       integer      not null check (stock >= 0),\n    version     bigint       not null default 0,\n    created_at  timestamptz  not null default now()\n);\n\ncreate index idx_product_stock on product (stock);\n\n-- Flyway records this file in flyway_schema_history and never re-runs it"
+    },
+    {
+     "language": "bash",
+     "code": "# Local PostgreSQL 16 with the credentials used by application.yml\ndocker run --name catalog-db \\\n  -e POSTGRES_DB=catalog \\\n  -e POSTGRES_USER=catalog \\\n  -e POSTGRES_PASSWORD=secret \\\n  -p 5432:5432 \\\n  -d postgres:16\n\n# Inspect which migrations were applied\ndocker exec catalog-db \\\n  psql -U catalog -d catalog -c \"select version, description, success from flyway_schema_history;\"\n\n# Run the app against this database\nDB_PASSWORD=secret ./mvnw spring-boot:run"
+    }
+   ]
+  },
+  {
+   "id": "testing",
+   "title": "Testing",
+   "description": "Slice the web layer with MockMvc and unit test services with Mockito.",
+   "snippets": [
+    {
+     "language": "java",
+     "code": "package com.example.catalog.product;\n\nimport static org.mockito.BDDMockito.given;\nimport static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;\nimport static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;\nimport static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;\n\nimport java.util.List;\nimport org.junit.jupiter.api.Test;\nimport org.springframework.beans.factory.annotation.Autowired;\nimport org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;\nimport org.springframework.security.test.context.support.WithMockUser;\nimport org.springframework.test.context.bean.override.mockito.MockitoBean;\nimport org.springframework.test.web.servlet.MockMvc;\n\n// Only the web slice starts; the service is a mock bean\n@WebMvcTest(ProductController.class)\nclass ProductControllerTest {\n\n    @Autowired\n    MockMvc mvc;\n\n    @MockitoBean\n    ProductService service;\n\n    @Test\n    @WithMockUser(roles = \"USER\")\n    void listsProducts() throws Exception {\n        given(service.list(0, 20))\n                .willReturn(List.of(new ProductResponse(1L, \"kettle\", 8990L, 4)));\n\n        mvc.perform(get(\"/api/products\"))\n                .andExpect(status().isOk())\n                .andExpect(jsonPath(\"$[0].name\").value(\"kettle\"))\n                .andExpect(jsonPath(\"$[0].priceCents\").value(8990));\n    }\n}"
+    },
+    {
+     "language": "java",
+     "code": "package com.example.catalog.product;\n\nimport static org.assertj.core.api.Assertions.assertThatThrownBy;\nimport static org.mockito.BDDMockito.given;\n\nimport java.util.Optional;\nimport org.junit.jupiter.api.Test;\nimport org.junit.jupiter.api.extension.ExtendWith;\nimport org.mockito.InjectMocks;\nimport org.mockito.Mock;\nimport org.mockito.junit.jupiter.MockitoExtension;\n\n@ExtendWith(MockitoExtension.class)\nclass ProductServiceTest {\n\n    @Mock\n    ProductRepository repository;\n\n    @InjectMocks\n    ProductService service;\n\n    @Test\n    void reportsMissingProduct() {\n        given(repository.findById(7L)).willReturn(Optional.empty());\n\n        assertThatThrownBy(() -> service.get(7L))\n                .isInstanceOf(ProductNotFoundException.class)\n                .hasMessage(\"product 7 not found\");\n    }\n}"
+    }
+   ]
+  },
+  {
+   "id": "actuator",
+   "title": "Actuator",
+   "description": "Expose health and metrics endpoints and add a domain health check.",
+   "snippets": [
+    {
+     "language": "yaml",
+     "code": "management:\n  endpoints:\n    web:\n      exposure:\n        include: health,info,metrics\n  endpoint:\n    health:\n      show-details: when-authorized\n      probes:\n        enabled: true\n  info:\n    env:\n      enabled: true\n\ninfo:\n  app:\n    name: catalog\n    version: 0.0.1"
+    },
+    {
+     "language": "java",
+     "code": "package com.example.catalog.config;\n\nimport org.springframework.boot.actuate.health.Health;\nimport org.springframework.boot.actuate.health.HealthIndicator;\nimport org.springframework.stereotype.Component;\n\n@Component\npublic class InventoryHealthIndicator implements HealthIndicator {\n\n    private final InventoryClient inventory;\n\n    public InventoryHealthIndicator(InventoryClient inventory) {\n        this.inventory = inventory;\n    }\n\n    // Appears as the \"inventory\" entry under /actuator/health\n    @Override\n    public Health health() {\n        try {\n            int pending = inventory.pendingShipments();\n            return Health.up().withDetail(\"pendingShipments\", pending).build();\n        } catch (RuntimeException error) {\n            return Health.down().withDetail(\"error\", error.getMessage()).build();\n        }\n    }\n}"
+    },
+    {
+     "language": "bash",
+     "code": "# Kubernetes liveness and readiness probes\ncurl -s localhost:8080/actuator/health/liveness\ncurl -s localhost:8080/actuator/health/readiness\n\n# Full health tree, details only for an authenticated caller\ncurl -s -u ana:s3cret-pass localhost:8080/actuator/health\n\n# Available metric names, then one specific metric\ncurl -s -u ana:s3cret-pass localhost:8080/actuator/metrics | jq -r '.names[]' | head -20\ncurl -s -u ana:s3cret-pass localhost:8080/actuator/metrics/http.server.requests | jq '.measurements'"
+    }
+   ]
+  }
+ ]
+}

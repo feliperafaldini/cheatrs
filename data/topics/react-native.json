@@ -1,0 +1,213 @@
+{
+ "slug": "react-native",
+ "title": "ReactNative",
+ "label": "ReactNative",
+ "group": "Framework",
+ "color": "#61DAFB",
+ "desc": "Build native iOS and Android apps from a single React codebase.",
+ "sections": [
+  {
+   "id": "setup",
+   "title": "Setup",
+   "description": "Scaffold a project with the Community CLI and start the Metro bundler.",
+   "snippets": [
+    {
+     "language": "bash",
+     "code": "# Create a new project (React Native Community CLI)\nnpx @react-native-community/cli@latest init MyApp\n\ncd MyApp\nnpm start          # start Metro\nnpm run android    # build and run on an emulator or device\nnpm run ios        # macOS only, requires Xcode"
+    },
+    {
+     "language": "bash",
+     "code": "# Verify the local toolchain: Node, JDK, SDK, Xcode, CocoaPods\nnpx react-native doctor"
+    }
+   ]
+  },
+  {
+   "id": "components",
+   "title": "Components",
+   "description": "Compose screens from core native-backed components instead of HTML tags.",
+   "snippets": [
+    {
+     "language": "jsx",
+     "code": "import { ScrollView, Text, View } from 'react-native';\n\nexport default function AboutScreen() {\n  return (\n    <ScrollView contentContainerStyle={{ padding: 24, gap: 12 }}>\n      <View>\n        <Text style={{ fontSize: 24, fontWeight: '600' }}>About</Text>\n        <Text style={{ color: '#4b5563' }}>\n          Every visible element is a native view, not a DOM node.\n        </Text>\n      </View>\n      <Text>ScrollView scrolls its children when they overflow.</Text>\n    </ScrollView>\n  );\n}"
+    },
+    {
+     "language": "jsx",
+     "code": "import { Pressable, Text, View } from 'react-native';\n\nexport default function Card({ title, onOpen }) {\n  return (\n    <View style={{ padding: 16, borderRadius: 12, backgroundColor: '#f3f4f6' }}>\n      <Text style={{ fontSize: 18, fontWeight: '600' }}>{title}</Text>\n      <Pressable\n        accessibilityRole=\"button\"\n        onPress={onOpen}\n        style={{ marginTop: 8 }}\n      >\n        <Text style={{ color: '#2563eb' }}>Open</Text>\n      </Pressable>\n    </View>\n  );\n}"
+    }
+   ]
+  },
+  {
+   "id": "styling",
+   "title": "Styling",
+   "description": "Use StyleSheet objects and flexbox; there is no CSS cascade or stylesheet inheritance.",
+   "snippets": [
+    {
+     "language": "javascript",
+     "code": "import { StyleSheet } from 'react-native';\n\nconst styles = StyleSheet.create({\n  row: {\n    flexDirection: 'row',   // default is column\n    alignItems: 'center',\n    gap: 12,\n    paddingHorizontal: 16,\n  },\n  dot: {\n    width: 48,\n    height: 48,\n    borderRadius: 24,\n    backgroundColor: '#61DAFB',\n  },\n  label: {\n    flex: 1,                // take the remaining width\n    fontSize: 16,\n    color: '#111827',\n  },\n});"
+    },
+    {
+     "language": "jsx",
+     "code": "import { StyleSheet, Text, View } from 'react-native';\n\nconst styles = StyleSheet.create({\n  row: { flexDirection: 'row', padding: 16 },\n  rowActive: { backgroundColor: '#e0f2fe' },\n  label: { flex: 1 },\n});\n\nexport default function StatusRow({ isActive }) {\n  // Later styles override earlier ones; false entries are skipped\n  return (\n    <View style={[styles.row, isActive && styles.rowActive, { opacity: 0.9 }]}>\n      <Text style={styles.label}>Status</Text>\n    </View>\n  );\n}\n\nexport function Square() {\n  // Percentages are strings and resolve against the parent\n  return (\n    <View style={{ width: '50%', aspectRatio: 1, backgroundColor: '#e5e7eb' }} />\n  );\n}"
+    }
+   ]
+  },
+  {
+   "id": "props",
+   "title": "Props",
+   "description": "Pass data into function components as read-only arguments with defaults.",
+   "snippets": [
+    {
+     "language": "jsx",
+     "code": "import { Text, View } from 'react-native';\n\nfunction Badge({ label, color = '#61DAFB', children }) {\n  return (\n    <View style={{ backgroundColor: color, paddingHorizontal: 10, paddingVertical: 4, borderRadius: 999 }}>\n      <Text style={{ color: '#0f172a' }}>{label}</Text>\n      {children}\n    </View>\n  );\n}\n\nexport default function Example() {\n  return <Badge label=\"New\">Limited</Badge>;\n}"
+    },
+    {
+     "language": "jsx",
+     "code": "import { Pressable, Text } from 'react-native';\n\n// Forward extra Pressable props to the underlying component\nfunction ActionButton({ title, ...pressableProps }) {\n  return (\n    <Pressable accessibilityRole=\"button\" {...pressableProps}>\n      <Text>{title}</Text>\n    </Pressable>\n  );\n}\n\nexport default function Example() {\n  return <ActionButton title=\"Retry\" onPress={() => console.log('retry')} />;\n}"
+    }
+   ]
+  },
+  {
+   "id": "state",
+   "title": "State",
+   "description": "Keep changing values in hooks; every state update re-renders the component.",
+   "snippets": [
+    {
+     "language": "jsx",
+     "code": "import { useState } from 'react';\nimport { Button, Text, View } from 'react-native';\n\nexport default function Counter() {\n  const [count, setCount] = useState(0);\n\n  return (\n    <View>\n      <Text>Count: {count}</Text>\n      <Button\n        title=\"Add one\"\n        onPress={() => setCount((current) => current + 1)}\n      />\n    </View>\n  );\n}"
+    },
+    {
+     "language": "jsx",
+     "code": "import { useEffect, useState } from 'react';\nimport { ActivityIndicator, Text, View } from 'react-native';\n\nexport default function Profile() {\n  const [name, setName] = useState(null);\n\n  useEffect(() => {\n    let cancelled = false;\n\n    fetch('https://api.example.com/profile')\n      .then((response) => response.json())\n      .then((data) => {\n        if (!cancelled) setName(data.name);\n      });\n\n    // Cleanup runs on unmount and before the next run\n    return () => {\n      cancelled = true;\n    };\n  }, []);\n\n  if (name === null) {\n    return <ActivityIndicator />;\n  }\n\n  return (\n    <View>\n      <Text>{name}</Text>\n    </View>\n  );\n}"
+    }
+   ]
+  },
+  {
+   "id": "lists",
+   "title": "Lists",
+   "description": "Render long collections with virtualized lists that recycle rows.",
+   "snippets": [
+    {
+     "language": "jsx",
+     "code": "import { FlatList, Text, View } from 'react-native';\n\nconst PEOPLE = [\n  { id: '1', name: 'Ada Lovelace' },\n  { id: '2', name: 'Grace Hopper' },\n  { id: '3', name: 'Alan Turing' },\n];\n\nexport default function PeopleList() {\n  return (\n    <FlatList\n      data={PEOPLE}\n      keyExtractor={(item) => item.id}\n      renderItem={({ item }) => (\n        <View style={{ paddingVertical: 12 }}>\n          <Text>{item.name}</Text>\n        </View>\n      )}\n      ItemSeparatorComponent={() => (\n        <View style={{ height: 1, backgroundColor: '#e5e7eb' }} />\n      )}\n      ListEmptyComponent={<Text>No people yet.</Text>}\n    />\n  );\n}"
+    },
+    {
+     "language": "jsx",
+     "code": "import { SectionList, Text } from 'react-native';\n\nconst SECTIONS = [\n  { title: 'Design', data: ['Figma', 'Penpot'] },\n  { title: 'Code', data: ['TypeScript', 'Rust'] },\n];\n\nexport default function SkillList() {\n  return (\n    <SectionList\n      sections={SECTIONS}\n      keyExtractor={(item, index) => `${item}-${index}`}\n      renderItem={({ item }) => <Text style={{ padding: 12 }}>{item}</Text>}\n      renderSectionHeader={({ section }) => (\n        <Text style={{ fontWeight: '700', padding: 12 }}>{section.title}</Text>\n      )}\n    />\n  );\n}"
+    }
+   ]
+  },
+  {
+   "id": "navigation",
+   "title": "Navigation",
+   "description": "Add stack navigation with React Navigation and pass route params.",
+   "snippets": [
+    {
+     "language": "bash",
+     "code": "# Core plus the native stack navigator\nnpm install @react-navigation/native @react-navigation/native-stack\nnpm install react-native-screens react-native-safe-area-context\nnpx pod-install   # iOS native dependencies"
+    },
+    {
+     "language": "jsx",
+     "code": "import { Button, Text, View } from 'react-native';\nimport { NavigationContainer } from '@react-navigation/native';\nimport { createNativeStackNavigator } from '@react-navigation/native-stack';\n\nfunction HomeScreen({ navigation }) {\n  return (\n    <View>\n      <Text>Home</Text>\n      <Button\n        title=\"Open details\"\n        onPress={() => navigation.navigate('Details', { id: 42 })}\n      />\n    </View>\n  );\n}\n\nfunction DetailsScreen({ route }) {\n  return <Text>Item {route.params.id}</Text>;\n}\n\nconst Stack = createNativeStackNavigator();\n\nexport default function App() {\n  return (\n    <NavigationContainer>\n      <Stack.Navigator initialRouteName=\"Home\">\n        <Stack.Screen name=\"Home\" component={HomeScreen} options={{ title: 'Home' }} />\n        <Stack.Screen name=\"Details\" component={DetailsScreen} />\n      </Stack.Navigator>\n    </NavigationContainer>\n  );\n}"
+    }
+   ]
+  },
+  {
+   "id": "images",
+   "title": "Images",
+   "description": "Load bundled or remote images; remote sources need explicit dimensions.",
+   "snippets": [
+    {
+     "language": "jsx",
+     "code": "import { Image, View } from 'react-native';\n\nexport default function Pictures() {\n  return (\n    <View style={{ gap: 12 }}>\n      {/* Bundled asset: the path is resolved by Metro at build time */}\n      <Image source={require('./assets/logo.png')} style={{ width: 64, height: 64 }} />\n\n      {/* Remote URL: always set width and height on the style */}\n      <Image\n        source={{ uri: 'https://picsum.photos/seed/rn/600/400' }}\n        style={{ width: 300, height: 200 }}\n        resizeMode=\"cover\"\n        accessibilityLabel=\"Landscape photo\"\n      />\n    </View>\n  );\n}"
+    },
+    {
+     "language": "jsx",
+     "code": "import { ImageBackground, Text } from 'react-native';\n\nexport default function Hero() {\n  return (\n    <ImageBackground\n      source={require('./assets/hero.jpg')}\n      style={{ flex: 1, justifyContent: 'flex-end' }}\n      imageStyle={{ opacity: 0.6 }}\n    >\n      <Text style={{ fontSize: 28, padding: 24 }}>Welcome back</Text>\n    </ImageBackground>\n  );\n}"
+    }
+   ]
+  },
+  {
+   "id": "gestures",
+   "title": "Gestures",
+   "description": "Handle taps with Pressable and drags with the gesture-handler worklet API.",
+   "snippets": [
+    {
+     "language": "jsx",
+     "code": "import { Pressable, Text } from 'react-native';\n\nexport default function TapTarget() {\n  return (\n    <Pressable\n      accessibilityRole=\"button\"\n      onPress={() => console.log('tapped')}\n      onLongPress={() => console.log('held')}\n      hitSlop={12}\n      style={({ pressed }) => ({\n        padding: 16,\n        opacity: pressed ? 0.5 : 1,\n        backgroundColor: '#61DAFB',\n      })}\n    >\n      <Text>Tap or hold</Text>\n    </Pressable>\n  );\n}"
+    },
+    {
+     "language": "jsx",
+     "code": "// Requires react-native-gesture-handler, react-native-reanimated and its Babel plugin\nimport { Gesture, GestureDetector, GestureHandlerRootView } from 'react-native-gesture-handler';\nimport Animated, { useAnimatedStyle, useSharedValue, withSpring } from 'react-native-reanimated';\n\nfunction DraggableBox() {\n  const offsetX = useSharedValue(0);\n  const startX = useSharedValue(0);\n\n  const pan = Gesture.Pan()\n    .onBegin(() => {\n      startX.value = offsetX.value;\n    })\n    .onUpdate((event) => {\n      offsetX.value = startX.value + event.translationX;\n    })\n    .onEnd(() => {\n      offsetX.value = withSpring(0);   // spring back to the origin\n    });\n\n  const animatedStyle = useAnimatedStyle(() => ({\n    transform: [{ translateX: offsetX.value }],\n  }));\n\n  return (\n    <GestureDetector gesture={pan}>\n      <Animated.View\n        style={[{ width: 80, height: 80, backgroundColor: '#61DAFB' }, animatedStyle]}\n      />\n    </GestureDetector>\n  );\n}\n\nexport default function App() {\n  return (\n    <GestureHandlerRootView style={{ flex: 1 }}>\n      <DraggableBox />\n    </GestureHandlerRootView>\n  );\n}"
+    }
+   ]
+  },
+  {
+   "id": "storage",
+   "title": "Local Storage",
+   "description": "Persist small key-value data with AsyncStorage and serialize objects to JSON.",
+   "snippets": [
+    {
+     "language": "bash",
+     "code": "npm install @react-native-async-storage/async-storage\nnpx pod-install   # iOS native dependency"
+    },
+    {
+     "language": "jsx",
+     "code": "import AsyncStorage from '@react-native-async-storage/async-storage';\n\n// AsyncStorage stores strings only\nasync function saveTheme(theme) {\n  await AsyncStorage.setItem('theme', theme);\n}\n\nasync function loadTheme() {\n  return AsyncStorage.getItem('theme');   // resolves to string or null\n}\n\nasync function clearTheme() {\n  await AsyncStorage.removeItem('theme');\n}"
+    },
+    {
+     "language": "javascript",
+     "code": "// Objects must be serialized by hand\nasync function saveUser(user) {\n  await AsyncStorage.setItem('user', JSON.stringify(user));\n}\n\nasync function loadUser() {\n  const raw = await AsyncStorage.getItem('user');\n  return raw ? JSON.parse(raw) : null;\n}"
+    }
+   ]
+  },
+  {
+   "id": "platform",
+   "title": "Platform Differences",
+   "description": "Branch on the platform when behavior or sizing differs between iOS and Android.",
+   "snippets": [
+    {
+     "language": "javascript",
+     "code": "import { Platform } from 'react-native';\n\nconst headerStyle = {\n  paddingTop: Platform.select({ ios: 44, android: 24, default: 12 }),\n  fontWeight: Platform.OS === 'ios' ? '600' : '700',\n};\n\n// Android exposes the API level as a number\nif (Platform.OS === 'android' && Platform.Version >= 33) {\n  // Android 13+ uses the runtime notification permission\n}"
+    },
+    {
+     "language": "text",
+     "code": "src/Header.ios.js      loaded on iOS\nsrc/Header.android.js  loaded on Android\nsrc/Header.js          fallback used by both"
+    }
+   ]
+  },
+  {
+   "id": "testing",
+   "title": "Testing",
+   "description": "Render components in Jest and assert on what the user can see.",
+   "snippets": [
+    {
+     "language": "bash",
+     "code": "npm install --save-dev jest @testing-library/react-native"
+    },
+    {
+     "language": "json",
+     "code": "{\n  \"scripts\": {\n    \"test\": \"jest\"\n  },\n  \"jest\": {\n    \"preset\": \"react-native\"\n  }\n}"
+    },
+    {
+     "language": "jsx",
+     "code": "import { fireEvent, render, screen } from '@testing-library/react-native';\nimport Counter from '../Counter';\n\ntest('increments the counter', () => {\n  render(<Counter />);\n\n  fireEvent.press(screen.getByText('Add one'));\n\n  expect(screen.getByText('Count: 1')).toBeTruthy();\n});"
+    }
+   ]
+  },
+  {
+   "id": "build",
+   "title": "Build and Release",
+   "description": "Produce signed Android artifacts with Gradle and an iOS archive with Xcode.",
+   "snippets": [
+    {
+     "language": "bash",
+     "code": "cd android\n\n# Play Store bundle -> app/build/outputs/bundle/release/app-release.aab\n./gradlew bundleRelease\n\n# Standalone APK -> app/build/outputs/apk/release/app-release.apk\n./gradlew assembleRelease"
+    },
+    {
+     "language": "bash",
+     "code": "# iOS: install pods, then create a release archive\ncd ios && pod install && cd ..\nxcodebuild -workspace ios/MyApp.xcworkspace \\\n  -scheme MyApp \\\n  -configuration Release \\\n  -archivePath build/MyApp.xcarchive \\\n  archive"
+    }
+   ]
+  }
+ ]
+}

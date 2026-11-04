@@ -1,0 +1,238 @@
+{
+ "slug": "c",
+ "title": "C",
+ "label": "C",
+ "group": "Language",
+ "color": "#A8B9CC",
+ "desc": "A small, portable systems language with manual memory control.",
+ "sections": [
+  {
+   "id": "setup",
+   "title": "Setup",
+   "description": "Install the toolchain and build a first program.",
+   "snippets": [
+    {
+     "language": "bash",
+     "code": "# Check which compiler is available (GCC or Clang)\ngcc --version\nclang --version\n\n# Compile and link a single source file\ngcc -std=c17 -Wall -Wextra -o hello hello.c\n\n# Run the resulting binary\n./hello"
+    },
+    {
+     "language": "c",
+     "code": "#include <stdio.h>\n\nint main(void) {\n    printf(\"Hello, World!\\n\");\n    return 0;  /* 0 reports success to the shell */\n}"
+    }
+   ]
+  },
+  {
+   "id": "syntax",
+   "title": "Syntax",
+   "description": "Comments, includes, declarations, and the main entry point.",
+   "snippets": [
+    {
+     "language": "c",
+     "code": "/*\n * Multi-line comment.\n * Every C program starts at main().\n */\n#include <stdio.h>      /* preprocessor include */\n\nint main(void) {        /* no arguments, integer return type */\n    int total = 0;      /* declaration: type, name, initializer */\n    total = 4 + 6;      /* expression statement, ends with a semicolon */\n\n    {\n        int scoped = 99;    /* visible only inside this block */\n        total += scoped;\n    }\n\n    printf(\"total = %d\\n\", total);  /* total = 109 */\n    return 0;\n}"
+    }
+   ]
+  },
+  {
+   "id": "types",
+   "title": "Types",
+   "description": "Fundamental types, fixed widths, and their typical sizes.",
+   "snippets": [
+    {
+     "language": "c",
+     "code": "#include <stdio.h>\n#include <stdint.h>\n#include <stdbool.h>\n#include <inttypes.h>\n\nint main(void) {\n    char letter = 'A';                /* 1 byte */\n    short small = 32000;              /* typically 2 bytes */\n    int count = 42;                   /* typically 4 bytes */\n    long large = 900000L;             /* 4 bytes on Windows, 8 on 64-bit Linux */\n    long long huge = 9000000000LL;    /* at least 8 bytes */\n    unsigned int mask = 0xFFFFu;      /* non-negative values only */\n    float ratio = 0.75f;              /* single precision */\n    double precise = 3.141592653589793;\n    bool ready = true;                /* needs <stdbool.h> */\n    int32_t fixed32 = -2000000000;    /* exact 32-bit width */\n    uint8_t byte = 255;               /* exact 8-bit width */\n\n    printf(\"%c %d %d %ld %lld\\n\", letter, small, count, large, huge);\n    printf(\"%u %.2f %.3f %d\\n\", mask, ratio, precise, ready);\n    printf(\"%\" PRId32 \" %u\\n\", fixed32, (unsigned)byte);\n    return 0;\n}"
+    },
+    {
+     "language": "c",
+     "code": "#include <stdio.h>\n#include <limits.h>\n\nint main(void) {\n    printf(\"char:   %zu byte,  range %d..%d\\n\", sizeof(char), CHAR_MIN, CHAR_MAX);\n    printf(\"int:    %zu bytes, range %d..%d\\n\", sizeof(int), INT_MIN, INT_MAX);\n    printf(\"long:   %zu bytes\\n\", sizeof(long));      /* 8 on 64-bit Linux */\n    printf(\"double: %zu bytes\\n\", sizeof(double));    /* 8 */\n    return 0;\n}"
+    }
+   ]
+  },
+  {
+   "id": "variables",
+   "title": "Variables",
+   "description": "Declare, initialize, and control the lifetime of values.",
+   "snippets": [
+    {
+     "language": "c",
+     "code": "#include <stdio.h>\n\nint counter = 0;              /* file scope, zero-initialized */\n\nint main(void) {\n    int apples = 12;          /* automatic storage, lives until the block ends */\n    const double tax = 0.23;  /* read-only after initialization */\n    static int calls;         /* persists across calls, starts at zero */\n\n    calls++;\n    apples += 3;\n    counter = apples * 2;\n\n    printf(\"%d apples, %d calls, %.2f tax\\n\", apples, calls, tax);\n    printf(\"counter = %d\\n\", counter);\n    return 0;\n}"
+    }
+   ]
+  },
+  {
+   "id": "operators",
+   "title": "Operators",
+   "description": "Arithmetic, comparison, logic, bitwise, and assignment.",
+   "snippets": [
+    {
+     "language": "c",
+     "code": "#include <stdio.h>\n\nint main(void) {\n    int a = 17;\n    int b = 5;\n\n    printf(\"%d %d %d %d %d\\n\", a + b, a - b, a * b, a / b, a % b); /* 22 12 85 3 2 */\n    printf(\"%d %d %d\\n\", a > b, a == b, a != b);                    /* 1 0 1 */\n    printf(\"%d %d %d\\n\", a & b, a | b, a ^ b);                      /* 1 21 20 */\n    printf(\"%d %d\\n\", a << 1, a >> 1);                              /* 34 8 */\n\n    int ok = (a > 10 && b < 10) ? 1 : 0;  /* logical AND plus ternary */\n    a += 3;                               /* compound assignment: a becomes 20 */\n    printf(\"%d %d\\n\", ok, a);             /* 1 20 */\n\n    int value = 2 + 3 * 4;                /* 14, multiplication first */\n    int forced = (2 + 3) * 4;             /* 20, parentheses win */\n    printf(\"%d %d\\n\", value, forced);\n    return 0;\n}"
+    }
+   ]
+  },
+  {
+   "id": "control-flow",
+   "title": "Control Flow",
+   "description": "Branch with if and switch, repeat with loops.",
+   "snippets": [
+    {
+     "language": "c",
+     "code": "#include <stdio.h>\n\nint main(void) {\n    int score = 78;\n\n    if (score >= 90) {\n        puts(\"A\");\n    } else if (score >= 70) {\n        puts(\"B\");\n    } else {\n        puts(\"C\");\n    }\n\n    switch (score / 10) {\n        case 9:\n            puts(\"excellent\");\n            break;\n        case 7:\n            puts(\"good\");\n            break;\n        default:\n            puts(\"keep going\");\n            break;\n    }\n\n    for (int i = 0; i < 3; i++) {\n        printf(\"for %d\\n\", i);\n    }\n\n    int n = 3;\n    while (n > 0) {\n        printf(\"while %d\\n\", n);\n        n--;\n    }\n\n    do {\n        puts(\"runs at least once\");\n    } while (n > 0);\n\n    return 0;\n}"
+    },
+    {
+     "language": "c",
+     "code": "#include <stdio.h>\n\nint main(void) {\n    for (int i = 0; i < 10; i++) {\n        if (i % 2 == 0) {\n            continue;          /* skip even numbers */\n        }\n        if (i > 7) {\n            break;             /* stop before 9 */\n        }\n        printf(\"%d \", i);      /* 1 3 5 7 */\n    }\n    putchar('\\n');\n\n    FILE *fp = fopen(\"data.txt\", \"r\");\n    if (fp == NULL) {\n        goto cleanup;          /* single exit point for cleanup */\n    }\n    /* ... read from fp ... */\ncleanup:\n    if (fp != NULL) {\n        fclose(fp);\n    }\n    return 0;\n}"
+    }
+   ]
+  },
+  {
+   "id": "functions",
+   "title": "Functions",
+   "description": "Prototypes, parameters by value, pointers, and recursion.",
+   "snippets": [
+    {
+     "language": "c",
+     "code": "#include <stdio.h>\n\nint add(int a, int b);          /* prototype: lets main call add before its definition */\nvoid swap(int *a, int *b);\n\nint main(void) {\n    printf(\"%d\\n\", add(4, 9));  /* 13 */\n\n    int x = 1;\n    int y = 2;\n    swap(&x, &y);                /* pass addresses to let the function modify them */\n    printf(\"%d %d\\n\", x, y);     /* 2 1 */\n    return 0;\n}\n\nint add(int a, int b) {\n    return a + b;                /* arguments arrive as copies */\n}\n\nvoid swap(int *a, int *b) {\n    int tmp = *a;\n    *a = *b;\n    *b = tmp;\n}"
+    },
+    {
+     "language": "c",
+     "code": "#include <stdio.h>\n\nunsigned long factorial(unsigned int n) {\n    if (n <= 1) {\n        return 1UL;              /* base case */\n    }\n    return n * factorial(n - 1);\n}\n\nint main(void) {\n    for (unsigned int i = 0; i < 6; i++) {\n        printf(\"%u! = %lu\\n\", i, factorial(i));\n    }\n    return 0;\n}"
+    }
+   ]
+  },
+  {
+   "id": "arrays",
+   "title": "Arrays",
+   "description": "Fixed-size sequences, iteration, and passing them to functions.",
+   "snippets": [
+    {
+     "language": "c",
+     "code": "#include <stdio.h>\n\nint main(void) {\n    int primes[5] = {2, 3, 5, 7, 11};\n    int zeros[4] = {0};                 /* every element is zero */\n\n    for (size_t i = 0; i < 5; i++) {\n        printf(\"%d \", primes[i]);\n    }\n    putchar('\\n');\n\n    int grid[2][3] = {\n        {1, 2, 3},\n        {4, 5, 6},\n    };\n    printf(\"%d\\n\", grid[1][2]);        /* 6 */\n\n    size_t length = sizeof primes / sizeof primes[0];\n    printf(\"%zu elements, last zero slot = %d\\n\", length, zeros[3]);  /* 5, 0 */\n    return 0;\n}"
+    },
+    {
+     "language": "c",
+     "code": "#include <stdio.h>\n\nint sum(const int values[], size_t count) {\n    int total = 0;\n    for (size_t i = 0; i < count; i++) {\n        total += values[i];\n    }\n    return total;\n}\n\nint main(void) {\n    int data[4] = {5, 10, 15, 20};\n\n    /* The array decays to a pointer, so the length must be passed separately. */\n    printf(\"%d\\n\", sum(data, 4));   /* 50 */\n    return 0;\n}"
+    }
+   ]
+  },
+  {
+   "id": "strings",
+   "title": "Strings",
+   "description": "Null-terminated char arrays and the string.h helpers.",
+   "snippets": [
+    {
+     "language": "c",
+     "code": "#include <stdio.h>\n#include <string.h>\n\nint main(void) {\n    char name[] = \"Ada\";              /* mutable array, 4 bytes including '\\0' */\n    char greeting[32];\n\n    printf(\"%zu\\n\", strlen(name));    /* 3, the terminator is not counted */\n\n    strcpy(greeting, \"Hello, \");\n    strcat(greeting, name);\n    printf(\"%s\\n\", greeting);         /* Hello, Ada */\n\n    if (strcmp(name, \"Ada\") == 0) {   /* compare contents, never with == */\n        puts(\"names match\");\n    }\n\n    char label[16];\n    int written = snprintf(label, sizeof label, \"%s-%d\", name, 42);\n    printf(\"%s (%d chars)\\n\", label, written);  /* Ada-42 (6 chars) */\n    return 0;\n}"
+    },
+    {
+     "language": "c",
+     "code": "#include <stdio.h>\n#include <string.h>\n\nint main(void) {\n    char line[64];\n\n    if (fgets(line, sizeof line, stdin) != NULL) {\n        line[strcspn(line, \"\\n\")] = '\\0';   /* drop the trailing newline */\n        printf(\"read %zu chars: %s\\n\", strlen(line), line);\n    }\n    return 0;\n}"
+    }
+   ]
+  },
+  {
+   "id": "pointers",
+   "title": "Pointers",
+   "description": "Addresses, dereferencing, arithmetic, and const qualifiers.",
+   "snippets": [
+    {
+     "language": "c",
+     "code": "#include <stdio.h>\n\nint main(void) {\n    int value = 42;\n    int *ptr = &value;              /* pointer holds the address of value */\n\n    printf(\"%d\\n\", *ptr);           /* 42: dereference reads the target */\n    *ptr = 7;                       /* write through the pointer */\n    printf(\"%d\\n\", value);          /* 7 */\n\n    int data[3] = {10, 20, 30};\n    int *walk = data;               /* array name decays to &data[0] */\n    printf(\"%d %d\\n\", *walk, *(walk + 2));  /* 10 30 */\n\n    int *missing = NULL;            /* explicit \"points nowhere\" value */\n    if (missing == NULL) {\n        puts(\"not pointing anywhere\");\n    }\n    return 0;\n}"
+    },
+    {
+     "language": "c",
+     "code": "#include <stdio.h>\n\nvoid increment(int *value) {\n    (*value)++;                     /* parentheses: increment the target, not the pointer */\n}\n\nint main(void) {\n    int x = 5;\n    int *const fixed = &x;          /* the pointer itself cannot move */\n    const int *readonly = &x;       /* the target cannot be changed through this pointer */\n\n    increment(fixed);\n    printf(\"%d\\n\", *readonly);      /* 6 */\n    return 0;\n}"
+    }
+   ]
+  },
+  {
+   "id": "structs",
+   "title": "Structs and Unions",
+   "description": "Group related fields and overlay storage with unions.",
+   "snippets": [
+    {
+     "language": "c",
+     "code": "#include <stdio.h>\n\ntypedef struct {\n    char name[32];\n    int year;\n    double rating;\n} Book;\n\ntypedef union {\n    float as_float;\n    unsigned int as_bits;\n} FloatBits;\n\nint main(void) {\n    Book book = {\n        .name = \"The C Programming Language\",\n        .year = 1978,\n        .rating = 4.7,\n    };\n    Book copy = book;               /* the whole struct is copied by value */\n\n    printf(\"%s (%d) %.1f\\n\", copy.name, copy.year, copy.rating);\n\n    FloatBits bits;\n    bits.as_float = 1.5f;           /* both members share the same storage */\n    printf(\"0x%08X\\n\", bits.as_bits);  /* 0x3FC00000 on IEEE-754 platforms */\n    return 0;\n}"
+    },
+    {
+     "language": "c",
+     "code": "#include <stdio.h>\n\ntypedef struct Node {\n    int value;\n    struct Node *next;              /* a struct may point to its own type */\n} Node;\n\nint main(void) {\n    Node tail = {.value = 3, .next = NULL};\n    Node head = {.value = 1, .next = &tail};\n\n    for (Node *cur = &head; cur != NULL; cur = cur->next) {\n        printf(\"%d \", cur->value);  /* 1 3 */\n    }\n    putchar('\\n');\n    return 0;\n}"
+    }
+   ]
+  },
+  {
+   "id": "memory",
+   "title": "Memory Management",
+   "description": "Allocate, resize, and release heap memory explicitly.",
+   "snippets": [
+    {
+     "language": "c",
+     "code": "#include <stdio.h>\n#include <stdlib.h>\n\nint main(void) {\n    size_t n = 4;\n    int *values = malloc(n * sizeof *values);\n    if (values == NULL) {\n        fprintf(stderr, \"out of memory\\n\");\n        return 1;\n    }\n\n    for (size_t i = 0; i < n; i++) {\n        values[i] = (int)(i * i);\n    }\n    printf(\"%d\\n\", values[3]);      /* 9 */\n\n    int *bigger = realloc(values, 8 * sizeof *values);\n    if (bigger == NULL) {\n        free(values);               /* the original block is still valid */\n        return 1;\n    }\n    values = bigger;                /* never assign realloc straight back */\n\n    values[7] = 49;\n    printf(\"%d\\n\", values[7]);     /* 49 */\n\n    free(values);                   /* release exactly once */\n    values = NULL;                  /* avoid accidental reuse */\n    return 0;\n}"
+    },
+    {
+     "language": "c",
+     "code": "#include <stdio.h>\n#include <stdlib.h>\n\nint main(void) {\n    size_t n = 10;\n    int *counts = calloc(n, sizeof *counts);  /* allocated and zeroed */\n    if (counts == NULL) {\n        return 1;\n    }\n\n    counts[0] += 1;\n    printf(\"%d %d\\n\", counts[0], counts[9]);  /* 1 0 */\n\n    free(counts);\n    return 0;\n}"
+    }
+   ]
+  },
+  {
+   "id": "file-io",
+   "title": "File I/O",
+   "description": "Open, read, write, and close files with stdio streams.",
+   "snippets": [
+    {
+     "language": "c",
+     "code": "#include <stdio.h>\n\nint main(void) {\n    FILE *out = fopen(\"notes.txt\", \"w\");   /* \"w\" truncates or creates */\n    if (out == NULL) {\n        perror(\"fopen\");\n        return 1;\n    }\n    fprintf(out, \"%d %s\\n\", 42, \"answer\");\n    fclose(out);\n\n    FILE *in = fopen(\"notes.txt\", \"r\");\n    if (in == NULL) {\n        perror(\"fopen\");\n        return 1;\n    }\n\n    char line[128];\n    while (fgets(line, sizeof line, in) != NULL) {\n        fputs(line, stdout);\n    }\n\n    fclose(in);\n    return 0;\n}"
+    },
+    {
+     "language": "c",
+     "code": "#include <stdio.h>\n\ntypedef struct {\n    int id;\n    double value;\n} Record;\n\nint main(void) {\n    Record saved = {.id = 7, .value = 3.5};\n\n    FILE *bin = fopen(\"data.bin\", \"wb\");\n    if (bin == NULL) {\n        return 1;\n    }\n    fwrite(&saved, sizeof saved, 1, bin);\n    fclose(bin);\n\n    Record loaded = {0};\n    FILE *back = fopen(\"data.bin\", \"rb\");\n    if (back == NULL) {\n        return 1;\n    }\n    if (fread(&loaded, sizeof loaded, 1, back) == 1) {\n        printf(\"%d %.1f\\n\", loaded.id, loaded.value);  /* 7 3.5 */\n    }\n    fclose(back);\n    return 0;\n}"
+    }
+   ]
+  },
+  {
+   "id": "preprocessor",
+   "title": "Preprocessor",
+   "description": "Macros, conditional compilation, and include guards.",
+   "snippets": [
+    {
+     "language": "c",
+     "code": "#include <stdio.h>\n\n#define MAX_ITEMS 128\n#define SQUARE(x) ((x) * (x))        /* parentheses keep precedence safe */\n#define VERSION \"1.4.2\"\n\n#ifndef DEBUG\n#define DEBUG 0\n#endif\n\nint main(void) {\n#if DEBUG\n    printf(\"debug build %s\\n\", VERSION);\n#endif\n\n    printf(\"%d\\n\", MAX_ITEMS);       /* 128 */\n    printf(\"%d\\n\", SQUARE(3 + 1));   /* 16, expands to ((3 + 1) * (3 + 1)) */\n    return 0;\n}"
+    },
+    {
+     "language": "c",
+     "code": "/* math_utils.h */\n#ifndef MATH_UTILS_H\n#define MATH_UTILS_H\n\n#define DOUBLE(x) ((x) * 2)\n#define STRINGIFY(x) #x              /* turns the argument into a string literal */\n\nint clamp(int value, int low, int high);\n\n#endif /* MATH_UTILS_H */"
+    }
+   ]
+  },
+  {
+   "id": "build",
+   "title": "Compiling",
+   "description": "Compile, link, and inspect C programs from the command line.",
+   "snippets": [
+    {
+     "language": "bash",
+     "code": "# Compile and link in one step\ngcc -std=c17 -Wall -Wextra -O2 main.c util.c -o app\n\n# Compile separately, then link the object files\ngcc -std=c17 -Wall -Wextra -c main.c\ngcc -std=c17 -Wall -Wextra -c util.c\ngcc main.o util.o -o app\n\n# Build a static library from util.o\nar rcs libutil.a util.o\ngcc main.o -L. -lutil -o app\n\n# Keep debug symbols\ngcc -std=c17 -g -O0 main.c -o app"
+    },
+    {
+     "language": "bash",
+     "code": "# Turn on runtime checks for memory and undefined behavior\ngcc -std=c17 -g -fsanitize=address,undefined main.c -o app\n\n# Inspect macros and includes after preprocessing\ngcc -E main.c | less\n\n# Ask pkg-config for the flags of an installed library\ngcc -std=c17 main.c $(pkg-config --cflags --libs libcurl) -o fetch"
+    }
+   ]
+  },
+  {
+   "id": "common-errors",
+   "title": "Common Errors",
+   "description": "Frequent mistakes that crash or silently corrupt a program.",
+   "snippets": [
+    {
+     "language": "c",
+     "code": "#include <stdio.h>\n#include <stdlib.h>\n\nint main(void) {\n    /* 1. Dereferencing NULL: segmentation fault */\n    int *null_ptr = NULL;\n    if (null_ptr != NULL) {\n        *null_ptr = 10;\n    }\n\n    /* 2. Off-by-one: valid indexes for values[3] are 0, 1, and 2 */\n    int values[3] = {1, 2, 3};\n    values[2] = 30;\n\n    /* 3. scanf needs the address of the variable */\n    int age = 0;\n    if (scanf(\"%d\", &age) != 1) {\n        age = 0;\n    }\n\n    /* 4. Bound the copy: snprintf always leaves room for the terminator */\n    char name[8];\n    snprintf(name, sizeof name, \"%s\", \"Ada\");\n\n    /* 5. Every malloc needs one matching free */\n    int *heap = malloc(4 * sizeof *heap);\n    if (heap != NULL) {\n        heap[0] = age;\n        free(heap);\n    }\n\n    printf(\"%d %s\\n\", values[2], name);\n    return 0;\n}"
+    },
+    {
+     "language": "bash",
+     "code": "gcc -std=c17 -Wall -Wextra app.c -o app\n\n# warning: implicit declaration of function 'strcpy'\n#   -> missing #include <string.h>\n\n# error: 'true' undeclared\n#   -> missing #include <stdbool.h>\n\n# warning: format '%d' expects argument of type 'int',\n#          but argument 2 has type 'double'\n#   -> use %f for double\n\n# error: expected ';' before '}' token\n#   -> a statement is missing its semicolon"
+    }
+   ]
+  }
+ ]
+}

@@ -1,0 +1,248 @@
+{
+ "slug": "html",
+ "title": "HTML",
+ "label": "HTML",
+ "group": "Language",
+ "color": "#E34F26",
+ "desc": "Markup language that gives web pages structure, meaning and accessible defaults.",
+ "sections": [
+  {
+   "id": "setup",
+   "title": "Setup",
+   "description": "Create an entry file and serve it over HTTP so relative paths and modules behave like production.",
+   "snippets": [
+    {
+     "language": "bash",
+     "code": "# Scaffold a page and serve it on http://localhost:8000\nmkdir -p site\ncd site\n\ncat > index.html <<'HTML'\n<!doctype html>\n<html lang=\"en\">\n  <head>\n    <meta charset=\"utf-8\">\n    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">\n    <title>My first page</title>\n  </head>\n  <body>\n    <h1>Hello, HTML</h1>\n  </body>\n</html>\nHTML\n\npython3 -m http.server 8000\n# Open http://localhost:8000 in the browser"
+    },
+    {
+     "language": "bash",
+     "code": "# Format the file, then check it against the HTML5 rules\nnpx --yes prettier --write index.html\nnpx --yes html-validate index.html"
+    }
+   ]
+  },
+  {
+   "id": "structure",
+   "title": "Document Structure",
+   "description": "Every page starts with a doctype, one html root and a head before the body.",
+   "snippets": [
+    {
+     "language": "html",
+     "code": "<!doctype html>\n<html lang=\"en\">\n  <head>\n    <meta charset=\"utf-8\">\n    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">\n    <title>Order history | Northwind Supply</title>\n    <link rel=\"stylesheet\" href=\"/assets/site.css\">\n  </head>\n  <body>\n    <header>\n      <a href=\"/\">Northwind Supply</a>\n    </header>\n\n    <main id=\"content\">\n      <h1>Order history</h1>\n      <p>Your last three orders appear below.</p>\n    </main>\n\n    <footer>\n      <p>&copy; 2026 Northwind Supply</p>\n    </footer>\n\n    <script src=\"/assets/app.js\" defer></script>\n  </body>\n</html>"
+    },
+    {
+     "language": "html",
+     "code": "<!-- One root element, head before body, block children inside block parents -->\n<article>\n  <h2>Shipping update</h2>\n  <p>Orders placed before 14:00 ship the same day.</p>\n  <ul>\n    <li>Standard delivery: 3 to 5 business days</li>\n    <li>Express delivery: next business day</li>\n  </ul>\n</article>"
+    }
+   ]
+  },
+  {
+   "id": "elements",
+   "title": "Elements",
+   "description": "Elements are block or inline, and a few of them are void and never take a closing tag.",
+   "snippets": [
+    {
+     "language": "html",
+     "code": "<!-- Block elements start on a new line and fill the available width -->\n<section>\n  <h2>Weekend schedule</h2>\n  <p>Doors open at 09:00.</p>\n</section>\n\n<!-- Inline elements sit inside text and only take the space they need -->\n<p>The <strong>final</strong> price includes <em>all</em> taxes.</p>"
+    },
+    {
+     "language": "html",
+     "code": "<!-- Void elements never take a closing tag -->\n<img src=\"/images/logo.svg\" alt=\"Acme logo\" width=\"120\" height=\"32\">\n<br>\n<hr>\n<input type=\"search\" name=\"q\" placeholder=\"Search products\">\n<meta charset=\"utf-8\">\n<link rel=\"icon\" href=\"/favicon.ico\">"
+    },
+    {
+     "language": "html",
+     "code": "<!-- Valid: a paragraph holds phrasing content only -->\n<p>Read the <a href=\"/docs/returns\">returns policy</a> before shipping.</p>\n\n<!-- Invalid: a div cannot live inside a paragraph -->\n<div class=\"notice\">Returns accepted within 30 days.</div>"
+    }
+   ]
+  },
+  {
+   "id": "attributes",
+   "title": "Attributes",
+   "description": "Attributes configure an element; global ones work everywhere and booleans are true by presence.",
+   "snippets": [
+    {
+     "language": "html",
+     "code": "<article\n  id=\"order-1042\"\n  class=\"card card--highlight\"\n  data-order-id=\"1042\"\n  data-status=\"shipped\"\n  lang=\"en\"\n  hidden>\n  <h2>Order 1042</h2>\n</article>"
+    },
+    {
+     "language": "html",
+     "code": "<!-- Boolean attributes are true by presence; the value is optional -->\n<input type=\"email\" name=\"email\" required>\n<video src=\"/media/intro.mp4\" controls muted loop></video>\n<details open>\n  <summary>Delivery details</summary>\n  <p>Leave the parcel at the front desk.</p>\n</details>\n\n<!-- Quote values that contain spaces; single and double quotes are both valid -->\n<a href=\"/search?q=usb+cable\" title=\"Search for USB cables\">USB cables</a>\n<div class='badge badge--new'>New</div>"
+    }
+   ]
+  },
+  {
+   "id": "text",
+   "title": "Text and Headings",
+   "description": "Headings describe the outline below h1, while paragraphs and inline tags carry the prose.",
+   "snippets": [
+    {
+     "language": "html",
+     "code": "<h1>Field notes</h1>\n\n<h2>Spring migration</h2>\n<h3>Arrival dates</h3>\n<p>Swallows returned to the valley on <time datetime=\"2026-03-18\">18 March</time>.</p>\n\n<h2>Nesting season</h2>\n<p>Nest boxes should face <strong>east</strong> and stay <em>dry</em>.</p>"
+    },
+    {
+     "language": "html",
+     "code": "<blockquote cite=\"https://example.org/bird-atlas/\">\n  <p>Swallows reuse the same nest site for several seasons.</p>\n</blockquote>\n<p>Source: <cite>Regional Bird Atlas</cite>, page 214.</p>"
+    },
+    {
+     "language": "html",
+     "code": "<p>Run <code>npm run build</code> before deploying.</p>\n\n<pre><code>const total = items.reduce((sum, item) =&gt; sum + item.price, 0);\nconsole.log(total);</code></pre>\n\n<p>Press <kbd>Ctrl</kbd> + <kbd>S</kbd> to save. Water is H<sub>2</sub>O and the area is 12 m<sup>2</sup>.</p>"
+    }
+   ]
+  },
+  {
+   "id": "links",
+   "title": "Links and Images",
+   "description": "Anchors connect documents and fragments, and images need dimensions plus a useful alt text.",
+   "snippets": [
+    {
+     "language": "html",
+     "code": "<nav aria-label=\"Breadcrumb\">\n  <a href=\"/\">Home</a> /\n  <a href=\"/products\">Products</a> /\n  <span aria-current=\"page\">Cables</span>\n</nav>\n\n<!-- An external link opened in a new tab needs rel=\"noopener\" -->\n<a href=\"https://developer.mozilla.org/en-US/docs/Web/HTML\" target=\"_blank\" rel=\"noopener noreferrer\">\n  HTML reference on MDN\n</a>\n\n<!-- Fragment, download and protocol links -->\n<a href=\"#specs\">Jump to specifications</a>\n<a href=\"/files/catalog-2026.pdf\" download=\"catalog-2026.pdf\">Download catalog (PDF)</a>\n<a href=\"mailto:orders@example.com?subject=Order%201042\">Email the orders desk</a>\n<a href=\"tel:+551140028922\">Call +55 11 4002-8922</a>"
+    },
+    {
+     "language": "html",
+     "code": "<img src=\"/images/coffee-grinder.jpg\"\n     alt=\"Burr grinder with a glass hopper full of dark roast beans\"\n     width=\"800\" height=\"600\" loading=\"lazy\" decoding=\"async\">\n\n<img src=\"/images/hero-640.jpg\"\n     srcset=\"/images/hero-640.jpg 640w,\n             /images/hero-1280.jpg 1280w,\n             /images/hero-1920.jpg 1920w\"\n     sizes=\"(min-width: 900px) 50vw, 100vw\"\n     alt=\"Roastery floor with three drum roasters\"\n     width=\"640\" height=\"360\">"
+    },
+    {
+     "language": "html",
+     "code": "<figure>\n  <img src=\"/images/grind-size.png\"\n       alt=\"Four piles of coffee grounds from fine to coarse\"\n       width=\"640\" height=\"360\">\n  <figcaption>Grind size from espresso (left) to French press (right).</figcaption>\n</figure>"
+    }
+   ]
+  },
+  {
+   "id": "lists",
+   "title": "Lists",
+   "description": "Unordered lists group items, ordered lists number them and description lists pair terms with details.",
+   "snippets": [
+    {
+     "language": "html",
+     "code": "<ul>\n  <li>Espresso\n    <ul>\n      <li>Single origin</li>\n      <li>House blend</li>\n    </ul>\n  </li>\n  <li>Filter</li>\n</ul>\n\n<ol start=\"3\" reversed>\n  <li>Grind the beans</li>\n  <li>Heat the water to 93 °C</li>\n  <li>Pour and wait 4 minutes</li>\n</ol>"
+    },
+    {
+     "language": "html",
+     "code": "<dl>\n  <dt>Espresso</dt>\n  <dd>18 g of finely ground coffee, 36 g out, in 25 to 30 seconds.</dd>\n\n  <dt>French press</dt>\n  <dd>30 g of coarse grounds steeped in 500 ml of water for 4 minutes.</dd>\n</dl>"
+    }
+   ]
+  },
+  {
+   "id": "tables",
+   "title": "Tables",
+   "description": "Tables are for tabular data: a caption, header cells with scope and rows in the body.",
+   "snippets": [
+    {
+     "language": "html",
+     "code": "<table>\n  <caption>Roast profiles</caption>\n  <thead>\n    <tr>\n      <th scope=\"col\">Bean</th>\n      <th scope=\"col\">Level</th>\n      <th scope=\"col\">Drop temperature</th>\n    </tr>\n  </thead>\n  <tbody>\n    <tr>\n      <th scope=\"row\">Ethiopia Guji</th>\n      <td>Light</td>\n      <td>198 °C</td>\n    </tr>\n    <tr>\n      <th scope=\"row\">Brazil Cerrado</th>\n      <td>Medium</td>\n      <td>210 °C</td>\n    </tr>\n  </tbody>\n  <tfoot>\n    <tr>\n      <td colspan=\"3\">Batch size: 12 kg of green coffee</td>\n    </tr>\n  </tfoot>\n</table>"
+    },
+    {
+     "language": "html",
+     "code": "<table>\n  <thead>\n    <tr>\n      <th scope=\"col\">Shift</th>\n      <th scope=\"col\">Monday</th>\n      <th scope=\"col\">Tuesday</th>\n    </tr>\n  </thead>\n  <tbody>\n    <tr>\n      <th scope=\"row\">Morning</th>\n      <td rowspan=\"2\">Ana</td>\n      <td>Bruno</td>\n    </tr>\n    <tr>\n      <th scope=\"row\">Afternoon</th>\n      <td>Clara</td>\n    </tr>\n  </tbody>\n</table>"
+    }
+   ]
+  },
+  {
+   "id": "forms",
+   "title": "Forms",
+   "description": "A form posts named values to an endpoint, with every control tied to a label.",
+   "snippets": [
+    {
+     "language": "html",
+     "code": "<form action=\"/sessions\" method=\"post\">\n  <label for=\"email\">Email</label>\n  <input id=\"email\" name=\"email\" type=\"email\" autocomplete=\"email\" required>\n\n  <label for=\"password\">Password</label>\n  <input id=\"password\" name=\"password\" type=\"password\"\n         autocomplete=\"current-password\" minlength=\"12\" required>\n\n  <button type=\"submit\">Sign in</button>\n</form>"
+    },
+    {
+     "language": "html",
+     "code": "<form action=\"/orders\" method=\"post\">\n  <fieldset>\n    <legend>Delivery method</legend>\n    <label><input type=\"radio\" name=\"delivery\" value=\"standard\" checked> Standard</label>\n    <label><input type=\"radio\" name=\"delivery\" value=\"express\"> Express</label>\n  </fieldset>\n\n  <label for=\"roast\">Roast level</label>\n  <select id=\"roast\" name=\"roast\">\n    <option value=\"light\">Light</option>\n    <option value=\"medium\" selected>Medium</option>\n    <option value=\"dark\">Dark</option>\n  </select>\n\n  <label for=\"notes\">Order notes</label>\n  <textarea id=\"notes\" name=\"notes\" rows=\"4\" maxlength=\"300\"\n            placeholder=\"Grind for filter, 500 g bags\"></textarea>\n\n  <button type=\"submit\">Place order</button>\n</form>"
+    },
+    {
+     "language": "html",
+     "code": "<!-- File uploads need the multipart encoding -->\n<form action=\"/uploads\" method=\"post\" enctype=\"multipart/form-data\">\n  <label for=\"receipt\">Receipt image</label>\n  <input id=\"receipt\" name=\"receipt\" type=\"file\"\n         accept=\"image/png,image/jpeg\" capture=\"environment\">\n  <button type=\"submit\">Upload</button>\n</form>"
+    }
+   ]
+  },
+  {
+   "id": "semantic",
+   "title": "Semantic Elements",
+   "description": "Landmarks such as header, nav, main and footer describe the role of each page region.",
+   "snippets": [
+    {
+     "language": "html",
+     "code": "<body>\n  <header>\n    <a href=\"/\">Northwind Coffee</a>\n    <nav aria-label=\"Main\">\n      <ul>\n        <li><a href=\"/beans\">Beans</a></li>\n        <li><a href=\"/equipment\">Equipment</a></li>\n      </ul>\n    </nav>\n  </header>\n\n  <main>\n    <h1>This week at the roastery</h1>\n    <article>\n      <h2>New lot from Huila</h2>\n      <p>Washed, 1 700 m, with notes of red apple and panela.</p>\n    </article>\n  </main>\n\n  <aside aria-label=\"Opening hours\">\n    <p>Monday to Friday, 08:00 to 18:00.</p>\n  </aside>\n\n  <footer>\n    <p>&copy; 2026 Northwind Coffee</p>\n  </footer>\n</body>"
+    },
+    {
+     "language": "html",
+     "code": "<article>\n  <header>\n    <h2>Grinder maintenance</h2>\n    <p>Published <time datetime=\"2026-10-02\">2 October 2026</time> by Ana Reis.</p>\n  </header>\n  <p>Brush the burrs every 2 kg of coffee.</p>\n</article>\n\n<details>\n  <summary>Shipping costs</summary>\n  <p>Free above R$ 250, otherwise R$ 18.</p>\n</details>"
+    }
+   ]
+  },
+  {
+   "id": "media",
+   "title": "Audio and Video",
+   "description": "Native media elements take multiple sources, a poster and caption tracks.",
+   "snippets": [
+    {
+     "language": "html",
+     "code": "<video controls width=\"640\" height=\"360\"\n       poster=\"/media/roastery-poster.jpg\" preload=\"metadata\">\n  <source src=\"/media/roastery.webm\" type=\"video/webm\">\n  <source src=\"/media/roastery.mp4\" type=\"video/mp4\">\n  <track kind=\"captions\" src=\"/media/roastery-en.vtt\"\n         srclang=\"en\" label=\"English\" default>\n  <p>Your browser cannot play this video.\n     <a href=\"/media/roastery.mp4\">Download it instead</a>.</p>\n</video>"
+    },
+    {
+     "language": "html",
+     "code": "<audio controls preload=\"none\">\n  <source src=\"/media/interview.opus\" type=\"audio/ogg; codecs=opus\">\n  <source src=\"/media/interview.mp3\" type=\"audio/mpeg\">\n  <p>Your browser cannot play this audio.\n     <a href=\"/media/interview.mp3\">Download the MP3</a>.</p>\n</audio>\n\n<!-- Muted autoplay is the only autoplay most browsers allow -->\n<video src=\"/media/loop.mp4\" autoplay muted loop playsinline\n       width=\"480\" height=\"270\"></video>"
+    }
+   ]
+  },
+  {
+   "id": "meta",
+   "title": "Meta and SEO",
+   "description": "The head carries the title, description, canonical URL, social previews and structured data.",
+   "snippets": [
+    {
+     "language": "html",
+     "code": "<head>\n  <meta charset=\"utf-8\">\n  <meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">\n  <title>Single origin beans | Northwind Coffee</title>\n  <meta name=\"description\"\n        content=\"Washed and natural single origin coffees roasted weekly in São Paulo.\">\n  <link rel=\"canonical\" href=\"https://northwind.example/beans\">\n  <meta name=\"robots\" content=\"index, follow\">\n  <meta name=\"theme-color\" content=\"#2f4f3a\">\n</head>"
+    },
+    {
+     "language": "html",
+     "code": "<!-- Open Graph and Twitter tags control link previews -->\n<meta property=\"og:type\" content=\"website\">\n<meta property=\"og:title\" content=\"Single origin beans | Northwind Coffee\">\n<meta property=\"og:description\" content=\"Roasted weekly in São Paulo and shipped within 48 hours.\">\n<meta property=\"og:image\" content=\"https://northwind.example/social/beans-1200x630.jpg\">\n<meta property=\"og:url\" content=\"https://northwind.example/beans\">\n<meta name=\"twitter:card\" content=\"summary_large_image\">"
+    },
+    {
+     "language": "html",
+     "code": "<script type=\"application/ld+json\">\n{\n  \"@context\": \"https://schema.org\",\n  \"@type\": \"Product\",\n  \"name\": \"Ethiopia Guji 250 g\",\n  \"sku\": \"NG-250-GUJI\",\n  \"offers\": {\n    \"@type\": \"Offer\",\n    \"price\": \"89.00\",\n    \"priceCurrency\": \"BRL\",\n    \"availability\": \"https://schema.org/InStock\"\n  }\n}\n</script>"
+    }
+   ]
+  },
+  {
+   "id": "accessibility",
+   "title": "Accessibility",
+   "description": "Accessible markup gives every control a name, keeps focus visible and announces changes politely.",
+   "snippets": [
+    {
+     "language": "html",
+     "code": "<a class=\"skip-link\" href=\"#main\">Skip to main content</a>\n<header>\n  <nav aria-label=\"Main\">\n    <a href=\"/beans\">Beans</a>\n    <a href=\"/equipment\">Equipment</a>\n  </nav>\n</header>\n\n<main id=\"main\" tabindex=\"-1\">\n  <h1>Checkout</h1>\n  <p>Review your order before paying.</p>\n</main>"
+    },
+    {
+     "language": "html",
+     "code": "<button type=\"button\" id=\"filters-toggle\" aria-expanded=\"false\" aria-controls=\"filters\">\n  Filters\n</button>\n<div id=\"filters\" hidden>\n  <label><input type=\"checkbox\" name=\"light\" checked> Light roast</label>\n  <label><input type=\"checkbox\" name=\"dark\"> Dark roast</label>\n</div>\n\n<!-- A live region announces the result without moving focus -->\n<p role=\"status\" aria-live=\"polite\">3 results for \"burr grinder\".</p>\n\n<!-- An icon-only button needs an accessible name -->\n<button type=\"button\" aria-label=\"Close dialog\">\n  <svg aria-hidden=\"true\" focusable=\"false\" width=\"16\" height=\"16\">\n    <path d=\"M2 2 L14 14 M14 2 L2 14\" stroke=\"currentColor\" stroke-width=\"2\"/>\n  </svg>\n</button>"
+    },
+    {
+     "language": "html",
+     "code": "<label for=\"phone\">Phone with country code</label>\n<input id=\"phone\" name=\"phone\" type=\"tel\" autocomplete=\"tel\"\n       aria-describedby=\"phone-hint\" required>\n<p id=\"phone-hint\">Format: +55 11 91234-5678</p>\n\n<!-- Decorative images take an empty alt; informative ones describe the content -->\n<img src=\"/images/hero-texture.png\" alt=\"\" width=\"1920\" height=\"480\">\n<img src=\"/images/award-2026.png\" alt=\"Roaster of the Year 2026 award badge\" width=\"180\" height=\"180\">"
+    }
+   ]
+  },
+  {
+   "id": "common-errors",
+   "title": "Common Mistakes",
+   "description": "Most bugs come from invalid nesting, duplicate ids, missing alt text and divs pretending to be controls.",
+   "snippets": [
+    {
+     "language": "html",
+     "code": "<!-- Mistake: a clickable div has no keyboard support -->\n<button type=\"button\" onclick=\"saveDraft()\">Save draft</button>\n\n<!-- Mistake: missing or empty alt on an informative image -->\n<img src=\"/charts/q3-revenue.png\"\n     alt=\"Q3 revenue reached R$ 1.2 million, 18 percent above Q2\"\n     width=\"640\" height=\"360\">\n\n<!-- Mistake: spacing with repeated <br> instead of separate paragraphs -->\n<p>Roasted on Monday.</p>\n<p>Shipped on Tuesday.</p>"
+    },
+    {
+     "language": "html",
+     "code": "<!-- Mistake: duplicate id breaks labels and fragment links -->\n<label for=\"work-email\">Work email</label>\n<input id=\"work-email\" name=\"work_email\" type=\"email\">\n<label for=\"personal-email\">Personal email</label>\n<input id=\"personal-email\" name=\"personal_email\" type=\"email\">\n\n<!-- Mistake: a table used for layout; use CSS grid instead -->\n<div class=\"grid\">\n  <section>Beans</section>\n  <section>Brewers</section>\n</div>"
+    },
+    {
+     "language": "html",
+     "code": "<!-- Escape characters that would otherwise parse as markup -->\n<p>Use &lt;strong&gt; only for real emphasis, not for bold text.</p>\n<p>5 &lt; 8 and 10 &gt; 3, plus AT&amp;T as a literal name.</p>\n\n<!-- Attribute values with spaces or quotes stay inside quotes -->\n<a href=\"/search?q=burr%20grinder\" title='Search for \"burr grinder\"'>Burr grinders</a>"
+    }
+   ]
+  }
+ ]
+}

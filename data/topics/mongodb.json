@@ -1,0 +1,271 @@
+{
+ "slug": "mongodb",
+ "title": "MongoDB",
+ "label": "MongoDB",
+ "group": "Database",
+ "color": "#47A248",
+ "desc": "Document database with a flexible BSON model, rich queries and an aggregation pipeline.",
+ "sections": [
+  {
+   "id": "setup",
+   "title": "Setup",
+   "description": "Run the server in a container, install the shell and confirm the build that answers.",
+   "snippets": [
+    {
+     "language": "bash",
+     "code": "# Start MongoDB 8.0 with a root user and a named volume\ndocker run --name mongo8 \\\n  -e MONGO_INITDB_ROOT_USERNAME=admin \\\n  -e MONGO_INITDB_ROOT_PASSWORD=devsecret \\\n  -p 27017:27017 \\\n  -v mongo8-data:/data/db \\\n  -d mongo:8.0\n\n# Follow the startup log until the server reports it is ready\ndocker logs -f mongo8\n"
+    },
+    {
+     "language": "bash",
+     "code": "# macOS: install only the shell and point it at an existing server\nbrew tap mongodb/brew\nbrew install mongosh\nmongosh --version\n\n# Confirm the container from the host\nmongosh \"mongodb://admin:devsecret@127.0.0.1:27017/?authSource=admin\" --eval 'db.version()'\n"
+    }
+   ]
+  },
+  {
+   "id": "connection",
+   "title": "Connection",
+   "description": "Build a URI for local, replica set or Atlas deployments and reuse it from drivers.",
+   "snippets": [
+    {
+     "language": "bash",
+     "code": "# Local server with credentials created in the admin database\nmongosh \"mongodb://admin:devsecret@127.0.0.1:27017/?authSource=admin\"\n\n# Replica set: name the set so the client can find the primary\nmongosh \"mongodb://app_user:devsecret@db1:27017,db2:27017/inventory?replicaSet=rs0&authSource=inventory\"\n\n# Atlas DNS seed list\nmongosh \"mongodb+srv://app_user:devsecret@cluster0.ab1cd.mongodb.net/inventory?retryWrites=true&w=majority\"\n"
+    },
+    {
+     "language": "javascript",
+     "code": "const { MongoClient } = require(\"mongodb\");\n\nasync function main() {\n  const client = new MongoClient(\n    \"mongodb://app_user:devsecret@127.0.0.1:27017/?authSource=inventory\",\n    { maxPoolSize: 20, serverSelectionTimeoutMS: 5000 }\n  );\n\n  await client.connect();\n  const db = client.db(\"inventory\");\n  const reply = await db.command({ ping: 1 });\n  console.log(reply.ok === 1 ? \"connected\" : \"no reply\");\n\n  await client.close();\n}\n\nmain().catch((error) => {\n  console.error(error);\n  process.exit(1);\n});\n"
+    },
+    {
+     "language": "javascript",
+     "code": "// Which node answered and which user is authenticated?\ndb.hello()\ndb.runCommand({ connectionStatus: 1 })\n"
+    }
+   ]
+  },
+  {
+   "id": "databases",
+   "title": "Databases",
+   "description": "Switch between databases, inspect their size and remove one completely.",
+   "snippets": [
+    {
+     "language": "javascript",
+     "code": "// List databases with their on-disk size\nshow dbs\n\n// Select a database; it exists only after the first write\nuse inventory\ndb.getName()\n"
+    },
+    {
+     "language": "javascript",
+     "code": "// Counters for the current database: collections, objects, indexes, storage\ndb.stats()\ndb.stats(1024 * 1024)  // sizes in MiB\n\n// Delete the selected database and every collection inside it\ndb.dropDatabase()\n"
+    }
+   ]
+  },
+  {
+   "id": "collections",
+   "title": "Collections",
+   "description": "Create collections with validation or size limits, then rename or drop them.",
+   "snippets": [
+    {
+     "language": "javascript",
+     "code": "// A JSON schema rejects documents that miss required fields\ndb.createCollection(\"orders\", {\n  validator: {\n    $jsonSchema: {\n      bsonType: \"object\",\n      required: [\"customerId\", \"total\", \"status\"],\n      properties: {\n        customerId: { bsonType: \"objectId\" },\n        total: { bsonType: \"decimal\" },\n        status: { enum: [\"pending\", \"paid\", \"shipped\"] },\n      },\n    },\n  },\n  validationLevel: \"strict\",\n  validationAction: \"error\",\n})\n\nshow collections\n"
+    },
+    {
+     "language": "javascript",
+     "code": "// Capped collection: fixed byte budget, oldest documents fall off\ndb.createCollection(\"events\", { capped: true, size: 1048576, max: 5000 })\n\n// Time series collection for timestamped measurements\ndb.createCollection(\"readings\", {\n  timeseries: { timeField: \"at\", metaField: \"sensor\", granularity: \"minutes\" },\n  expireAfterSeconds: 86400,\n})\n"
+    },
+    {
+     "language": "javascript",
+     "code": "// Rename inside the same database, then remove it\ndb.orders.renameCollection(\"orders_2025\")\ndb.orders_2025.drop()\n\n// Read back options and validation rules\ndb.getCollectionInfos({ name: \"orders\" })\n"
+    }
+   ]
+  },
+  {
+   "id": "documents",
+   "title": "Documents",
+   "description": "See how BSON documents nest objects, arrays and typed values under one _id.",
+   "snippets": [
+    {
+     "language": "javascript",
+     "code": "// One document mixing scalars, an embedded object and arrays\ndb.products.insertOne({\n  _id: ObjectId(\"665f1c2ab7e4a91d3c8f0a11\"),\n  sku: \"KB-87\",\n  name: \"Mechanical Keyboard\",\n  price: NumberDecimal(\"129.90\"),\n  tags: [\"input\", \"wireless\"],\n  dimensions: { width: 36, depth: 13, unit: \"cm\" },\n  createdAt: ISODate(\"2026-02-14T09:30:00Z\"),\n  inStock: true,\n})\n"
+    },
+    {
+     "language": "javascript",
+     "code": "// Read nested values with dot paths\nconst product = db.products.findOne({ sku: \"KB-87\" })\nproduct.dimensions.width\nproduct.tags[0]\nObject.keys(product)\n\n// BSON types survive the round trip\nproduct.price instanceof Decimal128  // true\nproduct.createdAt instanceof Date    // true\n"
+    }
+   ]
+  },
+  {
+   "id": "insert",
+   "title": "Inserting",
+   "description": "Write one document, a batch, or a mixed set of operations in a single call.",
+   "snippets": [
+    {
+     "language": "javascript",
+     "code": "// insertOne returns the generated _id when the document omits it\ndb.orders.insertOne({\n  customerId: ObjectId(\"665f1c2ab7e4a91d3c8f0a12\"),\n  total: NumberDecimal(\"249.50\"),\n  status: \"pending\",\n  items: [{ sku: \"KB-87\", qty: 1 }, { sku: \"MS-12\", qty: 2 }],\n  createdAt: new Date(),\n})\n"
+    },
+    {
+     "language": "javascript",
+     "code": "// ordered: false keeps going after a duplicate key error\nconst result = db.orders.insertMany(\n  [\n    { customerId: ObjectId(\"665f1c2ab7e4a91d3c8f0a13\"), total: NumberDecimal(\"59.90\"), status: \"paid\" },\n    { customerId: ObjectId(\"665f1c2ab7e4a91d3c8f0a14\"), total: NumberDecimal(\"18.00\"), status: \"pending\" },\n  ],\n  { ordered: false }\n)\n\nresult.insertedCount\n"
+    },
+    {
+     "language": "javascript",
+     "code": "// Mix inserts, updates and deletes in one ordered batch\ndb.products.bulkWrite([\n  { insertOne: { document: { sku: \"HD-45\", name: \"Headset\", price: NumberDecimal(\"89.00\") } } },\n  { updateOne: { filter: { sku: \"KB-87\" }, update: { $set: { inStock: false } } } },\n  { deleteOne: { filter: { sku: \"MS-12\" } } },\n])\n"
+    }
+   ]
+  },
+  {
+   "id": "find",
+   "title": "Finding Documents",
+   "description": "Read documents with projections and control the cursor before fetching.",
+   "snippets": [
+    {
+     "language": "javascript",
+     "code": "// All documents, then one document by primary key\ndb.orders.find().pretty()\ndb.orders.findOne({ _id: ObjectId(\"665f1c2ab7e4a91d3c8f0a12\") })\n\n// Projection: include two fields and hide _id\ndb.orders.find(\n  { status: \"paid\" },\n  { total: 1, status: 1, _id: 0 }\n)\n"
+    },
+    {
+     "language": "javascript",
+     "code": "// The server applies sort, skip and limit; the shell fetches lazily\ndb.orders\n  .find({ status: \"pending\" })\n  .sort({ createdAt: -1 })\n  .skip(20)\n  .limit(10)\n\n// Count and iterate without materializing the whole result set\ndb.orders.countDocuments({ status: \"pending\" })\nfor (const order of db.orders.find({ status: \"pending\" })) {\n  print(order._id, order.total)\n}\n"
+    },
+    {
+     "language": "javascript",
+     "code": "// Distinct values, a count and one projected document\ndb.orders.distinct(\"status\")\ndb.orders.countDocuments({})\ndb.orders.findOne({}, { total: 1, _id: 0 })\n"
+    }
+   ]
+  },
+  {
+   "id": "filtering",
+   "title": "Filtering and Sorting",
+   "description": "Express range, array, text and logical conditions, then order the results.",
+   "snippets": [
+    {
+     "language": "javascript",
+     "code": "// Range, set membership and existence\ndb.orders.find({ total: { $gte: NumberDecimal(\"100.00\") } })\ndb.orders.find({ status: { $in: [\"pending\", \"paid\"] } })\ndb.orders.find({ shippedAt: { $exists: false } })\ndb.orders.find({ status: { $ne: \"cancelled\" } })  // also matches missing status\n\n// null matches an explicit null and a missing field\ndb.orders.find({ shippedAt: null })\n"
+    },
+    {
+     "language": "javascript",
+     "code": "// Match inside embedded documents and arrays\ndb.orders.find({ \"items.sku\": \"KB-87\" })\ndb.orders.find({ items: { $elemMatch: { sku: \"KB-87\", qty: { $gte: 2 } } } })\ndb.orders.find({ tags: { $all: [\"gift\", \"priority\"] } })\ndb.orders.find({ \"items.0.sku\": \"KB-87\" })  // position matters here\n"
+    },
+    {
+     "language": "javascript",
+     "code": "// Regular expression, logical composition and ordering\ndb.customers.find({ email: { $regex: \"@example[.]com$\", $options: \"i\" } })\ndb.orders.find({\n  $or: [{ status: \"paid\" }, { total: { $gt: NumberDecimal(\"500.00\") } }],\n})\ndb.orders.find({\n  $and: [{ status: \"paid\" }, { createdAt: { $gte: new Date(\"2026-01-01\") } }],\n}).sort({ total: -1, createdAt: 1 })\n"
+    }
+   ]
+  },
+  {
+   "id": "update",
+   "title": "Updating",
+   "description": "Change fields in place, grow arrays, replace whole documents or upsert.",
+   "snippets": [
+    {
+     "language": "javascript",
+     "code": "// Field operators touch only the named paths\ndb.orders.updateOne(\n  { _id: ObjectId(\"665f1c2ab7e4a91d3c8f0a12\") },\n  {\n    $set: { status: \"paid\", paidAt: new Date() },\n    $inc: { \"totals.tax\": NumberDecimal(\"12.45\") },\n  }\n)\n"
+    },
+    {
+     "language": "javascript",
+     "code": "// Update every match and report how many documents changed\nconst changed = db.orders.updateMany(\n  { status: \"pending\" },\n  { $set: { reviewed: false } }\n)\nchanged.modifiedCount\n\n// Upsert inserts a new document when the filter matches nothing\ndb.settings.updateOne(\n  { key: \"theme\" },\n  { $set: { value: \"dark\", updatedAt: new Date() } },\n  { upsert: true }\n)\n"
+    },
+    {
+     "language": "javascript",
+     "code": "// Array operators: append, avoid duplicates and remove matches\ndb.orders.updateOne(\n  { _id: ObjectId(\"665f1c2ab7e4a91d3c8f0a12\") },\n  {\n    $push: { events: { at: new Date(), type: \"paid\" } },\n    $addToSet: { tags: \"priority\" },\n    $pull: { items: { sku: \"MS-12\" } },\n  }\n)\n\n// Return the document after the change\ndb.orders.findOneAndUpdate(\n  { _id: ObjectId(\"665f1c2ab7e4a91d3c8f0a12\") },\n  { $set: { status: \"shipped\" } },\n  { returnDocument: \"after\" }\n)\n"
+    }
+   ]
+  },
+  {
+   "id": "delete",
+   "title": "Deleting",
+   "description": "Remove single documents, whole matches or return the deleted document.",
+   "snippets": [
+    {
+     "language": "javascript",
+     "code": "// One match, then every match, then the affected count\ndb.orders.deleteOne({ _id: ObjectId(\"665f1c2ab7e4a91d3c8f0a12\") })\nconst { deletedCount } = db.orders.deleteMany({\n  status: \"cancelled\",\n  createdAt: { $lt: new Date(\"2025-01-01\") },\n})\ndeletedCount\n"
+    },
+    {
+     "language": "javascript",
+     "code": "// Remove and return the oldest queued job in one round trip\ndb.jobs.findOneAndDelete(\n  { status: \"queued\" },\n  { sort: { createdAt: 1 } }\n)\n"
+    }
+   ]
+  },
+  {
+   "id": "indexes",
+   "title": "Indexes",
+   "description": "Speed up reads with single, compound, unique, TTL, partial and text indexes.",
+   "snippets": [
+    {
+     "language": "javascript",
+     "code": "// Single-field, compound and unique indexes\ndb.orders.createIndex({ status: 1 })\ndb.orders.createIndex({ customerId: 1, createdAt: -1 })\ndb.customers.createIndex({ email: 1 }, { unique: true })\ndb.orders.createIndex({ status: 1 }, { name: \"status_lookup\" })\n"
+    },
+    {
+     "language": "javascript",
+     "code": "// TTL index: the server removes documents after expiresAt passes\ndb.sessions.createIndex({ expiresAt: 1 }, { expireAfterSeconds: 0 })\n\n// Partial index: only documents matching the filter are indexed\ndb.orders.createIndex(\n  { total: -1 },\n  { partialFilterExpression: { status: \"paid\" } }\n)\n\n// Text index, then a full-text search\ndb.products.createIndex({ name: \"text\", description: \"text\" })\ndb.products.find({ $text: { $search: \"wireless keyboard\" } })\n"
+    },
+    {
+     "language": "javascript",
+     "code": "// Inspect the winning plan and the index list\ndb.orders.find({ status: \"paid\" }).explain(\"executionStats\")\ndb.orders.getIndexes()\n\n// Drop by generated name\ndb.orders.dropIndex(\"status_1\")\n"
+    }
+   ]
+  },
+  {
+   "id": "aggregation",
+   "title": "Aggregation Pipeline",
+   "description": "Shape data through stages: filter, group, join, unwind and branch.",
+   "snippets": [
+    {
+     "language": "javascript",
+     "code": "// Revenue per customer, highest first\ndb.orders.aggregate([\n  { $match: { status: \"paid\" } },\n  { $group: { _id: \"$customerId\", orders: { $sum: 1 }, revenue: { $sum: \"$total\" } } },\n  { $sort: { revenue: -1 } },\n  { $limit: 10 },\n])\n"
+    },
+    {
+     "language": "javascript",
+     "code": "// Flatten line items and enrich each one with its product\ndb.orders.aggregate([\n  { $match: { status: \"paid\" } },\n  { $unwind: \"$items\" },\n  {\n    $lookup: {\n      from: \"products\",\n      localField: \"items.sku\",\n      foreignField: \"sku\",\n      as: \"product\",\n    },\n  },\n  { $unwind: \"$product\" },\n  { $project: { _id: 0, sku: \"$items.sku\", name: \"$product.name\", qty: \"$items.qty\" } },\n])\n"
+    },
+    {
+     "language": "javascript",
+     "code": "// Two reports over the same input in a single pass\ndb.orders.aggregate([\n  { $match: { createdAt: { $gte: ISODate(\"2026-01-01T00:00:00Z\") } } },\n  {\n    $facet: {\n      byStatus: [{ $group: { _id: \"$status\", count: { $sum: 1 } } }],\n      monthly: [\n        {\n          $group: {\n            _id: { $dateToString: { format: \"%Y-%m\", date: \"$createdAt\" } },\n            revenue: { $sum: \"$total\" },\n          },\n        },\n        { $sort: { _id: 1 } },\n      ],\n    },\n  },\n])\n"
+    }
+   ]
+  },
+  {
+   "id": "transactions",
+   "title": "Transactions",
+   "description": "Apply several writes atomically on a replica set with a session.",
+   "snippets": [
+    {
+     "language": "javascript",
+     "code": "const { MongoClient } = require(\"mongodb\");\n\nasync function transfer(client, fromId, toId, amountCents) {\n  const session = client.startSession();\n  try {\n    // withTransaction retries transient errors and aborts on a throw\n    await session.withTransaction(async () => {\n      const accounts = client.db(\"bank\").collection(\"accounts\");\n\n      const debit = await accounts.updateOne(\n        { _id: fromId, balanceCents: { $gte: amountCents } },\n        { $inc: { balanceCents: -amountCents } },\n        { session }\n      );\n      if (debit.matchedCount !== 1) throw new Error(\"insufficient funds\");\n\n      await accounts.updateOne(\n        { _id: toId },\n        { $inc: { balanceCents: amountCents } },\n        { session }\n      );\n    });\n  } finally {\n    await session.endSession();\n  }\n}\n"
+    },
+    {
+     "language": "javascript",
+     "code": "// mongosh: requires a replica set or a sharded cluster\nconst session = db.getMongo().startSession()\nsession.startTransaction()\n\ntry {\n  const accounts = session.getDatabase(\"bank\").accounts\n  accounts.updateOne({ _id: \"ana\" }, { $inc: { balanceCents: -5000 } })\n  accounts.updateOne({ _id: \"bruno\" }, { $inc: { balanceCents: 5000 } })\n  session.commitTransaction()\n} catch (error) {\n  session.abortTransaction()\n  throw error\n} finally {\n  session.endSession()\n}\n"
+    }
+   ]
+  },
+  {
+   "id": "backup",
+   "title": "Backup and Restore",
+   "description": "Dump and restore logical backups, compressed or scoped to one collection.",
+   "snippets": [
+    {
+     "language": "bash",
+     "code": "# Compressed logical backup of one database\nmongodump \\\n  --uri=\"mongodb://admin:devsecret@127.0.0.1:27017/?authSource=admin\" \\\n  --db=inventory \\\n  --gzip \\\n  --archive=inventory-2026-11-04.archive.gz\n\n# Restore it under a different database name\nmongorestore \\\n  --uri=\"mongodb://admin:devsecret@127.0.0.1:27017/?authSource=admin\" \\\n  --nsFrom=\"inventory.*\" \\\n  --nsTo=\"inventory_restore.*\" \\\n  --gzip \\\n  --archive=inventory-2026-11-04.archive.gz\n"
+    },
+    {
+     "language": "bash",
+     "code": "# Back up one collection, limited to orders created this year\nmongodump \\\n  --uri=\"mongodb://admin:devsecret@127.0.0.1:27017/?authSource=admin\" \\\n  --db=inventory \\\n  --collection=orders \\\n  --query='{ \"createdAt\": { \"$gte\": { \"$date\": \"2026-01-01T00:00:00Z\" } } }' \\\n  --out=/backup/orders\n"
+    },
+    {
+     "language": "bash",
+     "code": "# Consistent snapshot on a replica set: data plus the oplog window\nmongodump --uri=\"mongodb://app_user:devsecret@127.0.0.1:27017/?replicaSet=rs0\" \\\n  --oplog --gzip --archive=/backup/full-2026-11-04.archive.gz\n\n# Replay up to a point in time, in seconds since the epoch\nmongorestore --uri=\"mongodb://app_user:devsecret@127.0.0.1:27017/?replicaSet=rs0\" \\\n  --oplogReplay --oplogLimit=1762300000:1 \\\n  --gzip --archive=/backup/full-2026-11-04.archive.gz\n"
+    }
+   ]
+  },
+  {
+   "id": "common-errors",
+   "title": "Common Errors",
+   "description": "Read the usual failures by their message and apply the direct fix.",
+   "snippets": [
+    {
+     "language": "text",
+     "code": "MongoServerError: Authentication failed.\n  Wrong password, wrong authSource, or the user lives in another database.\n  Add ?authSource=admin when the user was created in admin.\n\nMongoNetworkError: connect ECONNREFUSED 127.0.0.1:27017\n  mongod is not running, or the container port is not published.\n  Check docker ps and publish it with -p 27017:27017.\n\nE11000 duplicate key error collection: inventory.customers index: email_1\n  A unique index already holds that value.\n  Update the existing document or retry with upsert: true.\n\nMongoServerError: not primary and secondaryOk=false\n  The write reached a secondary node.\n  Connect through the replica set seed list or use readPreference=primary.\n\nMongoServerError: Document failed validation\n  A $jsonSchema validator rejected the shape.\n  Compare required fields and bsonType with db.getCollectionInfos().\n\nBSONObjectTooLarge: object to insert too large\n  The document exceeds the 16 MiB limit.\n  Split the array or move the payload to GridFS.\n"
+    },
+    {
+     "language": "javascript",
+     "code": "// Check roles, replica set state and recent server errors\ndb.runCommand({ connectionStatus: 1 })\ndb.hello()\ndb.adminCommand({ getLog: \"global\" }).log.filter((line) => line.includes(\"E11000\"))\n"
+    }
+   ]
+  }
+ ]
+}

@@ -1,0 +1,280 @@
+{
+ "slug": "mysql",
+ "title": "MySQL",
+ "label": "MySQL",
+ "group": "Database",
+ "color": "#00758F",
+ "desc": "Open source relational database with InnoDB transactions, replication and a large SQL dialect.",
+ "sections": [
+  {
+   "id": "setup",
+   "title": "Setup",
+   "description": "Install MySQL, start the service and secure the first account.",
+   "snippets": [
+    {
+     "language": "bash",
+     "code": "# Debian or Ubuntu\nsudo apt update\nsudo apt install mysql-server\nsudo systemctl enable --now mysql\nsudo mysql_secure_installation\n\n# macOS with Homebrew\nbrew install mysql\nbrew services start mysql\nmysql_secure_installation\n"
+    },
+    {
+     "language": "bash",
+     "code": "# Confirm that the service is running and see the client version\nsudo systemctl status mysql\nmysql --version\n\n# First login through the administrative system account\nsudo mysql\n"
+    }
+   ]
+  },
+  {
+   "id": "connection",
+   "title": "Connection",
+   "description": "Open a session from the client and inspect what it is connected to.",
+   "snippets": [
+    {
+     "language": "bash",
+     "code": "# Connect as a local user; -p prompts for the password\nmysql -u app_user -p\n\n# Connect to a database on another host and port\nmysql -h 192.168.1.20 -P 3306 -u app_user -p inventory\n\n# Run one statement and exit\nmysql -u app_user -p -e \"SELECT VERSION(), CURRENT_USER();\" inventory\n\n# Execute a script against a database\nmysql -u app_user -p inventory < schema.sql\n"
+    },
+    {
+     "language": "sql",
+     "code": "-- Details of the current session\nSELECT VERSION() AS server_version,\n       CURRENT_USER() AS login,\n       DATABASE() AS current_db;\n\n-- Warnings produced by the previous statement\nSHOW WARNINGS;\n"
+    }
+   ]
+  },
+  {
+   "id": "databases",
+   "title": "Databases and Tables",
+   "description": "Create the schema and the tables used throughout this sheet.",
+   "snippets": [
+    {
+     "language": "sql",
+     "code": "CREATE DATABASE IF NOT EXISTS inventory\n  CHARACTER SET utf8mb4\n  COLLATE utf8mb4_0900_ai_ci;\n\nUSE inventory;\n\nSHOW DATABASES;\nSHOW TABLES;\nSELECT DATABASE() AS current_db;\n"
+    },
+    {
+     "language": "sql",
+     "code": "CREATE TABLE products (\n  id           BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,\n  sku          VARCHAR(32) NOT NULL,\n  name         VARCHAR(120) NOT NULL,\n  price_cents  INT UNSIGNED NOT NULL,\n  stock        INT UNSIGNED NOT NULL DEFAULT 0,\n  discontinued TINYINT(1) NOT NULL DEFAULT 0,\n  notes        VARCHAR(255) NULL,\n  created_at   TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,\n  PRIMARY KEY (id),\n  UNIQUE KEY uq_products_sku (sku)\n) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;\n\nCREATE TABLE customers (\n  id        BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,\n  email     VARCHAR(255) NOT NULL,\n  full_name VARCHAR(120) NOT NULL,\n  PRIMARY KEY (id),\n  UNIQUE KEY uq_customers_email (email)\n) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;\n\nCREATE TABLE orders (\n  id          BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,\n  customer_id BIGINT UNSIGNED NOT NULL,\n  status      ENUM('pending','paid','shipped','cancelled') NOT NULL DEFAULT 'pending',\n  total_cents INT UNSIGNED NOT NULL,\n  placed_at   DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,\n  PRIMARY KEY (id),\n  KEY idx_orders_customer (customer_id),\n  CONSTRAINT fk_orders_customer FOREIGN KEY (customer_id) REFERENCES customers (id)\n) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;\n\nCREATE TABLE order_items (\n  order_id         BIGINT UNSIGNED NOT NULL,\n  product_id       BIGINT UNSIGNED NOT NULL,\n  quantity         SMALLINT UNSIGNED NOT NULL,\n  unit_price_cents INT UNSIGNED NOT NULL,\n  PRIMARY KEY (order_id, product_id),\n  CONSTRAINT fk_items_order FOREIGN KEY (order_id) REFERENCES orders (id) ON DELETE CASCADE,\n  CONSTRAINT fk_items_product FOREIGN KEY (product_id) REFERENCES products (id)\n) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;\n"
+    },
+    {
+     "language": "sql",
+     "code": "-- Add, change and remove columns\nALTER TABLE products ADD COLUMN barcode VARCHAR(64) NULL AFTER sku;\nALTER TABLE products MODIFY COLUMN notes VARCHAR(500) NULL;\nALTER TABLE products ADD INDEX idx_products_barcode (barcode);\nALTER TABLE products DROP INDEX idx_products_barcode;\n\n-- Remove objects; IF EXISTS keeps the script repeatable\nDROP TABLE IF EXISTS scratch_notes;\nDROP DATABASE IF EXISTS old_inventory;\n"
+    }
+   ]
+  },
+  {
+   "id": "types",
+   "title": "Data Types",
+   "description": "Pick the column type that matches the values you store.",
+   "snippets": [
+    {
+     "language": "sql",
+     "code": "-- Integers\nTINYINT        -- 1 byte, -128 to 127\nSMALLINT       -- 2 bytes\nMEDIUMINT      -- 3 bytes\nINT            -- 4 bytes\nBIGINT         -- 8 bytes\nINT UNSIGNED   -- 0 to 4294967295\n\n-- Exact and approximate numbers\nDECIMAL(10,2)  -- exact, 10 digits in total with 2 after the point\nFLOAT          -- 4-byte approximate number\nDOUBLE         -- 8-byte approximate number\n\n-- Strings and binary data\nCHAR(2)        -- fixed length, padded with spaces\nVARCHAR(255)   -- variable length, at most 255 characters\nTEXT           -- up to 65535 bytes\nBLOB           -- binary large object\n\n-- Date and time\nDATE           -- 1000-01-01 to 9999-12-31\nDATETIME       -- date and time without time zone conversion\nTIMESTAMP      -- stored in UTC, 1970-01-01 to 2038-01-19\nTIME           -- -838:59:59 to 838:59:59\nYEAR           -- four-digit year\n\n-- Other common choices\nBOOLEAN        -- alias for TINYINT(1), values 0 and 1\nJSON           -- validated JSON document\nENUM('draft','live')  -- one value from a fixed list\n"
+    }
+   ]
+  },
+  {
+   "id": "insert",
+   "title": "Inserting Rows",
+   "description": "Add one row or many, skip duplicates or overwrite them.",
+   "snippets": [
+    {
+     "language": "sql",
+     "code": "INSERT INTO products (sku, name, price_cents, stock)\nVALUES ('KB-1000', 'Mechanical Keyboard', 12900, 12);\n\n-- Several rows in one statement\nINSERT INTO products (sku, name, price_cents, stock) VALUES\n  ('MS-2000', 'Wireless Mouse', 4500, 30),\n  ('HD-3000', 'USB-C Hub', 8900, 8);\n\n-- Skip rows that would duplicate a UNIQUE key\nINSERT IGNORE INTO products (sku, name, price_cents)\nVALUES ('KB-1000', 'Mechanical Keyboard', 12900);\n\nSELECT LAST_INSERT_ID() AS last_generated_id;\n"
+    },
+    {
+     "language": "sql",
+     "code": "-- Upsert: update the existing row instead of failing (MySQL 8.0.19+)\nINSERT INTO products (sku, name, price_cents, stock)\nVALUES ('KB-1000', 'Mechanical Keyboard', 11900, 5) AS new_row\nON DUPLICATE KEY UPDATE\n  price_cents = new_row.price_cents,\n  stock = products.stock + new_row.stock;\n\n-- Copy rows from one table into another\nINSERT INTO products (sku, name, price_cents, stock)\nSELECT sku, name, price_cents, stock\nFROM archived_products\nWHERE discontinued = 0;\n"
+    }
+   ]
+  },
+  {
+   "id": "select",
+   "title": "Selecting Rows",
+   "description": "Read columns, compute values and page through the result.",
+   "snippets": [
+    {
+     "language": "sql",
+     "code": "SELECT id, sku, name, price_cents FROM products;\n\n-- Compute values and give the result a name\nSELECT name,\n       price_cents / 100 AS price_dollars,\n       stock * price_cents AS inventory_value_cents\nFROM products;\n\n-- Build a single display string\nSELECT CONCAT(name, ' (', sku, ')') AS label, stock\nFROM products;\n\n-- Remove duplicate values from the result\nSELECT DISTINCT stock FROM products;\n"
+    },
+    {
+     "language": "sql",
+     "code": "-- First page: 10 rows\nSELECT id, name, price_cents\nFROM products\nORDER BY id\nLIMIT 10;\n\n-- Third page: skip 20 rows, then take 10\nSELECT id, name, price_cents\nFROM products\nORDER BY id\nLIMIT 10 OFFSET 20;\n\n-- Always pair OFFSET with ORDER BY, or the page boundaries are arbitrary\nSELECT id, name FROM products ORDER BY name LIMIT 5 OFFSET 0;\n"
+    }
+   ]
+  },
+  {
+   "id": "filtering",
+   "title": "Filtering and Sorting",
+   "description": "Narrow rows with WHERE and control order with ORDER BY.",
+   "snippets": [
+    {
+     "language": "sql",
+     "code": "SELECT id, name, price_cents\nFROM products\nWHERE stock > 0\n  AND price_cents BETWEEN 1000 AND 10000\n  AND sku LIKE 'KB-%';\n\n-- Either condition is enough\nSELECT id, name FROM products\nWHERE stock = 0 OR discontinued = 1;\n\n-- Match any value in a list\nSELECT id, name FROM products\nWHERE sku IN ('KB-1000', 'MS-2000');\n\n-- NULL never equals anything, so test it with IS NULL\nSELECT id, name FROM products\nWHERE notes IS NULL;\n"
+    },
+    {
+     "language": "sql",
+     "code": "-- Most expensive first; ties sorted by name\nSELECT id, name, price_cents\nFROM products\nWHERE discontinued = 0\nORDER BY price_cents DESC, name ASC\nLIMIT 5;\n\n-- Sort by an expression\nSELECT name, price_cents * stock AS inventory_value_cents\nFROM products\nORDER BY inventory_value_cents DESC;\n\n-- Case-insensitive contains match\nSELECT id, name FROM products\nWHERE name LIKE '%keyboard%';\n"
+    }
+   ]
+  },
+  {
+   "id": "joins",
+   "title": "Joins",
+   "description": "Combine related tables and keep unmatched rows when needed.",
+   "snippets": [
+    {
+     "language": "sql",
+     "code": "-- Inner join: only customers that have at least one order\nSELECT c.full_name, o.id AS order_id, o.total_cents\nFROM customers AS c\nINNER JOIN orders AS o ON o.customer_id = c.id\nORDER BY o.placed_at DESC;\n\n-- Left join: keep customers without orders, counted as zero\nSELECT c.full_name, COUNT(o.id) AS order_count\nFROM customers AS c\nLEFT JOIN orders AS o ON o.customer_id = c.id\nGROUP BY c.id, c.full_name\nORDER BY order_count DESC;\n\n-- Find the customers with no order at all\nSELECT c.full_name\nFROM customers AS c\nLEFT JOIN orders AS o ON o.customer_id = c.id\nWHERE o.id IS NULL;\n"
+    },
+    {
+     "language": "sql",
+     "code": "-- Walk order_items back to products and orders\nSELECT p.sku, SUM(oi.quantity) AS units_sold\nFROM order_items AS oi\nJOIN products AS p ON p.id = oi.product_id\nJOIN orders AS o ON o.id = oi.order_id\nWHERE o.status = 'paid'\nGROUP BY p.id, p.sku\nORDER BY units_sold DESC;\n"
+    },
+    {
+     "language": "sql",
+     "code": "-- Self join: pair each product with every cheaper product\nSELECT a.name AS product, b.name AS cheaper_product\nFROM products AS a\nJOIN products AS b ON b.price_cents < a.price_cents\nORDER BY a.name, b.price_cents DESC;\n"
+    }
+   ]
+  },
+  {
+   "id": "aggregation",
+   "title": "Aggregation and Grouping",
+   "description": "Collapse rows into counts, sums and per-group totals.",
+   "snippets": [
+    {
+     "language": "sql",
+     "code": "SELECT COUNT(*) AS total_products,\n       AVG(price_cents) AS avg_price_cents,\n       MIN(price_cents) AS cheapest_cents,\n       MAX(price_cents) AS most_expensive_cents,\n       SUM(stock) AS units_in_stock\nFROM products;\n\n-- COUNT(column) ignores NULL, COUNT(*) does not\nSELECT COUNT(*) AS all_rows,\n       COUNT(notes) AS rows_with_notes,\n       COUNT(DISTINCT stock) AS distinct_stock_values\nFROM products;\n"
+    },
+    {
+     "language": "sql",
+     "code": "SELECT status,\n       COUNT(*) AS orders,\n       SUM(total_cents) AS revenue_cents\nFROM orders\nGROUP BY status\nHAVING SUM(total_cents) > 100000\nORDER BY revenue_cents DESC;\n\n-- WITH ROLLUP adds a grand-total row where status is NULL\nSELECT status, COUNT(*) AS orders\nFROM orders\nGROUP BY status WITH ROLLUP;\n\n-- One row per customer, with their order count and lifetime value\nSELECT customer_id,\n       COUNT(*) AS orders,\n       SUM(total_cents) AS spent_cents\nFROM orders\nGROUP BY customer_id;\n"
+    }
+   ]
+  },
+  {
+   "id": "subqueries",
+   "title": "Subqueries",
+   "description": "Use a query as a value, a list, a table or a named CTE.",
+   "snippets": [
+    {
+     "language": "sql",
+     "code": "-- Scalar subquery: compare against the average\nSELECT name, price_cents\nFROM products\nWHERE price_cents > (SELECT AVG(price_cents) FROM products);\n\n-- IN with a subquery that returns one column\nSELECT full_name\nFROM customers\nWHERE id IN (SELECT customer_id FROM orders WHERE status = 'paid');\n\n-- EXISTS stops at the first matching row\nSELECT c.full_name\nFROM customers AS c\nWHERE EXISTS (\n  SELECT 1 FROM orders AS o\n  WHERE o.customer_id = c.id AND o.total_cents > 50000\n);\n"
+    },
+    {
+     "language": "sql",
+     "code": "-- Derived table: aggregate over a query result\nSELECT status, ROUND(AVG(order_total), 2) AS avg_total\nFROM (\n  SELECT status, total_cents / 100 AS order_total\n  FROM orders\n) AS per_order\nGROUP BY status;\n\n-- CTE (MySQL 8.0+) gives the subquery a name\nWITH paid AS (\n  SELECT customer_id, SUM(total_cents) AS spent_cents\n  FROM orders\n  WHERE status = 'paid'\n  GROUP BY customer_id\n)\nSELECT c.full_name, paid.spent_cents\nFROM customers AS c\nJOIN paid ON paid.customer_id = c.id\nORDER BY paid.spent_cents DESC;\n"
+    }
+   ]
+  },
+  {
+   "id": "updating",
+   "title": "Updating and Deleting",
+   "description": "Change or remove rows, alone or through a join.",
+   "snippets": [
+    {
+     "language": "sql",
+     "code": "UPDATE products\nSET price_cents = 11900,\n    stock = stock - 1\nWHERE sku = 'KB-1000';\n\n-- Different changes per row with CASE\nUPDATE products\nSET stock = CASE\n  WHEN stock < 5 THEN stock + 20\n  ELSE stock + 5\nEND\nWHERE discontinued = 0;\n\n-- UPDATE through a join\nUPDATE orders AS o\nJOIN customers AS c ON c.id = o.customer_id\nSET o.status = 'cancelled'\nWHERE c.email = 'ana@example.com'\n  AND o.status = 'pending';\n"
+    },
+    {
+     "language": "sql",
+     "code": "DELETE FROM order_items\nWHERE order_id = 42;\n\nDELETE FROM orders\nWHERE status = 'cancelled'\n  AND placed_at < '2025-01-01';\n\n-- Delete everything but keep the table and its indexes\nTRUNCATE TABLE order_items;\n\n-- Check the row count before deleting a wide condition\nSELECT COUNT(*) FROM orders WHERE status = 'cancelled';\n"
+    }
+   ]
+  },
+  {
+   "id": "indexes",
+   "title": "Indexes",
+   "description": "Speed up lookups and keep unique columns unique.",
+   "snippets": [
+    {
+     "language": "sql",
+     "code": "-- Speed up lookups and sorts on a column\nCREATE INDEX idx_products_name ON products (name);\n\n-- Composite index: usable by status alone, or by status and placed_at\nCREATE INDEX idx_orders_status_placed ON orders (status, placed_at);\n\n-- Descending index (MySQL 8.0+)\nCREATE INDEX idx_products_price_desc ON products (price_cents DESC);\n\n-- Full-text index for word searches\nCREATE FULLTEXT INDEX ft_products_name ON products (name);\n"
+    },
+    {
+     "language": "sql",
+     "code": "-- Inspect the indexes of a table\nSHOW INDEX FROM products;\n\n-- Remove one index\nDROP INDEX idx_products_name ON products;\n\n-- Rebuild table statistics used by the optimizer\nANALYZE TABLE products;\n\n-- Show the statement that would recreate the table\nSHOW CREATE TABLE products;\n"
+    }
+   ]
+  },
+  {
+   "id": "transactions",
+   "title": "Transactions",
+   "description": "Group statements so they commit or roll back together.",
+   "snippets": [
+    {
+     "language": "sql",
+     "code": "START TRANSACTION;\n\nUPDATE products\nSET stock = stock - 2\nWHERE id = 7;\n\nINSERT INTO orders (customer_id, status, total_cents)\nVALUES (3, 'pending', 17800);\n\nCOMMIT;\n"
+    },
+    {
+     "language": "sql",
+     "code": "-- Undo every statement since START TRANSACTION\nSTART TRANSACTION;\nDELETE FROM orders WHERE id = 91;\nROLLBACK;\n\n-- Keep part of the work with a savepoint\nSTART TRANSACTION;\nUPDATE products SET stock = stock - 1 WHERE id = 7;\nSAVEPOINT after_stock;\n\nINSERT INTO order_items (order_id, product_id, quantity, unit_price_cents)\nVALUES (91, 7, 1, 8900);\n\nROLLBACK TO SAVEPOINT after_stock;\nCOMMIT;\n\n-- Isolation level for the rest of the session\nSET SESSION TRANSACTION ISOLATION LEVEL READ COMMITTED;\n"
+    }
+   ]
+  },
+  {
+   "id": "users",
+   "title": "Users and Grants",
+   "description": "Create accounts, grant the least privilege they need and revoke it.",
+   "snippets": [
+    {
+     "language": "sql",
+     "code": "CREATE USER 'app_user'@'localhost' IDENTIFIED BY 'S3cure-Passw0rd!';\nCREATE USER 'report'@'10.0.0.%' IDENTIFIED BY 'R3port-Passw0rd!';\n\n-- Grant only the statements the application needs\nGRANT SELECT, INSERT, UPDATE, DELETE ON inventory.* TO 'app_user'@'localhost';\nGRANT SELECT ON inventory.orders TO 'report'@'10.0.0.%';\n\n-- Review what an account can do\nSHOW GRANTS FOR 'app_user'@'localhost';\n"
+    },
+    {
+     "language": "sql",
+     "code": "REVOKE DELETE ON inventory.* FROM 'app_user'@'localhost';\n\nALTER USER 'app_user'@'localhost' IDENTIFIED BY 'N3w-Passw0rd!';\nDROP USER 'report'@'10.0.0.%';\n\n-- Roles (MySQL 8.0+)\nCREATE ROLE 'read_only';\nGRANT SELECT ON inventory.* TO 'read_only';\nGRANT 'read_only' TO 'report'@'10.0.0.%';\nSET DEFAULT ROLE 'read_only' TO 'report'@'10.0.0.%';\n"
+    }
+   ]
+  },
+  {
+   "id": "backup",
+   "title": "Backup and Restore",
+   "description": "Dump a database to a file and load it back.",
+   "snippets": [
+    {
+     "language": "bash",
+     "code": "# Consistent dump of one InnoDB database, with routines and triggers\nmysqldump -u root -p --single-transaction --routines --triggers \\\n  inventory > inventory-2026-11-04.sql\n\n# Every database plus the user accounts\nmysqldump -u root -p --all-databases --routines --events > all-2026-11-04.sql\n\n# Schema only, no rows\nmysqldump -u root -p --no-data inventory > inventory-schema.sql\n\n# Restore into an existing database\nmysql -u root -p inventory < inventory-2026-11-04.sql\n\n# Compress in the pipe to save disk space\nmysqldump -u root -p --single-transaction inventory | gzip > inventory.sql.gz\ngunzip < inventory.sql.gz | mysql -u root -p inventory\n"
+    }
+   ]
+  },
+  {
+   "id": "explain",
+   "title": "EXPLAIN and Performance",
+   "description": "Read the query plan and find the step that scans too much.",
+   "snippets": [
+    {
+     "language": "sql",
+     "code": "EXPLAIN\nSELECT c.full_name, o.total_cents\nFROM customers AS c\nJOIN orders AS o ON o.customer_id = c.id\nWHERE o.status = 'paid'\nORDER BY o.placed_at DESC;\n\n-- The key column shows the index used, rows estimates the work\nEXPLAIN FORMAT=JSON\nSELECT id FROM orders WHERE status = 'pending';\n\n-- Extra warnings about the plan or the statement\nSHOW WARNINGS;\n"
+    },
+    {
+     "language": "sql",
+     "code": "-- Actually run the statement and report real timings (MySQL 8.0.18+)\nEXPLAIN ANALYZE\nSELECT id FROM orders WHERE status = 'pending';\n\n-- Record statements slower than one second\nSET GLOBAL slow_query_log = 'ON';\nSET GLOBAL long_query_time = 1;\nSHOW VARIABLES LIKE 'slow_query_log_file';\n\n-- Refresh the statistics the optimizer reads\nANALYZE TABLE orders;\n"
+    }
+   ]
+  },
+  {
+   "id": "functions",
+   "title": "Built-in Functions",
+   "description": "Ready-made helpers for strings, numbers, dates, NULL and JSON.",
+   "snippets": [
+    {
+     "language": "sql",
+     "code": "SELECT CONCAT('Order ', id, ' for ', customer_id) AS label,\n       UPPER('mysql') AS upper_text,\n       LENGTH('café') AS bytes,\n       CHAR_LENGTH('café') AS characters,\n       SUBSTRING('2026-11-04', 1, 7) AS month,\n       REPLACE('a-b-c', '-', '/') AS swapped,\n       TRIM('  padded  ') AS trimmed;\n\nSELECT ROUND(12.3456, 2) AS rounded,\n       CEIL(4.1) AS rounded_up,\n       FLOOR(4.9) AS rounded_down,\n       MOD(17, 5) AS remainder,\n       ABS(-42) AS absolute_value;\n"
+    },
+    {
+     "language": "sql",
+     "code": "SELECT NOW() AS now,\n       CURDATE() AS today,\n       DATE_ADD('2026-11-04', INTERVAL 30 DAY) AS in_30_days,\n       DATEDIFF('2026-12-31', '2026-11-04') AS days_left,\n       DATE_FORMAT('2026-11-04', '%Y-%m-%d') AS formatted,\n       UNIX_TIMESTAMP('2026-11-04 00:00:00') AS epoch;\n\n-- NULL handling and casting\nSELECT COALESCE(NULL, 'fallback') AS first_non_null,\n       IFNULL(NULL, 0) AS zero,\n       CAST('42' AS UNSIGNED) AS number_value,\n       CAST(42 AS CHAR) AS text_value;\n\n-- JSON extraction (MySQL 5.7+)\nSELECT JSON_EXTRACT('{\"sku\":\"KB-1000\",\"stock\":12}', '$.stock') AS stock,\n       JSON_UNQUOTE(JSON_EXTRACT('{\"sku\":\"KB-1000\"}', '$.sku')) AS sku,\n       '{\"sku\":\"MS-2000\"}'->>'$.sku' AS sku_with_arrow;\n"
+    }
+   ]
+  },
+  {
+   "id": "common-errors",
+   "title": "Common Errors",
+   "description": "Messages you will meet, what causes them and how to fix them.",
+   "snippets": [
+    {
+     "language": "text",
+     "code": "ERROR 1045 (28000): Access denied for user 'app_user'@'localhost' (using password: YES)\n  Cause: wrong password, or the account is not allowed from this host.\n  Fix:   ALTER USER 'app_user'@'localhost' IDENTIFIED BY 'N3w-Passw0rd!';\n\nERROR 2002 (HY000): Can't connect to local MySQL server through socket '/var/run/mysqld/mysqld.sock' (2)\n  Cause: the server is stopped, or the client uses another socket path.\n  Fix:   sudo systemctl start mysql; SHOW VARIABLES LIKE 'socket';\n\nERROR 1040 (08004): Too many connections\n  Cause: max_connections is exhausted by open clients.\n  Fix:   SET GLOBAL max_connections = 300;\n\nERROR 1129 (HY000): Host '10.0.0.42' is blocked because of many connection errors\n  Cause: repeated failed handshakes triggered the host cache.\n  Fix:   FLUSH HOSTS; and correct the credentials first.\n"
+    },
+    {
+     "language": "text",
+     "code": "ERROR 1062 (23000): Duplicate entry 'KB-1000' for key 'products.uq_products_sku'\n  Cause: a UNIQUE index already holds that value.\n  Fix:   use ON DUPLICATE KEY UPDATE, or choose another sku.\n\nERROR 1054 (42S22): Unknown column 'price' in 'field list'\n  Cause: the column is named price_cents, or an alias is out of scope.\n  Fix:   DESCRIBE products; and use the real column name.\n\nERROR 1215 (HY000): Cannot add foreign key constraint\n  Cause: column types or collations differ, or the parent key is not indexed.\n  Fix:   make both columns BIGINT UNSIGNED and create the parent key first.\n\nERROR 1364 (HY000): Field 'customer_id' doesn't have a default value\n  Cause: strict mode rejects an INSERT that omits a NOT NULL column.\n  Fix:   supply the value, or make the column nullable.\n\nERROR 1265 (01000): Data truncated for column 'status' at row 1\n  Cause: the value is not a member of the ENUM.\n  Fix:   use 'pending', 'paid', 'shipped' or 'cancelled'.\n"
+    }
+   ]
+  }
+ ]
+}

@@ -1,0 +1,324 @@
+{
+ "slug": "nodejs",
+ "title": "Node.js",
+ "label": "Node.js",
+ "group": "Runtime",
+ "color": "#339933",
+ "desc": "Server-side JavaScript runtime with built-in modules for files, HTTP, streams and processes.",
+ "sections": [
+  {
+   "id": "setup",
+   "title": "Setup",
+   "description": "Confirm the runtime, start a project and run a file.",
+   "snippets": [
+    {
+     "language": "bash",
+     "code": "# Check which Node and npm answer on this machine\nnode --version\nnpm --version\n\n# Create a folder with a package.json inside\nmkdir orders-api\ncd orders-api\nnpm init --yes\n\n# Run a file once, then restart it on every save\nnode main.js\nnode --watch main.js"
+    },
+    {
+     "language": "javascript",
+     "code": "// main.js\nimport { hostname } from \"node:os\";\n\nconsole.log(`running on ${hostname()} with Node ${process.version}`);"
+    }
+   ]
+  },
+  {
+   "id": "modules",
+   "title": "Modules",
+   "description": "Share code between files with ESM or the older CommonJS loader.",
+   "snippets": [
+    {
+     "language": "javascript",
+     "code": "// math.mjs\nexport const double = (value) => value * 2;\nexport default function add(left, right) {\n  return left + right;\n}"
+    },
+    {
+     "language": "javascript",
+     "code": "// app.mjs: default and named imports in one statement\nimport add, { double } from \"./math.mjs\";\n\nconsole.log(add(2, 3));    // 5\nconsole.log(double(21));   // 42"
+    },
+    {
+     "language": "javascript",
+     "code": "// price.cjs: CommonJS still works and is loaded from ESM by default import\nconst { readFile } = require(\"node:fs/promises\");\n\nmodule.exports.formatPrice = (cents) => `$${(cents / 100).toFixed(2)}`;"
+    }
+   ]
+  },
+  {
+   "id": "package-json",
+   "title": "package.json",
+   "description": "The manifest that names the project, its entry point and its dependencies.",
+   "snippets": [
+    {
+     "language": "json",
+     "code": "{\n  \"name\": \"orders-api\",\n  \"version\": \"0.3.0\",\n  \"private\": true,\n  \"type\": \"module\",\n  \"main\": \"src/server.js\",\n  \"engines\": { \"node\": \"22.x\" },\n  \"scripts\": {\n    \"start\": \"node src/server.js\",\n    \"test\": \"node --test\"\n  },\n  \"dependencies\": {\n    \"zod\": \"3.23.8\"\n  },\n  \"devDependencies\": {\n    \"eslint\": \"9.9.0\"\n  }\n}"
+    },
+    {
+     "language": "bash",
+     "code": "# Add a runtime dependency: manifest and lockfile change together\nnpm install zod\n\n# Add a tool that only development needs\nnpm install --save-dev eslint\n\n# Install exactly what the lockfile pins, as CI should\nnpm ci\n\n# List packages with newer versions, without touching anything\nnpm outdated"
+    }
+   ]
+  },
+  {
+   "id": "scripts",
+   "title": "npm Scripts",
+   "description": "Name the commands the project uses so nobody memorises flags.",
+   "snippets": [
+    {
+     "language": "json",
+     "code": "{\n  \"scripts\": {\n    \"dev\": \"node --watch src/server.js\",\n    \"start\": \"node src/server.js\",\n    \"test\": \"node --test test/\",\n    \"lint\": \"eslint src test\",\n    \"check\": \"npm run lint && npm test\",\n    \"prepare\": \"node scripts/build-assets.js\"\n  }\n}"
+    },
+    {
+     "language": "bash",
+     "code": "# Run one named script\nnpm run dev\n\n# Pass extra arguments through: the double dash is required\nnpm run test -- --test-name-pattern \"creates an order\"\n\n# List the scripts this package defines\nnpm run"
+    }
+   ]
+  },
+  {
+   "id": "filesystem",
+   "title": "Filesystem",
+   "description": "Read, write and list files with the promise-based fs API.",
+   "snippets": [
+    {
+     "language": "javascript",
+     "code": "import { readFile, writeFile, mkdir } from \"node:fs/promises\";\nimport { join } from \"node:path\";\n\n// Passing \"utf8\" returns a string; without it you get a Buffer\nconst raw = await readFile(join(import.meta.dirname, \"orders.json\"), \"utf8\");\nconst orders = JSON.parse(raw);\n\n// recursive creates the folder chain and does not fail when it exists\nawait mkdir(join(import.meta.dirname, \"out\"), { recursive: true });\nawait writeFile(\n  join(import.meta.dirname, \"out\", \"orders.json\"),\n  JSON.stringify(orders, null, 2),\n);"
+    },
+    {
+     "language": "javascript",
+     "code": "import { readdir } from \"node:fs/promises\";\n\n// withFileTypes saves one stat call per entry\nfor (const entry of await readdir(\"logs\", { withFileTypes: true })) {\n  if (entry.isFile() && entry.name.endsWith(\".log\")) {\n    console.log(entry.name);\n  }\n}"
+    },
+    {
+     "language": "javascript",
+     "code": "import { existsSync, readFileSync } from \"node:fs\";\n\n// Blocking IO is acceptable once, while the process boots\nconst defaults = existsSync(\"./config/default.json\")\n  ? JSON.parse(readFileSync(\"./config/default.json\", \"utf8\"))\n  : {};"
+    }
+   ]
+  },
+  {
+   "id": "path",
+   "title": "Paths",
+   "description": "Join, split and resolve paths without hand-written slashes.",
+   "snippets": [
+    {
+     "language": "javascript",
+     "code": "import path from \"node:path\";\n\n// join adds the platform separator between the parts\npath.join(\"data\", \"2026\", \"orders.csv\");   // data/2026/orders.csv on Linux\n\n// Take an existing path apart\npath.dirname(\"src/lib/parse.js\");    // src/lib\npath.basename(\"src/lib/parse.js\");   // parse.js\npath.extname(\"src/lib/parse.js\");    // .js\n\npath.parse(\"/srv/app/readme.md\");\n// { root: \"/\", dir: \"/srv/app\", base: \"readme.md\", ext: \".md\", name: \"readme\" }"
+    },
+    {
+     "language": "javascript",
+     "code": "import path from \"node:path\";\nimport { fileURLToPath } from \"node:url\";\n\n// import.meta.url is a file URL; path helpers expect a filesystem path\nconst here = path.dirname(fileURLToPath(import.meta.url));\nconst template = path.resolve(here, \"..\", \"templates\", \"invoice.html\");\n\n// import.meta.dirname does the same thing on Node 20.11 and later\nconsole.log(import.meta.dirname === here);   // true"
+    }
+   ]
+  },
+  {
+   "id": "process",
+   "title": "Process and Environment",
+   "description": "Arguments, environment variables, exit codes and signals.",
+   "snippets": [
+    {
+     "language": "javascript",
+     "code": "// node report.js --month 2026-10\nconst [flag, value] = process.argv.slice(2);   // \"--month\", \"2026-10\"\n\n// Environment values are strings or undefined, never numbers\nconst port = Number(process.env.PORT ?? 3000);\n\nif (flag !== \"--month\" || !value) {\n  console.error(\"usage: node report.js --month 2026-10\");\n  process.exit(1);\n}\n\nconsole.log(`report for ${value} on port ${port}`);"
+    },
+    {
+     "language": "javascript",
+     "code": "let pending = 0;\n\n// Containers send SIGTERM before they kill the process\nprocess.on(\"SIGTERM\", () => {\n  console.log(`flushing ${pending} pending jobs`);\n  process.exit(0);\n});\n\n// An uncaught error ends the process anyway; log the stack first\nprocess.on(\"uncaughtException\", (error) => {\n  console.error(\"fatal:\", error);\n  process.exit(1);\n});\n\nconsole.log(process.pid, process.platform, process.cwd());"
+    }
+   ]
+  },
+  {
+   "id": "http-server",
+   "title": "HTTP Server",
+   "description": "Serve JSON with the built-in http module, no framework.",
+   "snippets": [
+    {
+     "language": "javascript",
+     "code": "import { createServer } from \"node:http\";\n\nconst server = createServer((request, response) => {\n  if (request.method === \"GET\" && request.url === \"/health\") {\n    response.writeHead(200, { \"content-type\": \"application/json\" });\n    response.end(JSON.stringify({ status: \"ok\" }));\n    return;\n  }\n\n  response.writeHead(404, { \"content-type\": \"text/plain\" });\n  response.end(\"not found\");\n});\n\nserver.listen(3000, \"127.0.0.1\", () => {\n  console.log(\"listening on http://127.0.0.1:3000\");\n});"
+    },
+    {
+     "language": "javascript",
+     "code": "import { createServer } from \"node:http\";\n\nconst server = createServer(async (request, response) => {\n  if (request.method !== \"POST\" || request.url !== \"/orders\") {\n    response.writeHead(405, { allow: \"POST\" }).end();\n    return;\n  }\n\n  // The body arrives as Buffers, in as many chunks as the client sends\n  const chunks = [];\n  for await (const chunk of request) chunks.push(chunk);\n  const order = JSON.parse(Buffer.concat(chunks).toString(\"utf8\"));\n\n  response.writeHead(201, { \"content-type\": \"application/json\" });\n  response.end(JSON.stringify({ id: \"ord_1042\", item: order.item }));\n});\n\nserver.listen(3000);"
+    },
+    {
+     "language": "javascript",
+     "code": "// fetch is global since Node 18, so clients need no dependency either\nconst response = await fetch(\"http://127.0.0.1:3000/health\");\nconsole.log(response.status, await response.json());   // 200 { status: \"ok\" }"
+    }
+   ]
+  },
+  {
+   "id": "async",
+   "title": "Async and Promises",
+   "description": "Turn callbacks into promises and run work concurrently.",
+   "snippets": [
+    {
+     "language": "javascript",
+     "code": "import { readFile } from \"node:fs/promises\";\nimport { execFile } from \"node:child_process\";\nimport { promisify } from \"node:util\";\n\n// Callback APIs become promise APIs through promisify\nconst run = promisify(execFile);\n\nconst [{ stdout }, manifest] = await Promise.all([\n  run(\"git\", [\"rev-parse\", \"--short\", \"HEAD\"]),\n  readFile(\"package.json\", \"utf8\"),\n]);\n\nconsole.log(stdout.trim(), manifest.length);"
+    },
+    {
+     "language": "javascript",
+     "code": "// allSettled waits for every task, including the ones that reject\nconst results = await Promise.allSettled([\n  fetch(\"https://example.com/a\"),\n  fetch(\"https://example.com/b\"),\n]);\n\nfor (const result of results) {\n  console.log(result.status);   // \"fulfilled\" or \"rejected\"\n}"
+    },
+    {
+     "language": "javascript",
+     "code": "// race settles with whichever promise gets there first\nconst winner = await Promise.race([\n  fetch(\"https://example.com/slow-report\"),\n  new Promise((resolve) => setTimeout(() => resolve(\"gave up\"), 2000)),\n]);\n\nconsole.log(winner);"
+    }
+   ]
+  },
+  {
+   "id": "async-await",
+   "title": "Async Await",
+   "description": "Read asynchronous code top to bottom and handle failures with try/catch.",
+   "snippets": [
+    {
+     "language": "javascript",
+     "code": "async function loadOrder(id) {\n  const response = await fetch(`https://example.com/orders/${id}`);\n  if (!response.ok) {\n    throw new Error(`order ${id} failed with ${response.status}`);\n  }\n  return response.json();\n}\n\n// One try block covers every await inside it\ntry {\n  const order = await loadOrder(\"ord_1042\");\n  console.log(order.item);\n} catch (error) {\n  console.error(error.message);\n}"
+    },
+    {
+     "language": "javascript",
+     "code": "// Waiting one call at a time costs three round trips\nconst first = await fetch(\"https://example.com/1\");\nconst second = await fetch(\"https://example.com/2\");\nconst third = await fetch(\"https://example.com/3\");\n\n// Starting all three at once costs one\nconst [a, b, c] = await Promise.all([\n  fetch(\"https://example.com/1\"),\n  fetch(\"https://example.com/2\"),\n  fetch(\"https://example.com/3\"),\n]);\n\nconsole.log(first.status, second.status, third.status, a.status, b.status, c.status);"
+    },
+    {
+     "language": "javascript",
+     "code": "// AbortSignal.timeout rejects with a TimeoutError after 5 seconds\ntry {\n  const response = await fetch(\"https://example.com/report\", {\n    signal: AbortSignal.timeout(5000),\n  });\n  console.log(response.status);\n} catch (error) {\n  if (error.name === \"TimeoutError\") console.error(\"report took too long\");\n  else throw error;\n}"
+    }
+   ]
+  },
+  {
+   "id": "streams",
+   "title": "Streams",
+   "description": "Move data in chunks so memory stays flat on large files.",
+   "snippets": [
+    {
+     "language": "javascript",
+     "code": "import { createReadStream, createWriteStream } from \"node:fs\";\nimport { createGzip } from \"node:zlib\";\nimport { pipeline } from \"node:stream/promises\";\n\n// pipeline forwards errors and tears down every stream when one fails\nawait pipeline(\n  createReadStream(\"access.log\"),\n  createGzip(),\n  createWriteStream(\"access.log.gz\"),\n);"
+    },
+    {
+     "language": "javascript",
+     "code": "import { createReadStream, createWriteStream } from \"node:fs\";\nimport { Transform } from \"node:stream\";\nimport { pipeline } from \"node:stream/promises\";\n\nconst upper = new Transform({\n  transform(chunk, encoding, callback) {\n    callback(null, chunk.toString().toUpperCase());\n  },\n});\n\nawait pipeline(createReadStream(\"notes.txt\"), upper, createWriteStream(\"notes.upper.txt\"));"
+    },
+    {
+     "language": "javascript",
+     "code": "import { Readable } from \"node:stream\";\n\n// Any async iterable becomes a stream: handy for paginated APIs\nasync function* pages() {\n  for (const page of [\"alpha\", \"beta\", \"gamma\"]) yield `${page}\n`;\n}\n\nfor await (const chunk of Readable.from(pages())) {\n  process.stdout.write(chunk);\n}"
+    }
+   ]
+  },
+  {
+   "id": "events",
+   "title": "Events",
+   "description": "Emit and await application events with EventEmitter.",
+   "snippets": [
+    {
+     "language": "javascript",
+     "code": "import { EventEmitter } from \"node:events\";\n\nconst bus = new EventEmitter();\n\nbus.on(\"order:paid\", (order) => {\n  console.log(`charge ${order.total} for ${order.id}`);\n});\n\n// once removes the listener after the first call\nbus.once(\"ready\", () => console.log(\"ready fired\"));\n\nbus.emit(\"ready\");\nbus.emit(\"order:paid\", { id: \"ord_1042\", total: 4990 });"
+    },
+    {
+     "language": "javascript",
+     "code": "import { EventEmitter, once } from \"node:events\";\n\nconst emitter = new EventEmitter();\n\n// An \"error\" event with no listener is thrown, so always attach one\nemitter.on(\"error\", (error) => console.error(\"emitter failed:\", error.message));\n\n// once() resolves on the next matching event\nconst [payload] = await once(emitter, \"job:done\");\nconsole.log(payload);"
+    },
+    {
+     "language": "javascript",
+     "code": "import { EventEmitter } from \"node:events\";\n\nclass JobQueue extends EventEmitter {\n  #jobs = [];\n\n  add(name) {\n    this.#jobs.push(name);\n    this.emit(\"added\", name);\n  }\n}\n\nconst queue = new JobQueue();\nqueue.on(\"added\", (name) => console.log(`${name} queued`));\nqueue.add(\"resize-image\");"
+    }
+   ]
+  },
+  {
+   "id": "child-process",
+   "title": "Child Processes",
+   "description": "Run external programs and collect or stream their output.",
+   "snippets": [
+    {
+     "language": "javascript",
+     "code": "import { execFile } from \"node:child_process\";\nimport { promisify } from \"node:util\";\n\nconst run = promisify(execFile);\n\n// execFile takes the binary and an argument array, so no shell quoting\nconst { stdout } = await run(\"git\", [\"log\", \"--oneline\", \"-3\"]);\nconsole.log(stdout.trim());"
+    },
+    {
+     "language": "javascript",
+     "code": "import { spawn } from \"node:child_process\";\n\n// inherit connects the child's output straight to this process's terminal\nconst child = spawn(\"npm\", [\"run\", \"build\"], { stdio: \"inherit\" });\n\nchild.on(\"exit\", (code, signal) => {\n  if (signal) console.error(`build killed by ${signal}`);\n  else console.log(`build exited with code ${code}`);\n});"
+    }
+   ]
+  },
+  {
+   "id": "config",
+   "title": "Configuration",
+   "description": "Load environment files and validate values at boot.",
+   "snippets": [
+    {
+     "language": "bash",
+     "code": "# Node reads the file before the entry point runs (Node 20.6+)\nnode --env-file=.env src/server.js\n\n# Optional override layer, ignored when the file is absent (Node 22.9+)\nnode --env-file=.env --env-file-if-exists=.env.local src/server.js"
+    },
+    {
+     "language": "text",
+     "code": "# .env stays out of git; values below are examples\nDATABASE_URL=postgres://app:secret@127.0.0.1:5432/orders\nSESSION_SECRET=6f1c2a9d4b7e8f30\nPORT=3000\nLOG_LEVEL=debug"
+    },
+    {
+     "language": "javascript",
+     "code": "// config.js: fail once, at boot, instead of deep inside a request\nconst required = [\"DATABASE_URL\", \"SESSION_SECRET\"];\n\nfor (const key of required) {\n  if (!process.env[key]) {\n    throw new Error(`missing environment variable ${key}`);\n  }\n}\n\nexport const config = {\n  databaseUrl: process.env.DATABASE_URL,\n  sessionSecret: process.env.SESSION_SECRET,\n  port: Number(process.env.PORT ?? 3000),\n  logLevel: process.env.LOG_LEVEL ?? \"info\",\n};"
+    }
+   ]
+  },
+  {
+   "id": "testing",
+   "title": "Testing",
+   "description": "Write and run unit tests with the built-in node:test runner.",
+   "snippets": [
+    {
+     "language": "javascript",
+     "code": "import test from \"node:test\";\nimport assert from \"node:assert/strict\";\n\nimport { applyDiscount } from \"../src/pricing.js\";\n\ntest(\"applyDiscount takes ten percent off\", () => {\n  assert.equal(applyDiscount(5000, 10), 4500);\n});\n\ntest(\"applyDiscount rejects negative prices\", () => {\n  assert.throws(() => applyDiscount(-1, 10), /price must be positive/);\n});"
+    },
+    {
+     "language": "javascript",
+     "code": "import { describe, it, beforeEach } from \"node:test\";\nimport assert from \"node:assert/strict\";\n\ndescribe(\"order store\", () => {\n  let store;\n\n  beforeEach(() => {\n    store = new Map();\n  });\n\n  it(\"stores an order by id\", () => {\n    store.set(\"ord_1042\", { total: 4990 });\n    assert.equal(store.get(\"ord_1042\").total, 4990);\n  });\n\n  it(\"returns undefined for unknown ids\", () => {\n    assert.equal(store.get(\"ord_9999\"), undefined);\n  });\n});"
+    },
+    {
+     "language": "bash",
+     "code": "# Run every test file the runner discovers\nnode --test\n\n# Run one file with the readable reporter\nnode --test --test-reporter=spec test/pricing.test.js\n\n# Report line coverage (Node 22, still experimental)\nnode --test --experimental-test-coverage"
+    }
+   ]
+  },
+  {
+   "id": "debugging",
+   "title": "Debugging",
+   "description": "Inspect a running process, read warnings and profile a slow run.",
+   "snippets": [
+    {
+     "language": "bash",
+     "code": "# Open the inspector and pause before the first statement\nnode --inspect-brk src/server.js\n\n# Print the stack behind every process warning\nnode --trace-warnings src/server.js\n\n# Write a CPU profile that loads in Chrome DevTools\nnode --cpu-prof --cpu-prof-dir=profiles src/batch.js"
+    },
+    {
+     "language": "javascript",
+     "code": "import { inspect } from \"node:util\";\n\nconst order = { id: \"ord_1042\", items: [{ sku: \"A-1\", qty: 2 }] };\n\n// Control how deep nested objects are printed\nconsole.log(inspect(order, { depth: 3, colors: false }));\n\n// One JSON line per event is easy to grep and to ship\nconsole.log(JSON.stringify({ level: \"info\", event: \"order.created\", id: order.id }));\n\n// With --inspect attached, execution stops on this line\ndebugger;\nconsole.log(\"continued\");"
+    }
+   ]
+  },
+  {
+   "id": "performance",
+   "title": "Performance",
+   "description": "Measure time, memory and CPU work before optimising anything.",
+   "snippets": [
+    {
+     "language": "javascript",
+     "code": "import { performance } from \"node:perf_hooks\";\n\nconst start = performance.now();\nawait new Promise((resolve) => setTimeout(resolve, 120));\nconsole.log(`${(performance.now() - start).toFixed(1)} ms`);\n\n// Fraction of the event loop spent doing work rather than waiting\nconsole.log(performance.eventLoopUtilization());"
+    },
+    {
+     "language": "javascript",
+     "code": "import { memoryUsage } from \"node:process\";\n\n// Growth between two points is a hint, not proof, of a leak\nconst before = memoryUsage().heapUsed;\nconst rows = Array.from({ length: 200000 }, (_, index) => ({ index }));\nconst after = memoryUsage().heapUsed;\n\nconsole.log(((after - before) / 1024 / 1024).toFixed(1), \"MiB for\", rows.length, \"rows\");"
+    },
+    {
+     "language": "javascript",
+     "code": "import { Worker } from \"node:worker_threads\";\n\n// CPU-heavy work goes to a thread so the event loop keeps answering\nconst worker = new Worker(new URL(\"./hash-worker.js\", import.meta.url));\n\nworker.on(\"message\", (digest) => console.log(\"digest:\", digest));\nworker.on(\"error\", (error) => console.error(\"worker failed:\", error.message));\nworker.postMessage(\"order:1042\");"
+    }
+   ]
+  },
+  {
+   "id": "common-errors",
+   "title": "Common Errors",
+   "description": "Three failures behind most broken first runs, and the way out.",
+   "snippets": [
+    {
+     "language": "text",
+     "code": "# Port already taken\nError: listen EADDRINUSE: address already in use 127.0.0.1:3000\n\n# ESM import without the file extension\nError [ERR_MODULE_NOT_FOUND]: Cannot find module '/srv/app/src/format'\n\n# Top-level await inside a CommonJS file\nSyntaxError: await is only valid in async functions and the top level bodies of modules"
+    },
+    {
+     "language": "bash",
+     "code": "# Find whoever holds port 3000 and stop it\nlsof -i :3000\nkill 4817\n\n# Or pick another port for this run\nPORT=3001 node src/server.js"
+    },
+    {
+     "language": "javascript",
+     "code": "// ESM resolves relative paths literally: keep the extension\nimport { formatPrice } from \"./format.js\";\n\n// Or mark the whole package as ESM in package.json\n// { \"type\": \"module\" }\n\nconsole.log(formatPrice(4990));   // $49.90"
+    }
+   ]
+  }
+ ]
+}

@@ -1,0 +1,192 @@
+{
+ "slug": "turbo",
+ "title": "Turbo",
+ "label": "Turbo",
+ "group": "Tool",
+ "color": "#EF4444",
+ "desc": "Run monorepo tasks in dependency order and reuse their outputs through a local or remote cache.",
+ "sections": [
+  {
+   "id": "setup",
+   "title": "Setup",
+   "description": "Install the CLI globally, pin it in the repository and scaffold a workspace.",
+   "snippets": [
+    {
+     "language": "bash",
+     "code": "# Global install; a pinned repository build still takes precedence\ncurl -fsSL https://turborepo.dev/install | sh\nturbo --version\n\n# Scaffold a workspace with two apps and shared packages\npnpm dlx create-turbo@latest acme\ncd acme && pnpm install && pnpm build"
+    },
+    {
+     "language": "bash",
+     "code": "# Pin the CLI at the workspace root\npnpm add turbo --save-dev --ignore-workspace-root-check\n\n# Every command then uses the pinned binary\npnpm exec turbo run build\n\n# npm needs no workspace-root flag\nnpm install turbo --save-dev\nnpx turbo run build"
+    }
+   ]
+  },
+  {
+   "id": "config",
+   "title": "turbo.json",
+   "description": "Root configuration that declares tasks, global inputs and cache behavior.",
+   "snippets": [
+    {
+     "language": "json",
+     "code": "{\n  \"$schema\": \"https://turborepo.dev/schema.json\",\n  \"globalDependencies\": [\".env\", \"tsconfig.base.json\"],\n  \"globalEnv\": [\"NODE_ENV\"],\n  \"tasks\": {\n    \"build\": {\n      \"dependsOn\": [\"^build\"],\n      \"inputs\": [\"$TURBO_DEFAULT$\", \".env*\"],\n      \"outputs\": [\"dist/**\", \".next/**\", \"!.next/cache/**\"],\n      \"env\": [\"NEXT_PUBLIC_API_URL\"]\n    },\n    \"test\": {\n      \"dependsOn\": [\"build\"],\n      \"outputs\": [\"coverage/**\"]\n    },\n    \"dev\": {\n      \"cache\": false,\n      \"persistent\": true\n    }\n  }\n}"
+    },
+    {
+     "language": "json",
+     "code": "{\n  \"extends\": [\"//\"],\n  \"tasks\": {\n    \"build\": {\n      \"outputs\": [\"$TURBO_EXTENDS$\", \".next/**\", \"!.next/cache/**\"]\n    }\n  }\n}"
+    },
+    {
+     "language": "json",
+     "code": "{\n  \"$schema\": \"https://turborepo.dev/schema.json\",\n  \"ui\": \"tui\",\n  \"concurrency\": \"50%\",\n  \"envMode\": \"strict\",\n  \"cacheDir\": \".turbo/cache\",\n  \"cacheMaxSize\": \"10GB\",\n  \"remoteCache\": {\n    \"signature\": true\n  }\n}"
+    }
+   ]
+  },
+  {
+   "id": "pipelines",
+   "title": "Pipelines",
+   "description": "Task graph edges built from same-package steps, upstream builds and explicit package tasks.",
+   "snippets": [
+    {
+     "language": "json",
+     "code": "{\n  \"$schema\": \"https://turborepo.dev/schema.json\",\n  \"tasks\": {\n    \"lint\": {},\n    \"build\": {\n      \"dependsOn\": [\"^build\", \"lint\"]\n    },\n    \"test\": {\n      \"dependsOn\": [\"build\"]\n    },\n    \"web#deploy\": {\n      \"dependsOn\": [\"test\", \"@acme/ui#build\"]\n    }\n  }\n}"
+    },
+    {
+     "language": "json",
+     "code": "{\n  \"extends\": [\"//\"],\n  \"tasks\": {\n    \"dev\": {\n      \"with\": [\"api#dev\"],\n      \"persistent\": true,\n      \"cache\": false\n    }\n  }\n}"
+    },
+    {
+     "language": "bash",
+     "code": "# Print every task, its dependencies and the hash it would use\nturbo run build --dry=json\n\n# Render the same graph as SVG, or as DOT on stdout\nturbo run build --graph=graph.svg\nturbo run build --graph"
+    }
+   ]
+  },
+  {
+   "id": "caching",
+   "title": "Caching",
+   "description": "Content-addressed local cache keyed by inputs, lockfile, environment and task configuration.",
+   "snippets": [
+    {
+     "language": "json",
+     "code": "{\n  \"tasks\": {\n    \"build\": {\n      \"inputs\": [\"$TURBO_DEFAULT$\", \"!README.md\", \".env.production\"],\n      \"outputs\": [\"dist/**\", \"!.next/cache/**\"],\n      \"outputLogs\": \"new-only\"\n    },\n    \"typecheck\": {\n      \"inputs\": [\"$TURBO_DEFAULT$\", \"$TURBO_ROOT$/tsconfig.base.json\"],\n      \"outputs\": []\n    }\n  }\n}"
+    },
+    {
+     "language": "bash",
+     "code": "# Drop local artifacts, then run twice: execute, then replay\nrm -rf .turbo/cache\nturbo run build\nturbo run build\n\n# Write a JSON report with hashes, inputs and outputs per task\nturbo run build --summarize\nls .turbo/runs"
+    },
+    {
+     "language": "bash",
+     "code": "# Re-run and overwrite artifacts even on a cache hit\nturbo run build --force\n\n# Use a cache directory outside the default .turbo/cache\nturbo run build --cache-dir=./.cache/turbo\n\n# Stay offline: read and write the local cache only\nturbo run build --cache=local:rw"
+    }
+   ]
+  },
+  {
+   "id": "remote-cache",
+   "title": "Remote Cache",
+   "description": "Share artifacts across machines and CI through Vercel or a self-hosted endpoint.",
+   "snippets": [
+    {
+     "language": "bash",
+     "code": "# Authenticate, then connect this repository to its remote cache\nturbo login\nturbo link\n\n# Upload once, clear local artifacts, then replay from the server\nturbo run build\nrm -rf .turbo/cache\nturbo run build"
+    },
+    {
+     "language": "bash",
+     "code": "# Self-hosted cache: point the CLI at the server and use a CI token\nexport TURBO_API=\"https://cache.acme.dev\"\nexport TURBO_TEAM=\"acme\"\nexport TURBO_TOKEN=\"cache-token-from-vault\"\nturbo login --manual\n\n# Sign artifacts so a corrupted upload or download becomes a cache miss\nexport TURBO_REMOTE_CACHE_SIGNATURE_KEY=\"acme-cache-signing-key-2026-11-rotate\""
+    },
+    {
+     "language": "json",
+     "code": "{\n  \"remoteCache\": {\n    \"enabled\": true,\n    \"signature\": true,\n    \"timeout\": 30,\n    \"uploadTimeout\": 60,\n    \"apiUrl\": \"https://cache.acme.dev\"\n  }\n}"
+    }
+   ]
+  },
+  {
+   "id": "filters",
+   "title": "Filters",
+   "description": "Select packages by name, directory, dependency direction or git range.",
+   "snippets": [
+    {
+     "language": "bash",
+     "code": "# One package by name, one by directory, one by dependent direction\nturbo run build --filter=web\nturbo run build --filter=./apps/*\nturbo run build --filter=...web"
+    },
+    {
+     "language": "bash",
+     "code": "# web plus its dependencies, then only the dependencies without web\nturbo run build --filter=web...\nturbo run build --filter=web^...\n\n# A single task in a single package, skipping its task graph\nturbo run web#build --only"
+    },
+    {
+     "language": "bash",
+     "code": "# Packages changed since main, plus everything that depends on them\nturbo run test --filter=...[main]\n\n# Directory globs combine as a union, negation removes matches\nturbo run lint --filter=./packages/* --filter=!./packages/legacy"
+    }
+   ]
+  },
+  {
+   "id": "tasks",
+   "title": "Running Tasks",
+   "description": "Execute one or more tasks with concurrency, failure handling and log control.",
+   "snippets": [
+    {
+     "language": "bash",
+     "code": "# turbo is shorthand for turbo run; several tasks share one graph\nturbo build lint test\nturbo run build --concurrency=50%\nturbo run test --continue"
+    },
+    {
+     "language": "bash",
+     "code": "# Keep going after failures and replay only cache misses\nturbo run build test --continue=always --output-logs=new-only\n\n# Inspect the plan, including hashes, inputs and env vars, without running\nturbo run build --dry=json"
+    },
+    {
+     "language": "bash",
+     "code": "# Watch mode re-runs tasks affected by file changes\nturbo watch build lint\n\n# Serial execution with ordered logs for debugging a flaky task\nturbo run build --concurrency=1 --log-order=stream"
+    }
+   ]
+  },
+  {
+   "id": "environment",
+   "title": "Environment Variables",
+   "description": "Declare which variables enter the hash and which pass through to the task runtime.",
+   "snippets": [
+    {
+     "language": "json",
+     "code": "{\n  \"globalEnv\": [\"NODE_ENV\"],\n  \"globalPassThroughEnv\": [\"GITHUB_TOKEN\"],\n  \"envMode\": \"strict\",\n  \"tasks\": {\n    \"build\": {\n      \"env\": [\"DATABASE_URL\", \"STRIPE_*\", \"!STRIPE_TEST_KEY\"],\n      \"passThroughEnv\": [\"SENTRY_AUTH_TOKEN\"]\n    }\n  }\n}"
+    },
+    {
+     "language": "bash",
+     "code": "# Show which variables entered the hash for each task\nturbo run build --dry=json | jq '.tasks[0].environmentVariables'\n\n# Temporary escape hatch while adding missing variables\nturbo run build --env-mode=loose"
+    },
+    {
+     "language": "json",
+     "code": "{\n  \"globalDependencies\": [\".env\"],\n  \"tasks\": {\n    \"build\": {\n      \"inputs\": [\n        \"$TURBO_DEFAULT$\",\n        \".env.production.local\",\n        \".env.production\"\n      ]\n    }\n  }\n}"
+    }
+   ]
+  },
+  {
+   "id": "monorepo",
+   "title": "Monorepo Layout",
+   "description": "Workspace roots, application and package folders, and the root scripts that tie them together.",
+   "snippets": [
+    {
+     "language": "text",
+     "code": "acme/\n├── apps/\n│   ├── web/                 # customer-facing Next.js app\n│   └── docs/                # documentation site\n├── packages/\n│   ├── ui/                  # shared React components\n│   ├── config/              # shared tsconfig and ESLint presets\n│   └── api-client/          # typed client generated from OpenAPI\n├── package.json             # private root with workspace scripts\n├── pnpm-lock.yaml\n├── pnpm-workspace.yaml\n└── turbo.json"
+    },
+    {
+     "language": "json",
+     "code": "{\n  \"private\": true,\n  \"scripts\": {\n    \"build\": \"turbo run build\",\n    \"dev\": \"turbo run dev\",\n    \"lint\": \"turbo run lint\",\n    \"test\": \"turbo run test\"\n  },\n  \"devDependencies\": {\n    \"turbo\": \"2.11.5\"\n  },\n  \"devEngines\": {\n    \"packageManager\": {\n      \"name\": \"pnpm\",\n      \"version\": \"9.0.0\"\n    }\n  }\n}"
+    },
+    {
+     "language": "yaml",
+     "code": "packages:\n  - \"apps/*\"\n  - \"packages/*\""
+    }
+   ]
+  },
+  {
+   "id": "ci",
+   "title": "Continuous Integration",
+   "description": "Reuse the remote cache, run only affected packages and keep build contexts small.",
+   "snippets": [
+    {
+     "language": "yaml",
+     "code": "name: ci\non:\n  pull_request:\njobs:\n  checks:\n    runs-on: ubuntu-latest\n    steps:\n      - uses: actions/checkout@v4\n        with:\n          fetch-depth: 0\n      - uses: pnpm/action-setup@v4\n        with:\n          version: 9\n      - uses: actions/setup-node@v4\n        with:\n          node-version: 22\n          cache: pnpm\n      - run: pnpm install --frozen-lockfile\n      - run: pnpm exec turbo run lint test build --affected\n        env:\n          TURBO_TOKEN: ${{ secrets.TURBO_TOKEN }}\n          TURBO_TEAM: acme"
+    },
+    {
+     "language": "bash",
+     "code": "# Mirror the CI run locally against the remote cache\nexport TURBO_TOKEN=\"ci-token-from-secret-store\"\nexport TURBO_TEAM=\"acme\"\nturbo run build test --affected --cache=local:rw,remote:rw\n\n# Reduce a Docker build context to one app and its workspace dependencies\nturbo prune web --docker --out-dir=out"
+    }
+   ]
+  }
+ ]
+}

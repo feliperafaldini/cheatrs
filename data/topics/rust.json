@@ -1,0 +1,340 @@
+{
+ "slug": "rust",
+ "title": "Rust",
+ "label": "Rust",
+ "group": "Language",
+ "color": "#CE422B",
+ "desc": "Fast, memory-safe systems language built around ownership and zero-cost abstractions.",
+ "sections": [
+  {
+   "id": "setup",
+   "title": "Setup",
+   "description": "Install the toolchain and compile a first program.",
+   "snippets": [
+    {
+     "language": "bash",
+     "code": "# Install rustup, the toolchain manager, then the stable toolchain\ncurl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh\nrustup update stable\nrustup component add clippy rustfmt\n\n# Check what is installed\nrustc --version\ncargo --version"
+    },
+    {
+     "language": "bash",
+     "code": "# Compile and run a single file without Cargo\nrustc main.rs -o hello\n./hello\n\n# Optimized build\nrustc -O main.rs -o hello"
+    }
+   ]
+  },
+  {
+   "id": "cargo",
+   "title": "Cargo",
+   "description": "Project layout, dependency management and the everyday build commands.",
+   "snippets": [
+    {
+     "language": "bash",
+     "code": "cargo new greet --bin\ncd greet\n\ncargo check            # type-check quickly without producing a binary\ncargo run              # build and run\ncargo build --release  # optimized build in target/release\ncargo test             # every test target\ncargo add serde --features derive"
+    },
+    {
+     "language": "toml",
+     "code": "[package]\nname = \"greet\"\nversion = \"0.1.0\"\nedition = \"2024\"\n\n[dependencies]\nserde = { version = \"1\", features = [\"derive\"] }\n\n[profile.release]\nlto = true\ncodegen-units = 1"
+    }
+   ]
+  },
+  {
+   "id": "basic-syntax",
+   "title": "Basic Syntax",
+   "description": "Program entry point, comments, macros and expression-oriented blocks.",
+   "snippets": [
+    {
+     "language": "rust",
+     "code": "// Single-line comment\n/* Block comment, can span lines */\n\nfn main() {\n    let name = \"Felipe\";\n    println!(\"Hello, {name}!\");              // inline format argument\n    println!(\"{name} has {} chars\", name.len());\n\n    let doubled = {\n        let base = 21;\n        base * 2                             // last expression, no semicolon\n    };\n    println!(\"doubled = {doubled}\");\n}"
+    },
+    {
+     "language": "rust",
+     "code": "fn main() {\n    // A semicolon turns an expression into a statement of type ()\n    let printed = println!(\"side effect\");\n    let _ = printed;\n\n    // Blocks and if/else are expressions too\n    let label = if 3 > 2 { \"bigger\" } else { \"smaller\" };\n    println!(\"{label}\");\n}"
+    }
+   ]
+  },
+  {
+   "id": "variables",
+   "title": "Variables",
+   "description": "Bindings, mutability, shadowing and constants.",
+   "snippets": [
+    {
+     "language": "rust",
+     "code": "fn main() {\n    let city = \"Recife\";        // immutable, type inferred as &str\n    let mut count = 0;          // mutable binding\n    count += 1;\n\n    let count = count + 10;     // shadowing creates a new binding\n    let count: u32 = count as u32;\n\n    const MAX_USERS: u32 = 10_000;\n    static GREETING: &str = \"hello\";\n\n    println!(\"{city} {count} {MAX_USERS} {GREETING}\");\n}"
+    },
+    {
+     "language": "rust",
+     "code": "fn main() {\n    let (x, y) = (3, 7);               // destructure in a let\n    let [first, .., last] = [1, 2, 3, 4];\n    println!(\"{x} {y} {first} {last}\");\n\n    const LIMIT: usize = 64;\n    let buffer = [0u8; LIMIT];         // length comes from a constant\n    println!(\"{}\", buffer.len());\n}"
+    }
+   ]
+  },
+  {
+   "id": "types",
+   "title": "Types",
+   "description": "Scalar, compound and string types with the conversions between them.",
+   "snippets": [
+    {
+     "language": "rust",
+     "code": "fn main() {\n    let flag: bool = true;\n    let letter: char = 'ç';\n    let count: u8 = 255;\n    let offset: i64 = -9_000;\n    let ratio: f64 = 0.75;\n\n    let pair: (i32, &str) = (7, \"days\");\n    let scores: [u8; 3] = [90, 85, 77];\n\n    let wide = i64::from(count);       // widening, cannot fail\n    let narrow = wide as u8;           // cast truncates to 8 bits\n    println!(\"{flag} {letter} {offset} {ratio} {pair:?} {scores:?} {narrow}\");\n}"
+    },
+    {
+     "language": "rust",
+     "code": "fn describe(value: &str) -> String {\n    format!(\"{value} has {} bytes\", value.len())\n}\n\nfn main() {\n    let owned: String = String::from(\"Rust\");\n    let slice: &str = &owned[..2];\n    let bytes: &[u8] = owned.as_bytes();\n\n    println!(\"{}\", describe(&owned));\n    println!(\"{slice} {:?}\", &bytes[..1]);\n}"
+    }
+   ]
+  },
+  {
+   "id": "ownership",
+   "title": "Ownership",
+   "description": "Move, copy and drop semantics that replace a garbage collector.",
+   "snippets": [
+    {
+     "language": "rust",
+     "code": "fn main() {\n    let first = String::from(\"hello\");\n    let second = first;          // first is moved, not copied\n    // println!(\"{first}\");      // error[E0382]: borrow of moved value\n\n    let third = second.clone();  // explicit deep copy\n    println!(\"{second} {third}\");\n\n    let number = 42;             // Copy types are duplicated\n    let copy = number;\n    println!(\"{number} {copy}\");\n}"
+    },
+    {
+     "language": "rust",
+     "code": "fn measure(text: String) -> usize {\n    text.len()                   // text is dropped when measure returns\n}\n\nfn make() -> String {\n    String::from(\"owned by the caller\")\n}\n\nfn main() {\n    let message = make();\n    let length = measure(message);\n    // message is no longer valid here\n    println!(\"length = {length}\");\n}"
+    }
+   ]
+  },
+  {
+   "id": "borrowing",
+   "title": "Borrowing and References",
+   "description": "Shared and exclusive references, slices and the rules that keep them safe.",
+   "snippets": [
+    {
+     "language": "rust",
+     "code": "fn main() {\n    let mut total = 10;\n    let a = &total;              // shared borrow\n    let b = &total;              // many shared borrows are allowed\n    println!(\"{a} {b}\");\n\n    let c = &mut total;          // exclusive borrow, a and b are done\n    *c += 5;\n    println!(\"{total}\");\n}"
+    },
+    {
+     "language": "rust",
+     "code": "fn first_word(text: &str) -> &str {\n    match text.find(' ') {\n        Some(index) => &text[..index],\n        None => text,\n    }\n}\n\nfn sum(values: &[i32]) -> i32 {\n    values.iter().sum()\n}\n\nfn main() {\n    let phrase = String::from(\"ownership matters\");\n    let word = first_word(&phrase);\n    let nums = [1, 2, 3, 4];\n    println!(\"{word} {}\", sum(&nums));\n}"
+    }
+   ]
+  },
+  {
+   "id": "structs",
+   "title": "Structs",
+   "description": "Named, tuple and unit structs with their impl blocks.",
+   "snippets": [
+    {
+     "language": "rust",
+     "code": "#[derive(Debug, Clone)]\nstruct User {\n    name: String,\n    age: u8,\n}\n\nimpl User {\n    fn new(name: &str, age: u8) -> Self {\n        Self { name: name.to_owned(), age }\n    }\n\n    fn birthday(&mut self) {\n        self.age += 1;\n    }\n}\n\nfn main() {\n    let mut user = User::new(\"Felipe\", 30);\n    user.birthday();\n    let preview = User { age: 31, ..user.clone() };\n    println!(\"{} {} {:?}\", user.name, user.age, preview);\n}"
+    },
+    {
+     "language": "rust",
+     "code": "struct Meters(f64);\nstruct Marker;\n\nimpl Meters {\n    fn to_feet(&self) -> f64 {\n        self.0 * 3.280_84\n    }\n}\n\nfn main() {\n    let distance = Meters(42.0);\n    println!(\"{:.1} feet\", distance.to_feet());\n\n    let _flag = Marker;\n    let raw = distance.0;        // tuple fields are public by default\n    println!(\"{raw}\");\n}"
+    }
+   ]
+  },
+  {
+   "id": "enums",
+   "title": "Enums and Option",
+   "description": "Sum types that carry data, including the standard Option.",
+   "snippets": [
+    {
+     "language": "rust",
+     "code": "#[derive(Debug)]\nenum Shape {\n    Circle { radius: f64 },\n    Rectangle { width: f64, height: f64 },\n    Point,\n}\n\nimpl Shape {\n    fn area(&self) -> f64 {\n        match self {\n            Shape::Circle { radius } => std::f64::consts::PI * radius * radius,\n            Shape::Rectangle { width, height } => width * height,\n            Shape::Point => 0.0,\n        }\n    }\n}\n\nfn main() {\n    let shapes = [Shape::Circle { radius: 2.0 }, Shape::Point];\n    for shape in &shapes {\n        println!(\"{:?} -> {:.2}\", shape, shape.area());\n    }\n}"
+    },
+    {
+     "language": "rust",
+     "code": "fn find_user(id: u32) -> Option<&'static str> {\n    match id {\n        1 => Some(\"Felipe\"),\n        _ => None,\n    }\n}\n\nfn main() {\n    let name = find_user(1).unwrap_or(\"anonymous\");\n    let upper = find_user(2).map(str::to_uppercase);\n    println!(\"{name} {upper:?}\");\n\n    if let Some(found) = find_user(1) {\n        println!(\"found {found}\");\n    }\n}"
+    }
+   ]
+  },
+  {
+   "id": "pattern-matching",
+   "title": "Pattern Matching",
+   "description": "Destructure values and branch on shape with exhaustiveness checks.",
+   "snippets": [
+    {
+     "language": "rust",
+     "code": "enum Event {\n    Key(char),\n    Click { x: i32, y: i32 },\n    Quit,\n}\n\nfn main() {\n    let events = [Event::Key('q'), Event::Click { x: 3, y: 4 }, Event::Quit];\n\n    for event in events {\n        match event {\n            Event::Key('q') => println!(\"quit requested\"),\n            Event::Key(c @ 'a'..='z') => println!(\"lowercase {c}\"),\n            Event::Key(other) => println!(\"other key {other}\"),\n            Event::Click { x: 0, y } => println!(\"left edge at {y}\"),\n            Event::Click { x, y } if x == y => println!(\"diagonal at {x}\"),\n            Event::Click { x, y } => println!(\"click at {x},{y}\"),\n            Event::Quit => break,\n        }\n    }\n}"
+    },
+    {
+     "language": "rust",
+     "code": "struct Point {\n    x: i32,\n    y: i32,\n}\n\nfn classify(point: &Point) -> &'static str {\n    match (point.x, point.y) {\n        (0, 0) => \"origin\",\n        (0, _) => \"on the y axis\",\n        (_, 0) => \"on the x axis\",\n        (x, y) if x == y => \"diagonal\",\n        _ => \"somewhere else\",\n    }\n}\n\nfn main() {\n    let point = Point { x: 2, y: 2 };\n    let Point { x, y } = &point;\n    println!(\"{x} {y}\");\n\n    let Some(label) = Some(classify(&point)) else {\n        return;\n    };\n    println!(\"{label}\");\n\n    let mut stack = vec![1, 2, 3];\n    while let Some(top) = stack.pop() {\n        println!(\"{top}\");\n    }\n}"
+    }
+   ]
+  },
+  {
+   "id": "functions",
+   "title": "Functions and Closures",
+   "description": "Free functions, closures and the Fn traits.",
+   "snippets": [
+    {
+     "language": "rust",
+     "code": "fn add(a: i32, b: i32) -> i32 {\n    a + b\n}\n\nfn greet(name: &str) -> String {\n    format!(\"Hello, {name}!\")\n}\n\nfn print_all(values: &[i32]) {\n    for value in values {\n        print!(\"{value} \");\n    }\n    println!();\n}\n\nfn main() {\n    println!(\"{}\", add(3, 4));\n    println!(\"{}\", greet(\"Felipe\"));\n    print_all(&[1, 2, 3]);\n}"
+    },
+    {
+     "language": "rust",
+     "code": "fn apply_twice<F>(mut f: F, value: i32) -> i32\nwhere\n    F: FnMut(i32) -> i32,\n{\n    let once = f(value);   // two calls cannot overlap as borrows\n    f(once)\n}\n\nfn make_adder(amount: i32) -> impl Fn(i32) -> i32 {\n    move |value| value + amount\n}\n\nfn main() {\n    let add_one = |value: i32| value + 1;\n    println!(\"{}\", apply_twice(add_one, 5));\n\n    let add_ten = make_adder(10);\n    println!(\"{}\", add_ten(7));\n}"
+    }
+   ]
+  },
+  {
+   "id": "traits",
+   "title": "Traits",
+   "description": "Shared behaviour through methods, default bodies and dynamic dispatch.",
+   "snippets": [
+    {
+     "language": "rust",
+     "code": "trait Summary {\n    fn title(&self) -> String;\n\n    fn preview(&self) -> String {\n        format!(\"{} (read more)\", self.title())\n    }\n}\n\nstruct Article {\n    heading: String,\n}\n\nimpl Summary for Article {\n    fn title(&self) -> String {\n        self.heading.clone()\n    }\n}\n\nfn show(item: &impl Summary) {\n    println!(\"{}\", item.preview());\n}\n\nfn main() {\n    let article = Article { heading: String::from(\"Borrowing rules\") };\n    show(&article);\n}"
+    },
+    {
+     "language": "rust",
+     "code": "trait Shape {\n    fn area(&self) -> f64;\n}\n\nstruct Square {\n    side: f64,\n}\n\nstruct Circle {\n    radius: f64,\n}\n\nimpl Shape for Square {\n    fn area(&self) -> f64 {\n        self.side * self.side\n    }\n}\n\nimpl Shape for Circle {\n    fn area(&self) -> f64 {\n        std::f64::consts::PI * self.radius * self.radius\n    }\n}\n\nfn main() {\n    let shapes: Vec<Box<dyn Shape>> = vec![\n        Box::new(Square { side: 2.0 }),\n        Box::new(Circle { radius: 1.0 }),\n    ];\n    let total: f64 = shapes.iter().map(|shape| shape.area()).sum();\n    println!(\"{total:.2}\");\n}"
+    }
+   ]
+  },
+  {
+   "id": "generics",
+   "title": "Generics",
+   "description": "Write code once for many types, bounded by the capabilities it needs.",
+   "snippets": [
+    {
+     "language": "rust",
+     "code": "fn largest<T: PartialOrd + Copy>(items: &[T]) -> T {\n    let mut max = items[0];          // panics on an empty slice\n    for &item in items {\n        if item > max {\n            max = item;\n        }\n    }\n    max\n}\n\nfn main() {\n    println!(\"{}\", largest(&[3, 9, 2]));\n    println!(\"{}\", largest(&['a', 'z', 'm']));\n}"
+    },
+    {
+     "language": "rust",
+     "code": "use std::fmt::Display;\n\nstruct Pair<T> {\n    left: T,\n    right: T,\n}\n\nimpl<T: Display + PartialOrd> Pair<T> {\n    fn show(&self) {\n        println!(\"{} vs {}\", self.left, self.right);\n    }\n}\n\nimpl Pair<f64> {\n    fn midpoint(&self) -> f64 {\n        (self.left + self.right) / 2.0\n    }\n}\n\nfn main() {\n    let pair = Pair { left: 1.5, right: 2.5 };\n    pair.show();\n    println!(\"{}\", pair.midpoint());\n}"
+    }
+   ]
+  },
+  {
+   "id": "lifetimes",
+   "title": "Lifetimes",
+   "description": "Tell the compiler how long references stay valid.",
+   "snippets": [
+    {
+     "language": "rust",
+     "code": "fn longest<'a>(left: &'a str, right: &'a str) -> &'a str {\n    if left.len() >= right.len() { left } else { right }\n}\n\nfn main() {\n    let first = String::from(\"short\");\n    let second = String::from(\"much longer\");\n    let result = longest(&first, &second);\n    println!(\"{result}\");\n}"
+    },
+    {
+     "language": "rust",
+     "code": "#[derive(Debug)]\nstruct Excerpt<'a> {\n    part: &'a str,\n}\n\nimpl<'a> Excerpt<'a> {\n    fn announce(&self) -> &'a str {\n        self.part\n    }\n}\n\nfn main() {\n    let text = String::from(\"the quick brown fox\");\n    let excerpt = Excerpt { part: &text[4..9] };\n    println!(\"{:?} {}\", excerpt, excerpt.announce());\n}"
+    }
+   ]
+  },
+  {
+   "id": "collections",
+   "title": "Collections",
+   "description": "Vec, HashMap, HashSet, BTreeMap and VecDeque in practice.",
+   "snippets": [
+    {
+     "language": "rust",
+     "code": "use std::collections::HashMap;\n\nfn main() {\n    let mut scores: Vec<i32> = vec![10, 20];\n    scores.push(30);\n    scores[0] = 15;\n    let second = scores.get(1).copied().unwrap_or(0);\n\n    let mut ages = HashMap::new();\n    ages.insert(\"Felipe\", 30);\n    ages.entry(\"Ana\").or_insert(28);\n    *ages.entry(\"Felipe\").or_insert(0) += 1;\n\n    for (name, age) in &ages {\n        println!(\"{name}: {age}\");\n    }\n    println!(\"{second} {}\", scores.len());\n}"
+    },
+    {
+     "language": "rust",
+     "code": "use std::collections::{BTreeMap, HashSet, VecDeque};\n\nfn main() {\n    let mut seen = HashSet::from([\"rust\", \"cargo\"]);\n    seen.insert(\"clippy\");\n    println!(\"{}\", seen.contains(\"rust\"));\n\n    let mut queue = VecDeque::new();\n    queue.push_back(1);\n    queue.push_front(0);\n    println!(\"{:?}\", queue.pop_front());\n\n    let mut sorted = BTreeMap::new();\n    sorted.insert(2, \"two\");\n    sorted.insert(1, \"one\");\n    println!(\"{:?}\", sorted.keys().collect::<Vec<_>>());\n}"
+    }
+   ]
+  },
+  {
+   "id": "iterators",
+   "title": "Iterators",
+   "description": "Lazy chains over sequences, from map and filter to fold.",
+   "snippets": [
+    {
+     "language": "rust",
+     "code": "fn main() {\n    let values = vec![1, 2, 3, 4, 5, 6];\n\n    let doubled: Vec<i32> = values.iter().map(|value| value * 2).collect();\n    let even_sum: i32 = values.iter().filter(|value| **value % 2 == 0).sum();\n    let total = values.iter().fold(0, |acc, value| acc + value);\n\n    let labels: Vec<String> = values\n        .iter()\n        .enumerate()\n        .map(|(index, value)| format!(\"{index}:{value}\"))\n        .collect();\n\n    println!(\"{doubled:?} {even_sum} {total} {labels:?}\");\n}"
+    },
+    {
+     "language": "rust",
+     "code": "fn main() {\n    let words = [\"alpha\", \"beta\", \"gamma\"];\n\n    let joined: Vec<String> = words\n        .iter()\n        .copied()\n        .zip(1..)\n        .map(|(word, number)| format!(\"{number}-{word}\"))\n        .collect();\n\n    let short: Vec<&str> = words.iter().copied().filter(|word| word.len() <= 4).collect();\n    // rev() needs a double-ended source, so reverse before filter\n    let top: Vec<i32> = (1..=100).rev().filter(|n| n % 3 == 0).take(4).collect();\n\n    let mut iter = words.iter();\n    let first = iter.next();\n    let rest: Vec<&&str> = iter.collect();\n\n    println!(\"{joined:?} {short:?} {top:?} {first:?} {rest:?}\");\n}"
+    }
+   ]
+  },
+  {
+   "id": "error-handling",
+   "title": "Error Handling",
+   "description": "Recoverable errors with Result, the ? operator and custom error types.",
+   "snippets": [
+    {
+     "language": "rust",
+     "code": "use std::fs;\nuse std::io;\n\nfn read_count(path: &str) -> Result<u32, io::Error> {\n    let text = fs::read_to_string(path)?;\n    let count = text\n        .trim()\n        .parse::<u32>()\n        .map_err(|error| io::Error::new(io::ErrorKind::InvalidData, error))?;\n    Ok(count)\n}\n\nfn main() {\n    match read_count(\"count.txt\") {\n        Ok(count) => println!(\"count = {count}\"),\n        Err(error) => eprintln!(\"failed: {error}\"),\n    }\n}"
+    },
+    {
+     "language": "rust",
+     "code": "use std::fmt;\nuse std::num::ParseIntError;\n\n#[derive(Debug)]\nenum ConfigError {\n    Missing,\n    Invalid(ParseIntError),\n}\n\nimpl fmt::Display for ConfigError {\n    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {\n        match self {\n            ConfigError::Missing => write!(f, \"port is missing\"),\n            ConfigError::Invalid(error) => write!(f, \"invalid port: {error}\"),\n        }\n    }\n}\n\nimpl std::error::Error for ConfigError {\n    fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {\n        match self {\n            ConfigError::Invalid(error) => Some(error),\n            ConfigError::Missing => None,\n        }\n    }\n}\n\nfn parse_port(text: &str) -> Result<u16, ConfigError> {\n    let trimmed = text.trim();\n    if trimmed.is_empty() {\n        return Err(ConfigError::Missing);\n    }\n    trimmed.parse().map_err(ConfigError::Invalid)\n}\n\nfn main() {\n    println!(\"{:?}\", parse_port(\"8080\"));\n    println!(\"{}\", parse_port(\"abc\").unwrap_err());\n}"
+    }
+   ]
+  },
+  {
+   "id": "modules",
+   "title": "Modules and Crates",
+   "description": "Organize code into modules and pull crates into the build.",
+   "snippets": [
+    {
+     "language": "rust",
+     "code": "mod store {\n    pub struct Item {\n        pub name: String,\n        quantity: u32,\n    }\n\n    impl Item {\n        pub fn new(name: &str, quantity: u32) -> Self {\n            Self { name: name.to_owned(), quantity }\n        }\n\n        pub fn quantity(&self) -> u32 {\n            self.quantity\n        }\n    }\n\n    pub(crate) fn label(item: &Item) -> String {\n        format!(\"{} x{}\", item.name, item.quantity())\n    }\n}\n\nfn main() {\n    let item = store::Item::new(\"bolt\", 12);\n    println!(\"{}\", store::label(&item));\n}"
+    },
+    {
+     "language": "text",
+     "code": "src/\n  main.rs        mod store; use store::Item;\n  store/\n    mod.rs       pub mod item; pub use item::Item;\n    item.rs      pub struct Item with pub fn new()\n\ntests/\n  api.rs         integration test, compiled as its own crate"
+    }
+   ]
+  },
+  {
+   "id": "testing",
+   "title": "Testing",
+   "description": "Unit, integration and documentation tests with cargo test.",
+   "snippets": [
+    {
+     "language": "rust",
+     "code": "fn add(a: i32, b: i32) -> i32 {\n    a + b\n}\n\n#[cfg(test)]\nmod tests {\n    use super::*;\n\n    #[test]\n    fn adds_positive_numbers() {\n        assert_eq!(add(2, 3), 5);\n    }\n\n    #[test]\n    fn adds_negative_numbers() {\n        assert_eq!(add(-2, -3), -5);\n        assert_ne!(add(0, 0), 1);\n    }\n\n    #[test]\n    #[should_panic(expected = \"overflow\")]\n    fn panics_on_overflow() {\n        let total = i32::MAX;\n        assert!(total.checked_add(1).is_some(), \"overflow\");\n    }\n}"
+    },
+    {
+     "language": "bash",
+     "code": "cargo test                    # unit, integration and doc tests\ncargo test adds_positive      # only tests whose name matches\ncargo test -- --nocapture     # show stdout from passing tests\ncargo test --test api         # only tests/api.rs"
+    }
+   ]
+  },
+  {
+   "id": "concurrency",
+   "title": "Concurrency",
+   "description": "Threads, channels and shared state checked at compile time.",
+   "snippets": [
+    {
+     "language": "rust",
+     "code": "use std::thread;\nuse std::time::Duration;\n\nfn main() {\n    let handle = thread::spawn(|| {\n        for step in 1..=3 {\n            println!(\"worker {step}\");\n            thread::sleep(Duration::from_millis(50));\n        }\n        42\n    });\n\n    println!(\"main keeps working\");\n    let result = handle.join().expect(\"worker panicked\");\n    println!(\"worker returned {result}\");\n}"
+    },
+    {
+     "language": "rust",
+     "code": "use std::sync::{Arc, Mutex};\nuse std::thread;\n\nfn main() {\n    let counter = Arc::new(Mutex::new(0));\n    let mut handles = Vec::new();\n\n    for _ in 0..4 {\n        let shared = Arc::clone(&counter);\n        handles.push(thread::spawn(move || {\n            let mut value = shared.lock().expect(\"lock poisoned\");\n            *value += 1;\n        }));\n    }\n\n    for handle in handles {\n        handle.join().expect(\"thread panicked\");\n    }\n\n    println!(\"count = {}\", *counter.lock().unwrap());\n}"
+    }
+   ]
+  },
+  {
+   "id": "smart-pointers",
+   "title": "Smart Pointers",
+   "description": "Heap allocation and shared ownership with Box, Rc, RefCell and Arc.",
+   "snippets": [
+    {
+     "language": "rust",
+     "code": "#[derive(Debug)]\nenum List {\n    Node(i32, Box<List>),\n    Nil,\n}\n\nfn main() {\n    let list = List::Node(1, Box::new(List::Node(2, Box::new(List::Nil))));\n    println!(\"{list:?}\");\n}"
+    },
+    {
+     "language": "rust",
+     "code": "use std::cell::RefCell;\nuse std::rc::Rc;\n\nfn main() {\n    let shared = Rc::new(RefCell::new(vec![1, 2]));\n    let clone = Rc::clone(&shared);\n\n    clone.borrow_mut().push(3);\n    println!(\"{:?}\", shared.borrow());\n    println!(\"strong count = {}\", Rc::strong_count(&shared));\n\n    // Rc is single-threaded; Arc is the thread-safe counterpart\n}"
+    }
+   ]
+  },
+  {
+   "id": "common-errors",
+   "title": "Common Compiler Errors",
+   "description": "The borrow checker messages you will meet most often, and the fixes.",
+   "snippets": [
+    {
+     "language": "rust",
+     "code": "fn main() {\n    // E0382: use after move — borrow instead of moving again\n    let name = String::from(\"Felipe\");\n    let moved = name;\n    let borrowed = &moved;\n    println!(\"{borrowed}\");\n\n    // E0502: overlapping borrows — let the shared borrow end first\n    let mut text = String::from(\"hi\");\n    {\n        let shared = &text;\n        println!(\"{shared}\");\n    }\n    let exclusive = &mut text;\n    exclusive.push('!');\n    println!(\"{exclusive}\");\n}"
+    },
+    {
+     "language": "text",
+     "code": "error[E0382]: borrow of moved value: `name`\n  --> src/main.rs:3:20\n\nerror[E0502]: cannot borrow `text` as mutable because it is also borrowed as immutable\n  --> src/main.rs:10:18\n\nerror[E0499]: cannot borrow `text` as mutable more than once at a time\n\nerror[E0308]: mismatched types\n  expected `i32`, found `&str`\n\nerror[E0597]: `value` does not live long enough"
+    }
+   ]
+  }
+ ]
+}

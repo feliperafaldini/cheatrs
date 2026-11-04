@@ -1,0 +1,244 @@
+{
+ "slug": "express",
+ "title": "Express",
+ "label": "Express",
+ "group": "Framework",
+ "color": "#000000",
+ "desc": "Small Node.js framework for routing, middleware and JSON APIs.",
+ "sections": [
+  {
+   "id": "setup",
+   "title": "Setup",
+   "description": "Install Express 5 and start a server that answers on port 3000.",
+   "snippets": [
+    {
+     "language": "bash",
+     "code": "# Create the project and install the framework\nmkdir orders-api\ncd orders-api\nnpm init --yes\nnpm install express\n\n# Run the entry point, restarting it when a file changes\nnode --watch server.js"
+    },
+    {
+     "language": "javascript",
+     "code": "// server.js\nimport express from \"express\";\n\nconst app = express();\nconst port = Number(process.env.PORT ?? 3000);\n\napp.get(\"/health\", (req, res) => {\n  res.json({ status: \"ok\", uptime: process.uptime() });\n});\n\napp.listen(port, () => {\n  console.log(`orders api listening on http://localhost:${port}`);\n});"
+    }
+   ]
+  },
+  {
+   "id": "routing",
+   "title": "Routing",
+   "description": "Map HTTP methods and paths to handlers, then split them into routers.",
+   "snippets": [
+    {
+     "language": "javascript",
+     "code": "// app.js\nimport express from \"express\";\n\nconst app = express();\napp.use(express.json());\n\nconst products = [\n  { id: 7, name: \"Desk lamp\", priceCents: 4590 },\n  { id: 8, name: \"Cable tray\", priceCents: 1990 },\n];\n\napp.get(\"/products\", (req, res) => {\n  res.json(products);\n});\n\napp.post(\"/products\", (req, res) => {\n  const { name, priceCents } = req.body ?? {};\n  const product = { id: 9, name, priceCents };\n  res.status(201).location(`/products/${product.id}`).json(product);\n});\n\napp.route(\"/products/:id\")\n  .get((req, res) => {\n    const id = Number(req.params.id);\n    const product = products.find((item) => item.id === id);\n    if (!product) return res.status(404).json({ error: \"product not found\" });\n    res.json(product);\n  })\n  .delete((req, res) => {\n    res.sendStatus(204);\n  });\n\napp.listen(3000, () => console.log(\"http://localhost:3000/products\"));"
+    },
+    {
+     "language": "javascript",
+     "code": "// routes/invoices.js\nimport { Router } from \"express\";\n\nconst router = Router();\nconst invoices = new Map([\n  [\"inv_1042\", { id: \"inv_1042\", totalCents: 12900 }],\n  [\"inv_1043\", { id: \"inv_1043\", totalCents: 7400 }],\n]);\n\nrouter.get(\"/\", (req, res) => {\n  res.json(Array.from(invoices.values()));\n});\n\nrouter.get(\"/:invoiceId\", (req, res) => {\n  const invoice = invoices.get(req.params.invoiceId);\n  if (!invoice) return res.status(404).json({ error: \"invoice not found\" });\n  res.json(invoice);\n});\n\nexport default router;"
+    },
+    {
+     "language": "javascript",
+     "code": "// app.js: mount the router under a prefix\nimport express from \"express\";\nimport invoices from \"./routes/invoices.js\";\n\nconst app = express();\napp.use(\"/invoices\", invoices);\n\napp.listen(3000, () => console.log(\"http://localhost:3000/invoices\"));"
+    }
+   ]
+  },
+  {
+   "id": "middleware",
+   "title": "Middleware",
+   "description": "Run shared logic before handlers, in the order it is registered.",
+   "snippets": [
+    {
+     "language": "javascript",
+     "code": "// middleware/logger.js\nexport function requestLogger(req, res, next) {\n  const startedAt = performance.now();\n  res.on(\"finish\", () => {\n    const elapsed = Math.round(performance.now() - startedAt);\n    console.log(`${req.method} ${req.originalUrl} ${res.statusCode} ${elapsed}ms`);\n  });\n  next();\n}"
+    },
+    {
+     "language": "javascript",
+     "code": "// middleware/api-key.js\nexport function requireApiKey(req, res, next) {\n  const provided = req.get(\"x-api-key\");\n  if (provided !== process.env.API_KEY) {\n    return res.status(401).json({ error: \"invalid api key\" });\n  }\n  next();\n}"
+    },
+    {
+     "language": "javascript",
+     "code": "// app.js\nimport express from \"express\";\nimport { requestLogger } from \"./middleware/logger.js\";\nimport { requireApiKey } from \"./middleware/api-key.js\";\n\nconst app = express();\napp.use(requestLogger);\napp.use(express.json());\n\napp.get(\"/catalog\", (req, res) => res.json({ items: 42 }));\n\napp.use(\"/admin\", requireApiKey);\napp.get(\"/admin/metrics\", (req, res) => res.json({ requests: 1840 }));\n\napp.listen(3000, () => console.log(\"http://localhost:3000/catalog\"));"
+    }
+   ]
+  },
+  {
+   "id": "request",
+   "title": "Request",
+   "description": "Read the query string, headers and connection details from the incoming request.",
+   "snippets": [
+    {
+     "language": "javascript",
+     "code": "app.get(\"/search\", (req, res) => {\n  const term = String(req.query.q ?? \"\").trim();\n  const page = Number.parseInt(String(req.query.page ?? \"1\"), 10) || 1;\n  const sort = req.query.sort === \"price\" ? \"price\" : \"name\";\n\n  res.json({ term, page, sort, perPage: 20 });\n});"
+    },
+    {
+     "language": "javascript",
+     "code": "app.get(\"/whoami\", (req, res) => {\n  res.json({\n    method: req.method,\n    url: req.originalUrl,\n    ip: req.ip,\n    userAgent: req.get(\"user-agent\"),\n    acceptsJson: req.accepts(\"json\") === \"json\",\n  });\n});"
+    }
+   ]
+  },
+  {
+   "id": "response",
+   "title": "Response",
+   "description": "Shape the reply with status codes, headers, cookies and files.",
+   "snippets": [
+    {
+     "language": "javascript",
+     "code": "app.post(\"/invoices\", (req, res) => {\n  const invoice = { id: \"inv_1042\", customer: \"Ada Lovelace\", totalCents: 12900 };\n  res.status(201).location(`/invoices/${invoice.id}`).json(invoice);\n});\n\napp.delete(\"/invoices/:invoiceId\", (req, res) => {\n  res.sendStatus(204);\n});"
+    },
+    {
+     "language": "javascript",
+     "code": "app.post(\"/session\", (req, res) => {\n  res.cookie(\"session\", \"sess_9f2c41\", {\n    httpOnly: true,\n    sameSite: \"lax\",\n    secure: true,\n    maxAge: 3_600_000,\n  });\n  res.redirect(303, \"/account\");\n});"
+    },
+    {
+     "language": "javascript",
+     "code": "import { fileURLToPath } from \"node:url\";\n\nconst invoicePdf = fileURLToPath(new URL(\"./files/invoice-1042.pdf\", import.meta.url));\n\napp.get(\"/invoices/:invoiceId/pdf\", (req, res) => {\n  res.download(invoicePdf, \"invoice-1042.pdf\");\n});"
+    }
+   ]
+  },
+  {
+   "id": "params",
+   "title": "Route Parameters",
+   "description": "Capture path segments and validate them once before the handler runs.",
+   "snippets": [
+    {
+     "language": "javascript",
+     "code": "app.get(\"/orders/:orderId/items/:itemId\", (req, res) => {\n  const { orderId, itemId } = req.params;\n  res.json({ orderId, itemId, line: 3 });\n});"
+    },
+    {
+     "language": "javascript",
+     "code": "import express from \"express\";\n\nconst router = express.Router();\n\nrouter.param(\"orderId\", (req, res, next, orderId) => {\n  const parsed = Number(orderId);\n  if (!Number.isInteger(parsed) || parsed < 1) {\n    return res.status(400).json({ error: \"orderId must be a positive integer\" });\n  }\n  req.orderId = parsed;\n  next();\n});\n\nrouter.get(\"/:orderId\", (req, res) => {\n  res.json({ orderId: req.orderId, status: \"shipped\" });\n});\n\nexport default router;"
+    }
+   ]
+  },
+  {
+   "id": "body",
+   "title": "Body Parsing",
+   "description": "Parse JSON and form payloads, and keep raw bytes when a signature needs them.",
+   "snippets": [
+    {
+     "language": "javascript",
+     "code": "import express from \"express\";\n\nconst app = express();\napp.use(express.json({ limit: \"256kb\" }));\napp.use(express.urlencoded({ extended: false, limit: \"32kb\" }));"
+    },
+    {
+     "language": "javascript",
+     "code": "app.post(\"/orders\", (req, res) => {\n  const { customer, quantity } = req.body ?? {};\n  if (typeof customer !== \"string\" || !Number.isInteger(quantity)) {\n    return res.status(422).json({ error: \"customer and integer quantity are required\" });\n  }\n  res.status(201).json({ id: \"ord_7781\", customer, quantity });\n});"
+    },
+    {
+     "language": "javascript",
+     "code": "app.post(\"/webhooks/stripe\", express.raw({ type: \"application/json\" }), (req, res) => {\n  // req.body is a Buffer here, so the signature can be checked byte for byte\n  const signature = req.get(\"stripe-signature\");\n  res.json({\n    received: true,\n    signaturePresent: Boolean(signature),\n    bytes: req.body?.length ?? 0,\n  });\n});"
+    }
+   ]
+  },
+  {
+   "id": "static",
+   "title": "Static Files",
+   "description": "Serve files from a folder, with cache rules per URL prefix.",
+   "snippets": [
+    {
+     "language": "javascript",
+     "code": "app.use(express.static(\"public\", { maxAge: \"1h\", etag: true }));\napp.use(\"/assets\", express.static(\"dist/assets\", { maxAge: \"30d\", immutable: true }));\napp.use(\"/downloads\", express.static(\"storage/downloads\", { dotfiles: \"deny\", index: false }));"
+    },
+    {
+     "language": "javascript",
+     "code": "app.use(\n  \"/media\",\n  express.static(\"media\", {\n    setHeaders(res, filePath) {\n      if (filePath.endsWith(\".mp4\")) {\n        res.setHeader(\"cache-control\", \"public, max-age=86400\");\n      }\n    },\n  }),\n);"
+    }
+   ]
+  },
+  {
+   "id": "errors",
+   "title": "Error Handling",
+   "description": "Turn failures into the right status code with a 404 tail and a four-argument handler.",
+   "snippets": [
+    {
+     "language": "javascript",
+     "code": "class HttpError extends Error {\n  constructor(status, message) {\n    super(message);\n    this.status = status;\n  }\n}\n\napp.get(\"/orders/:orderId\", (req, res, next) => {\n  if (req.params.orderId !== \"ord_7781\") {\n    return next(new HttpError(404, \"order ord_7781 was not found\"));\n  }\n  res.json({ id: \"ord_7781\", status: \"shipped\" });\n});"
+    },
+    {
+     "language": "javascript",
+     "code": "// Runs when no earlier route matched\napp.use((req, res) => {\n  res.status(404).json({ error: `no route for ${req.method} ${req.originalUrl}` });\n});\n\n// The fourth argument is what marks this as an error handler\napp.use((error, req, res, next) => {\n  if (res.headersSent) return next(error);\n  const status = error.status ?? 500;\n  console.error(`${status} ${error.message}`);\n  res.status(status).json({\n    error: status === 500 ? \"internal server error\" : error.message,\n  });\n});"
+    }
+   ]
+  },
+  {
+   "id": "async",
+   "title": "Async Handlers",
+   "description": "Await data inside handlers; Express 5 forwards a rejected promise to the error handler.",
+   "snippets": [
+    {
+     "language": "javascript",
+     "code": "app.get(\"/orders/:orderId\", async (req, res) => {\n  // Express 5 catches a rejection from this async function\n  const order = await orders.findById(req.params.orderId);\n  if (!order) {\n    const error = new Error(`order ${req.params.orderId} not found`);\n    error.status = 404;\n    throw error;\n  }\n  res.json(order);\n});"
+    },
+    {
+     "language": "javascript",
+     "code": "app.get(\"/dashboards/:customerId\", async (req, res, next) => {\n  try {\n    const [customer, invoices, balance] = await Promise.all([\n      customers.findById(req.params.customerId),\n      invoices.listForCustomer(req.params.customerId),\n      billing.balanceFor(req.params.customerId),\n    ]);\n    res.json({ customer, invoices, balanceCents: balance });\n  } catch (error) {\n    next(error);\n  }\n});"
+    }
+   ]
+  },
+  {
+   "id": "validation",
+   "title": "Validation",
+   "description": "Reject bad input before it reaches the database, with reusable rules or schemas.",
+   "snippets": [
+    {
+     "language": "javascript",
+     "code": "import { body, validationResult } from \"express-validator\";\n\napp.post(\n  \"/signups\",\n  [\n    body(\"email\").isEmail().normalizeEmail(),\n    body(\"password\").isLength({ min: 12 }),\n  ],\n  (req, res) => {\n    const errors = validationResult(req);\n    if (!errors.isEmpty()) {\n      return res.status(422).json({ errors: errors.array() });\n    }\n    res.status(201).json({ email: req.body.email });\n  },\n);"
+    },
+    {
+     "language": "javascript",
+     "code": "import { z } from \"zod\";\n\nconst orderSchema = z.object({\n  customer: z.string().trim().min(2),\n  quantity: z.coerce.number().int().positive(),\n});\n\napp.post(\"/orders\", (req, res) => {\n  const result = orderSchema.safeParse(req.body);\n  if (!result.success) {\n    return res.status(422).json({ issues: result.error.issues });\n  }\n  res.status(201).json(result.data);\n});"
+    }
+   ]
+  },
+  {
+   "id": "security",
+   "title": "Security",
+   "description": "Set safe headers, restrict browser origins and cap repeated requests.",
+   "snippets": [
+    {
+     "language": "javascript",
+     "code": "import cors from \"cors\";\nimport express from \"express\";\nimport helmet from \"helmet\";\n\nconst app = express();\napp.use(helmet());\napp.use(\n  cors({\n    origin: \"https://shop.example.com\",\n    methods: [\"GET\", \"POST\"],\n    credentials: true,\n    maxAge: 600,\n  }),\n);"
+    },
+    {
+     "language": "javascript",
+     "code": "import express from \"express\";\nimport { rateLimit } from \"express-rate-limit\";\n\nconst app = express();\napp.set(\"trust proxy\", 1);\n\nconst loginLimiter = rateLimit({\n  windowMs: 15 * 60 * 1000,\n  limit: 10,\n  standardHeaders: \"draft-7\",\n  legacyHeaders: false,\n  message: { error: \"too many login attempts, try again in 15 minutes\" },\n});\n\napp.post(\"/login\", loginLimiter, (req, res) => {\n  res.json({ token: \"tok_5c1e9a\" });\n});"
+    }
+   ]
+  },
+  {
+   "id": "testing",
+   "title": "Testing",
+   "description": "Exercise routes in-process with node:test and supertest, with no port to open.",
+   "snippets": [
+    {
+     "language": "javascript",
+     "code": "// src/app.js\nimport express from \"express\";\n\nexport const app = express();\napp.use(express.json());\n\napp.get(\"/health\", (req, res) => {\n  res.json({ status: \"ok\" });\n});\n\napp.post(\"/orders\", (req, res) => {\n  const customer = req.body?.customer;\n  if (!customer) {\n    return res.status(422).json({ error: \"customer is required\" });\n  }\n  res.status(201).json({ id: \"ord_9001\", customer });\n});"
+    },
+    {
+     "language": "javascript",
+     "code": "// test/orders.test.js\nimport assert from \"node:assert/strict\";\nimport test from \"node:test\";\nimport request from \"supertest\";\nimport { app } from \"../src/app.js\";\n\ntest(\"GET /health reports ok\", async () => {\n  const response = await request(app).get(\"/health\");\n  assert.equal(response.status, 200);\n  assert.deepEqual(response.body, { status: \"ok\" });\n});\n\ntest(\"POST /orders rejects a missing customer\", async () => {\n  const response = await request(app).post(\"/orders\").send({ quantity: 2 });\n  assert.equal(response.status, 422);\n  assert.match(response.body.error, /customer/);\n});"
+    },
+    {
+     "language": "bash",
+     "code": "# Install the in-process HTTP client, then run every *.test.js file\nnpm install --save-dev supertest\nnode --test"
+    }
+   ]
+  },
+  {
+   "id": "common-errors",
+   "title": "Common Errors",
+   "description": "The failures that show up first: wrong order, duplicate reply and Express 5 wildcards.",
+   "snippets": [
+    {
+     "language": "javascript",
+     "code": "// Wrong: the route reads req.body before any parser has run\napp.post(\"/orders\", (req, res) => res.json(req.body));\napp.use(express.json());\n\n// Right: register the parser first\napp.use(express.json());\napp.post(\"/orders\", (req, res) => res.json(req.body));"
+    },
+    {
+     "language": "javascript",
+     "code": "// Wrong: the second call throws ERR_HTTP_HEADERS_SENT\napp.get(\"/orders/:orderId\", (req, res) => {\n  res.json({ id: req.params.orderId });\n  res.status(500).json({ error: \"late reply\" });\n});\n\n// Right: return as soon as the response is sent\napp.get(\"/orders/:orderId\", (req, res) => {\n  return res.json({ id: req.params.orderId });\n});"
+    },
+    {
+     "language": "javascript",
+     "code": "// Express 5 throws \"Missing parameter name\" for an unnamed wildcard\napp.get(\"*\", (req, res) => res.sendFile(\"index.html\", { root: \"public\" }));\n\n// Name the wildcard; braces also let it match the root path\napp.get(\"/{*splat}\", (req, res) => res.sendFile(\"index.html\", { root: \"public\" }));"
+    }
+   ]
+  }
+ ]
+}

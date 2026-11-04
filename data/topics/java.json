@@ -1,0 +1,254 @@
+{
+ "slug": "java",
+ "title": "Java",
+ "label": "Java",
+ "group": "Language",
+ "color": "#ED8B00",
+ "desc": "A statically typed, garbage-collected language that runs on the JVM and favours long-lived, portable systems.",
+ "sections": [
+  {
+   "id": "setup",
+   "title": "Setup",
+   "description": "Install a JDK, compile a class and run it.",
+   "snippets": [
+    {
+     "language": "bash",
+     "code": "# Java 21 is the current long-term support release\njava -version\n\n# Compile a source file into Hello.class\njavac Hello.java\n\n# Run the compiled class (no .class suffix)\njava Hello\n\n# Run a single source file directly (Java 11+)\njava Hello.java\n\n# Open the interactive REPL (Java 9+)\njshell"
+    },
+    {
+     "language": "java",
+     "code": "public class Hello {\n    public static void main(String[] args) {\n        System.out.println(\"Hello, world\");\n    }\n}"
+    }
+   ]
+  },
+  {
+   "id": "syntax",
+   "title": "Syntax",
+   "description": "Comments, statements, text blocks and switch expressions.",
+   "snippets": [
+    {
+     "language": "java",
+     "code": "// Single-line comment\n/* Block comment */\n/** Javadoc comment, read by javadoc and IDEs */\n\npackage com.example.app;   // package comes before imports\n\nimport java.util.List;\n\npublic class SyntaxDemo {\n    public static void main(String[] args) {\n        int count = 3;                 // statements end with a semicolon\n        var name = \"Ada\";              // local type inference (Java 10+)\n\n        // Text block preserves newlines and strips common indentation (Java 15+)\n        String report = \"\"\"\n                name: %s\n                count: %d\n                \"\"\".formatted(name, count);\n\n        // Arrow switch: no fall-through, and every branch is exhaustive\n        String size = switch (count) {\n            case 1 -> \"one\";\n            case 2, 3 -> \"few\";\n            default -> \"many\";\n        };\n\n        List<String> tags = List.of(\"jvm\", \"typed\");\n        System.out.print(report);\n        System.out.println(size + \" \" + tags);\n    }\n}"
+    }
+   ]
+  },
+  {
+   "id": "types",
+   "title": "Types",
+   "description": "Primitive values, wrappers, casts and pattern checks.",
+   "snippets": [
+    {
+     "language": "java",
+     "code": "// Primitives have a fixed width and can never be null\nbyte tiny = 100;                 // 8-bit, -128 to 127\nshort small = 30_000;            // 16-bit\nint count = 2_000_000;           // 32-bit\nlong big = 9_000_000_000L;       // 64-bit, L suffix required\nfloat ratio = 3.5f;              // 32-bit IEEE 754, f suffix required\ndouble precise = 2.71828;        // 64-bit IEEE 754\nchar letter = 'J';               // one UTF-16 code unit\nboolean ready = true;\n\n// Wrapper objects add null and work with generics\nInteger boxed = 42;              // autoboxing\nint unboxed = boxed;             // unboxing\n\n// Widening is implicit, narrowing needs an explicit cast\nlong widened = count;\nint narrowed = (int) big;\n\n// Strings and arrays are objects, not primitives\nString text = \"hello\";\nString upper = text.toUpperCase();\nint[] numbers = {3, 1, 4, 1, 5};\nString[] names = new String[4];"
+    },
+    {
+     "language": "java",
+     "code": "public class TypeChecks {\n    public static void main(String[] args) {\n        Object value = \"cheatsheet\";\n\n        // instanceof binds the cast result to a new variable (Java 16+)\n        if (value instanceof String text && text.length() > 5) {\n            System.out.println(text.toUpperCase());\n        }\n\n        // Pattern switch over Object is exhaustive with a default (Java 21)\n        String kind = switch (value) {\n            case Integer number -> \"integer \" + number;\n            case String text2 -> \"string of \" + text2.length() + \" chars\";\n            case null -> \"null value\";\n            default -> \"other type\";\n        };\n\n        System.out.println(kind);\n    }\n}"
+    }
+   ]
+  },
+  {
+   "id": "classes",
+   "title": "Classes",
+   "description": "Fields, constructors, accessors and records.",
+   "snippets": [
+    {
+     "language": "java",
+     "code": "public class Account {\n    private final String owner;\n    private long balanceCents;\n\n    public Account(String owner, long openingCents) {\n        this.owner = owner;\n        this.balanceCents = openingCents;\n    }\n\n    public void deposit(long cents) {\n        if (cents <= 0) {\n            throw new IllegalArgumentException(\"deposit must be positive\");\n        }\n        balanceCents += cents;\n    }\n\n    public long balanceCents() {\n        return balanceCents;\n    }\n\n    public String owner() {\n        return owner;\n    }\n}"
+    },
+    {
+     "language": "java",
+     "code": "// A record generates the constructor, accessors, equals, hashCode and toString\nrecord Point(int x, int y) {\n    // Compact constructor validates without repeating the parameters\n    public Point {\n        if (Math.abs(x) > 1_000 || Math.abs(y) > 1_000) {\n            throw new IllegalArgumentException(\"coordinates out of range\");\n        }\n    }\n\n    Point shift(int dx, int dy) {\n        return new Point(x + dx, y + dy);\n    }\n}\n\npublic class RecordDemo {\n    public static void main(String[] args) {\n        Point start = new Point(2, 5);\n        Point moved = start.shift(3, -1);\n        System.out.println(start.x() + \",\" + start.y());   // 2,5\n        System.out.println(moved);                          // Point[x=5, y=4]\n    }\n}"
+    }
+   ]
+  },
+  {
+   "id": "inheritance",
+   "title": "Inheritance",
+   "description": "Subclassing, overriding and sealed hierarchies.",
+   "snippets": [
+    {
+     "language": "java",
+     "code": "abstract class Shape {\n    protected final String name;\n\n    protected Shape(String name) {\n        this.name = name;\n    }\n\n    public abstract double area();\n\n    public String describe() {\n        return name + \" with area \" + area();\n    }\n}\n\nclass Circle extends Shape {\n    private final double radius;\n\n    Circle(double radius) {\n        super(\"circle\");\n        this.radius = radius;\n    }\n\n    @Override\n    public double area() {\n        return Math.PI * radius * radius;\n    }\n\n    @Override\n    public String describe() {\n        return super.describe() + \" (r=\" + radius + \")\";\n    }\n}\n\npublic class InheritanceDemo {\n    public static void main(String[] args) {\n        Shape shape = new Circle(2.0);\n        System.out.println(shape.describe());\n    }\n}"
+    },
+    {
+     "language": "java",
+     "code": "public class SealedDemo {\n    // Only the listed records may implement Payment (Java 17+)\n    sealed interface Payment permits CardPayment, CashPayment {}\n\n    record CardPayment(String last4) implements Payment {}\n    record CashPayment(int cents) implements Payment {}\n\n    // The compiler knows the cases are exhaustive, so no default is needed\n    static String label(Payment payment) {\n        return switch (payment) {\n            case CardPayment card -> \"card ending \" + card.last4();\n            case CashPayment cash -> \"cash \" + cash.cents() + \" cents\";\n        };\n    }\n\n    public static void main(String[] args) {\n        System.out.println(label(new CardPayment(\"4242\")));\n        System.out.println(label(new CashPayment(1250)));\n    }\n}"
+    }
+   ]
+  },
+  {
+   "id": "interfaces",
+   "title": "Interfaces",
+   "description": "Contracts, default methods and functional interfaces.",
+   "snippets": [
+    {
+     "language": "java",
+     "code": "interface Notifier {\n    void send(String message);              // abstract and implicitly public\n\n    default void sendTwice(String message) {\n        send(message);\n        send(message);\n    }\n\n    static Notifier console() {\n        // A single abstract method makes the interface a lambda target\n        return message -> System.out.println(\"LOG \" + message);\n    }\n}\n\npublic class InterfaceDemo {\n    public static void main(String[] args) {\n        Notifier notifier = Notifier.console();\n        notifier.sendTwice(\"deploy finished\");\n    }\n}"
+    },
+    {
+     "language": "java",
+     "code": "import java.util.function.Function;\nimport java.util.function.Predicate;\n\npublic class Functions {\n    public static void main(String[] args) {\n        Function<String, Integer> length = String::length;\n        Predicate<String> notBlank = value -> !value.isBlank();\n\n        System.out.println(length.apply(\"cheatsheet\"));   // 10\n        System.out.println(notBlank.test(\"  \"));          // false\n        System.out.println(notBlank.test(\"java\"));        // true\n    }\n}"
+    }
+   ]
+  },
+  {
+   "id": "generics",
+   "title": "Generics",
+   "description": "Type parameters, bounds and wildcard variance.",
+   "snippets": [
+    {
+     "language": "java",
+     "code": "public class GenericsDemo {\n    static class Box<T> {\n        private T value;\n\n        void put(T value) {\n            this.value = value;\n        }\n\n        T get() {\n            return value;\n        }\n    }\n\n    // The bound allows compareTo and keeps the return type concrete\n    static <T extends Comparable<T>> T max(T left, T right) {\n        return left.compareTo(right) >= 0 ? left : right;\n    }\n\n    public static void main(String[] args) {\n        Box<String> box = new Box<>();\n        box.put(\"java\");\n        System.out.println(box.get());\n\n        System.out.println(max(3, 9));               // 9\n        System.out.println(max(\"apple\", \"pear\"));    // pear\n    }\n}"
+    },
+    {
+     "language": "java",
+     "code": "import java.util.ArrayList;\nimport java.util.List;\n\npublic class WildcardsDemo {\n    // Producer: accepts any list of a Number subtype, reads as Number\n    static double sum(List<? extends Number> values) {\n        double total = 0;\n        for (Number value : values) {\n            total += value.doubleValue();\n        }\n        return total;\n    }\n\n    // Consumer: accepts any list that can hold Integer, writes Integer\n    static void addInts(List<? super Integer> target) {\n        target.add(10);\n        target.add(20);\n    }\n\n    public static void main(String[] args) {\n        List<Integer> ints = List.of(1, 2, 3);\n        System.out.println(sum(ints));\n\n        List<Number> numbers = new ArrayList<>();\n        addInts(numbers);\n        System.out.println(numbers);\n    }\n}"
+    }
+   ]
+  },
+  {
+   "id": "collections",
+   "title": "Collections",
+   "description": "Lists, sets, maps and ordered queues.",
+   "snippets": [
+    {
+     "language": "java",
+     "code": "import java.util.ArrayList;\nimport java.util.HashMap;\nimport java.util.HashSet;\nimport java.util.List;\nimport java.util.Map;\nimport java.util.Set;\n\npublic class CollectionsDemo {\n    public static void main(String[] args) {\n        List<String> langs = new ArrayList<>();\n        langs.add(\"java\");\n        langs.add(\"kotlin\");\n        langs.set(1, \"scala\");\n        langs.remove(\"java\");\n\n        Set<String> tags = new HashSet<>();\n        tags.add(\"backend\");\n        tags.add(\"backend\");             // ignored, a set holds no duplicates\n\n        Map<String, Integer> stock = new HashMap<>();\n        stock.put(\"apple\", 12);\n        stock.merge(\"apple\", 3, Integer::sum);   // 15\n        stock.putIfAbsent(\"pear\", 7);\n\n        int apples = stock.getOrDefault(\"apple\", 0);\n        System.out.println(langs + \" \" + tags + \" \" + apples);\n\n        // Immutable factories copy nothing and reject mutation (Java 9+)\n        List<Integer> primes = List.of(2, 3, 5, 7);\n        Map<String, Integer> sizes = Map.of(\"small\", 1, \"large\", 3);\n        System.out.println(primes + \" \" + sizes);\n    }\n}"
+    },
+    {
+     "language": "java",
+     "code": "import java.util.ArrayDeque;\nimport java.util.Deque;\nimport java.util.Map;\nimport java.util.TreeMap;\n\npublic class OrderedDemo {\n    public static void main(String[] args) {\n        Deque<String> queue = new ArrayDeque<>();\n        queue.addLast(\"first\");\n        queue.addLast(\"second\");\n        queue.addFirst(\"priority\");\n\n        String next = queue.removeFirst();   // priority\n        System.out.println(next + \" then \" + queue);\n\n        // TreeMap keeps keys in their natural order\n        Map<String, Integer> sorted = new TreeMap<>();\n        sorted.put(\"banana\", 3);\n        sorted.put(\"apple\", 5);\n        sorted.put(\"cherry\", 2);\n\n        for (Map.Entry<String, Integer> entry : sorted.entrySet()) {\n            System.out.println(entry.getKey() + \"=\" + entry.getValue());\n        }\n    }\n}"
+    }
+   ]
+  },
+  {
+   "id": "streams",
+   "title": "Streams",
+   "description": "Lazy pipelines, collectors and numeric streams.",
+   "snippets": [
+    {
+     "language": "java",
+     "code": "import java.util.Comparator;\nimport java.util.List;\nimport java.util.Map;\nimport java.util.stream.Collectors;\n\nrecord Employee(String name, String team, int salary) {}\n\npublic class StreamDemo {\n    public static void main(String[] args) {\n        List<Employee> staff = List.of(\n                new Employee(\"Ana\", \"platform\", 8200),\n                new Employee(\"Bruno\", \"platform\", 7400),\n                new Employee(\"Carla\", \"data\", 9100),\n                new Employee(\"Davi\", \"data\", 6800));\n\n        List<String> wellPaid = staff.stream()\n                .filter(employee -> employee.salary() > 7000)\n                .sorted(Comparator.comparingInt(Employee::salary).reversed())\n                .map(Employee::name)\n                .toList();                       // Java 16+\n\n        Map<String, Double> averageByTeam = staff.stream()\n                .collect(Collectors.groupingBy(\n                        Employee::team,\n                        Collectors.averagingInt(Employee::salary)));\n\n        long payroll = staff.stream().mapToLong(Employee::salary).sum();\n\n        System.out.println(wellPaid);\n        System.out.println(averageByTeam);\n        System.out.println(payroll);\n    }\n}"
+    },
+    {
+     "language": "java",
+     "code": "import java.util.OptionalInt;\nimport java.util.stream.Collectors;\nimport java.util.stream.IntStream;\n\npublic class NumericStreams {\n    public static void main(String[] args) {\n        int[] values = {4, 8, 15, 16, 23, 42};\n\n        int sum = IntStream.of(values).sum();\n        OptionalInt max = IntStream.of(values).max();\n        double mean = IntStream.of(values).average().orElse(0);\n\n        String evens = IntStream.of(values)\n                .filter(number -> number % 2 == 0)\n                .mapToObj(Integer::toString)\n                .collect(Collectors.joining(\", \"));\n\n        System.out.println(sum + \" \" + max.orElse(-1) + \" \" + mean);\n        System.out.println(evens);               // 4, 8, 16, 42\n    }\n}"
+    }
+   ]
+  },
+  {
+   "id": "exceptions",
+   "title": "Exceptions",
+   "description": "Catch, wrap, clean up and close resources.",
+   "snippets": [
+    {
+     "language": "java",
+     "code": "public class ExceptionsDemo {\n    static int parsePort(String raw) {\n        try {\n            int port = Integer.parseInt(raw);\n            if (port > 65535) {\n                throw new IllegalArgumentException(\"port out of range: \" + port);\n            }\n            return port;\n        } catch (NumberFormatException error) {\n            // Keep the cause so the original stack trace survives\n            throw new IllegalArgumentException(\"not a number: \" + raw, error);\n        }\n    }\n\n    public static void main(String[] args) {\n        try {\n            System.out.println(parsePort(\"8080\"));\n            System.out.println(parsePort(\"eighty\"));\n        } catch (IllegalArgumentException error) {\n            System.out.println(\"bad input: \" + error.getMessage());\n            System.out.println(\"cause: \" + error.getCause());\n        } finally {\n            System.out.println(\"done\");\n        }\n    }\n}"
+    },
+    {
+     "language": "java",
+     "code": "import java.io.BufferedReader;\nimport java.io.FileReader;\nimport java.io.IOException;\n\npublic class TryWithResources {\n    public static void main(String[] args) {\n        // The reader is closed even when readLine throws\n        try (BufferedReader reader = new BufferedReader(new FileReader(\"notes.txt\"))) {\n            String line;\n            while ((line = reader.readLine()) != null) {\n                System.out.println(line);\n            }\n        } catch (IOException error) {\n            System.err.println(\"could not read notes.txt: \" + error.getMessage());\n        }\n    }\n}"
+    }
+   ]
+  },
+  {
+   "id": "io",
+   "title": "I/O and Files",
+   "description": "Read, write, list and copy files with java.nio.file.",
+   "snippets": [
+    {
+     "language": "java",
+     "code": "import java.io.IOException;\nimport java.nio.file.Files;\nimport java.nio.file.Path;\n\npublic class FilesDemo {\n    public static void main(String[] args) throws IOException {\n        Path path = Path.of(\"notes.txt\");\n\n        // Write and read a whole file as UTF-8 text\n        Files.writeString(path, \"first line\\nsecond line\\n\");\n        String content = Files.readString(path);\n        System.out.println(content.lines().count() + \" lines\");\n\n        // Files.lines is lazy and must be closed\n        try (var lines = Files.lines(path)) {\n            lines.filter(line -> line.startsWith(\"second\"))\n                    .forEach(System.out::println);\n        }\n\n        // Files.list is also a closeable stream\n        try (var entries = Files.list(Path.of(\".\"))) {\n            entries.limit(5).forEach(System.out::println);\n        }\n    }\n}"
+    },
+    {
+     "language": "java",
+     "code": "import java.io.IOException;\nimport java.nio.file.Files;\nimport java.nio.file.Path;\nimport java.nio.file.StandardCopyOption;\n\npublic class CopyDemo {\n    public static void main(String[] args) throws IOException {\n        Path directory = Path.of(\"output\");\n        Files.createDirectories(directory);\n\n        Path target = directory.resolve(\"copy.txt\");\n        Files.copy(Path.of(\"notes.txt\"), target, StandardCopyOption.REPLACE_EXISTING);\n\n        Path temp = Files.createTempFile(\"cheatrs-\", \".log\");\n        System.out.println(Files.size(target) + \" bytes\");\n        System.out.println(Files.isRegularFile(temp));\n\n        Files.deleteIfExists(temp);   // leaves the copied file in place\n    }\n}"
+    }
+   ]
+  },
+  {
+   "id": "concurrency",
+   "title": "Concurrency",
+   "description": "Virtual threads, executors and composable futures.",
+   "snippets": [
+    {
+     "language": "java",
+     "code": "import java.time.Duration;\nimport java.util.concurrent.Executors;\n\npublic class VirtualThreadsDemo {\n    public static void main(String[] args) {\n        // One virtual thread per task, cheap enough for thousands of tasks\n        try (var executor = Executors.newVirtualThreadPerTaskExecutor()) {\n            for (int task = 1; task <= 3; task++) {\n                int id = task;\n                executor.submit(() -> {\n                    Thread.sleep(Duration.ofMillis(200));\n                    System.out.println(\"task \" + id + \" on \" + Thread.currentThread());\n                    return id;\n                });\n            }\n        }   // close waits for every submitted task\n        System.out.println(\"all tasks finished\");\n    }\n}"
+    },
+    {
+     "language": "java",
+     "code": "import java.util.concurrent.CompletableFuture;\n\npublic class FuturesDemo {\n    public static void main(String[] args) {\n        CompletableFuture<String> user = CompletableFuture.supplyAsync(() -> \"ana\");\n        CompletableFuture<Integer> score = CompletableFuture.supplyAsync(() -> 87);\n\n        String result = user.thenCombine(score, (name, points) -> name + \" scored \" + points)\n                .exceptionally(error -> \"failed: \" + error.getMessage())\n                .join();\n\n        System.out.println(result);   // ana scored 87\n    }\n}"
+    }
+   ]
+  },
+  {
+   "id": "jdbc",
+   "title": "JDBC",
+   "description": "Connect, query and commit with plain JDBC.",
+   "snippets": [
+    {
+     "language": "java",
+     "code": "import java.sql.Connection;\nimport java.sql.DriverManager;\nimport java.sql.PreparedStatement;\nimport java.sql.ResultSet;\nimport java.sql.SQLException;\n\npublic class JdbcQueryDemo {\n    public static void main(String[] args) {\n        String url = \"jdbc:postgresql://localhost:5432/shop\";\n\n        try (Connection connection = DriverManager.getConnection(url, \"app\", \"secret\");\n             PreparedStatement query = connection.prepareStatement(\n                     \"SELECT id, name FROM product WHERE price_cents > ? ORDER BY name\")) {\n\n            query.setInt(1, 1000);\n            try (ResultSet rows = query.executeQuery()) {\n                while (rows.next()) {\n                    System.out.println(rows.getLong(\"id\") + \" \" + rows.getString(\"name\"));\n                }\n            }\n        } catch (SQLException error) {\n            System.err.println(\"query failed: \" + error.getMessage());\n        }\n    }\n}"
+    },
+    {
+     "language": "java",
+     "code": "import java.sql.Connection;\nimport java.sql.DriverManager;\nimport java.sql.PreparedStatement;\nimport java.sql.SQLException;\n\npublic class JdbcTransactionDemo {\n    public static void main(String[] args) throws SQLException {\n        String url = \"jdbc:postgresql://localhost:5432/shop\";\n\n        try (Connection connection = DriverManager.getConnection(url, \"app\", \"secret\")) {\n            connection.setAutoCommit(false);\n\n            try (PreparedStatement debit = connection.prepareStatement(\n                         \"UPDATE account SET balance_cents = balance_cents - ? WHERE id = ?\");\n                 PreparedStatement credit = connection.prepareStatement(\n                         \"UPDATE account SET balance_cents = balance_cents + ? WHERE id = ?\")) {\n\n                debit.setLong(1, 2500);\n                debit.setLong(2, 1);\n                debit.executeUpdate();\n\n                credit.setLong(1, 2500);\n                credit.setLong(2, 2);\n                credit.executeUpdate();\n\n                connection.commit();\n            } catch (SQLException error) {\n                connection.rollback();\n                throw error;\n            }\n        }\n    }\n}"
+    }
+   ]
+  },
+  {
+   "id": "build",
+   "title": "Maven and Gradle",
+   "description": "Project files for Maven and the Gradle Kotlin DSL.",
+   "snippets": [
+    {
+     "language": "xml",
+     "code": "<project xmlns=\"http://maven.apache.org/POM/4.0.0\"\n         xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\"\n         xsi:schemaLocation=\"http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd\">\n  <modelVersion>4.0.0</modelVersion>\n\n  <groupId>com.example</groupId>\n  <artifactId>demo</artifactId>\n  <version>1.0.0</version>\n\n  <properties>\n    <maven.compiler.release>21</maven.compiler.release>\n    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>\n  </properties>\n\n  <dependencies>\n    <dependency>\n      <groupId>org.junit.jupiter</groupId>\n      <artifactId>junit-jupiter</artifactId>\n      <version>5.10.2</version>\n      <scope>test</scope>\n    </dependency>\n  </dependencies>\n\n  <build>\n    <plugins>\n      <plugin>\n        <groupId>org.apache.maven.plugins</groupId>\n        <artifactId>maven-surefire-plugin</artifactId>\n        <version>3.2.5</version>\n      </plugin>\n    </plugins>\n  </build>\n</project>"
+    },
+    {
+     "language": "kotlin",
+     "code": "plugins {\n    java\n    application\n}\n\njava {\n    toolchain {\n        languageVersion.set(JavaLanguageVersion.of(21))\n    }\n}\n\nrepositories {\n    mavenCentral()\n}\n\ndependencies {\n    testImplementation(\"org.junit.jupiter:junit-jupiter:5.10.2\")\n    testRuntimeOnly(\"org.junit.platform:junit-platform-launcher:1.10.2\")\n}\n\napplication {\n    mainClass.set(\"com.example.demo.App\")\n}\n\ntasks.test {\n    useJUnitPlatform()\n}"
+    },
+    {
+     "language": "bash",
+     "code": "# Maven: build target/demo-1.0.0.jar and run the tests\nmvn clean package\nmvn test\n\n# Print the resolved dependency graph\nmvn dependency:tree\n\n# Gradle: generate the wrapper once, then use ./gradlew\ngradle wrapper\n./gradlew build\n./gradlew test\n./gradlew dependencies"
+    }
+   ]
+  },
+  {
+   "id": "testing",
+   "title": "Testing",
+   "description": "JUnit 5 tests, assertions and parameterized cases.",
+   "snippets": [
+    {
+     "language": "java",
+     "code": "import org.junit.jupiter.api.Test;\nimport static org.junit.jupiter.api.Assertions.assertEquals;\nimport static org.junit.jupiter.api.Assertions.assertThrows;\n\nclass Calculator {\n    int add(int left, int right) {\n        return left + right;\n    }\n\n    int divide(int left, int right) {\n        return left / right;\n    }\n}\n\nclass CalculatorTest {\n    private final Calculator calculator = new Calculator();\n\n    @Test\n    void addsTwoPositiveNumbers() {\n        assertEquals(7, calculator.add(3, 4));\n    }\n\n    @Test\n    void rejectsDivisionByZero() {\n        ArithmeticException error = assertThrows(\n                ArithmeticException.class,\n                () -> calculator.divide(10, 0));\n        assertEquals(\"/ by zero\", error.getMessage());\n    }\n}"
+    },
+    {
+     "language": "java",
+     "code": "import org.junit.jupiter.params.ParameterizedTest;\nimport org.junit.jupiter.params.provider.CsvSource;\nimport static org.junit.jupiter.api.Assertions.assertEquals;\n\nclass ScoreTest {\n    static String grade(int points) {\n        if (points >= 90) {\n            return \"A\";\n        }\n        if (points >= 80) {\n            return \"B\";\n        }\n        if (points >= 70) {\n            return \"C\";\n        }\n        return \"F\";\n    }\n\n    @ParameterizedTest\n    @CsvSource({\"95, A\", \"85, B\", \"75, C\", \"40, F\"})\n    void mapsPointsToGrade(int points, String expected) {\n        assertEquals(expected, grade(points));\n    }\n}"
+    }
+   ]
+  },
+  {
+   "id": "common-errors",
+   "title": "Common Errors",
+   "description": "Runtime traps that compile cleanly and fail later.",
+   "snippets": [
+    {
+     "language": "java",
+     "code": "public class NullAndEquals {\n    public static void main(String[] args) {\n        // NullPointerException: unboxing a null Integer\n        Integer count = null;\n        // int total = count;                  // would throw NullPointerException\n        int total = count == null ? 0 : count; // safe default\n        System.out.println(total);\n\n        // == compares references; equals compares characters\n        String first = \"java\";\n        String second = new String(\"java\");\n        System.out.println(first == second);      // false\n        System.out.println(first.equals(second)); // true\n    }\n}"
+    },
+    {
+     "language": "java",
+     "code": "import java.util.ArrayList;\nimport java.util.List;\n\npublic class DivisionAndIteration {\n    public static void main(String[] args) {\n        // Integer division truncates, so add a floating point operand\n        int half = 5 / 2;              // 2\n        double precise = 5 / 2.0;      // 2.5\n        System.out.println(half + \" vs \" + precise);\n\n        // removeIf is safe; removing inside a for-each throws\n        // ConcurrentModificationException\n        List<String> names = new ArrayList<>(List.of(\"ana\", \"bruno\", \"carla\"));\n        names.removeIf(name -> name.startsWith(\"b\"));\n        System.out.println(names);\n\n        // Valid indexes are 0 through length - 1\n        int[] values = {10, 20, 30};\n        int last = values[values.length - 1];   // 30\n        System.out.println(last);\n    }\n}"
+    },
+    {
+     "language": "java",
+     "code": "import java.util.HashMap;\nimport java.util.Map;\n\npublic class KeyContract {\n    // Records generate equals and hashCode that agree with each other\n    record User(String email) {}\n\n    public static void main(String[] args) {\n        Map<User, Integer> visits = new HashMap<>();\n        visits.put(new User(\"ana@example.com\"), 1);\n\n        // Lookup works because equal records have equal hash codes\n        System.out.println(visits.get(new User(\"ana@example.com\")));   // 1\n\n        // A class that overrides equals but not hashCode breaks this lookup\n    }\n}"
+    }
+   ]
+  }
+ ]
+}

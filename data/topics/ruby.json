@@ -1,0 +1,276 @@
+{
+ "slug": "ruby",
+ "title": "Ruby",
+ "label": "Ruby",
+ "group": "Language",
+ "color": "#CC342D",
+ "desc": "Dynamic, object-oriented language built around blocks, mixins, and convention over configuration.",
+ "sections": [
+  {
+   "id": "setup",
+   "title": "Setup",
+   "description": "Check the interpreter, start a bundle, and run a script",
+   "snippets": [
+    {
+     "language": "bash",
+     "code": "# Check the interpreter on the PATH\nruby -v\n\n# Open the interactive shell\nirb\n\n# Evaluate a one-line script\nruby -e 'puts \"hello from Ruby\"'\n\n# Run a file\nruby greet.rb"
+    },
+    {
+     "language": "ruby",
+     "code": "# frozen_string_literal: true\n\n# greet.rb\n# Usage: ruby greet.rb Grace\nname = ARGV.first || \"world\"\nputs \"hello, #{name}\""
+    },
+    {
+     "language": "bash",
+     "code": "# Start a Gemfile in the current directory\nbundle init\n\n# Add gems and record them in the Gemfile\nbundle add rack\nbundle add minitest --group test\n\n# Install exactly what the lockfile records\nbundle install\n\n# Run a script with the bundle's versions\nbundle exec ruby greet.rb"
+    }
+   ]
+  },
+  {
+   "id": "syntax",
+   "title": "Syntax",
+   "description": "Comments, variables, expression values, and naming conventions",
+   "snippets": [
+    {
+     "language": "ruby",
+     "code": "# frozen_string_literal: true\n\n# A comment runs to the end of the line.\nname = \"Grace\"        # local variables are snake_case\nage = 36\nMAX_TRIES = 3         # constants start with an uppercase letter\n\n# Interpolation only happens inside double quotes.\nputs \"hello, #{name}\"\nputs 'hello, #{name}'\n\n# Parentheses are optional around arguments.\nputs age + 1\n\n# Every expression returns a value.\nstatus = age >= 18 ? \"adult\" : \"minor\"\nputs \"#{name} is #{status}\"\n\n# Semicolons are optional; two spaces per indent level."
+    },
+    {
+     "language": "ruby",
+     "code": "first, second = 10, 20\nfirst, second = second, first\nputs first   # 20\nputs second  # 10\n\nhead, *tail = [1, 2, 3, 4]\nputs head           # 1\nputs tail.inspect   # [2, 3, 4]\n\n# Underscore-prefixed names signal unused values.\n_, kept = [\"drop\", \"keep\"]\nputs kept           # keep"
+    },
+    {
+     "language": "ruby",
+     "code": "def valid?(value)      # ? marks a predicate\n  !value.nil?\nend\n\ndef normalize!(text)   # ! warns of mutation or surprise\n  text.strip!\n  text\nend\n\ntitle = \"  ruby  \"\nnormalize!(title)\nputs title          # ruby\nputs valid?(title)  # true"
+    }
+   ]
+  },
+  {
+   "id": "types",
+   "title": "Types",
+   "description": "Numbers, symbols, nil, ranges, and explicit conversions",
+   "snippets": [
+    {
+     "language": "ruby",
+     "code": "count = 42\nratio = 0.75\nlabel = :ruby         # Symbol: immutable, interned name\nactive = true\nmissing = nil\n\nputs count.class      # Integer\nputs ratio.class      # Float\nputs label.class      # Symbol\nputs missing.nil?     # true\n\nputs 7 / 2                 # 2, integer division\nputs 7.0 / 2               # 3.5\nputs 2**10                 # 1024\nputs 10.divmod(3).inspect  # [3, 1]\nputs 0.1 + 0.2             # 0.30000000000000004"
+    },
+    {
+     "language": "ruby",
+     "code": "puts \"42\".to_i          # 42\nputs \"3.5\".to_f         # 3.5\nputs Integer(\"42\")      # 42\nputs Float(\"3.5\")       # 3.5\nputs 42.to_s            # 42\nputs :ruby.to_s         # ruby\nputs \"ruby\".to_sym      # ruby\n\n# Strict conversions raise instead of returning zero.\nbegin\n  Integer(\"forty-two\")\nrescue ArgumentError\n  puts \"not a number\"\nend\n\nputs nil.to_a.inspect   # []\nputs nil.to_s.inspect   # \"\""
+    },
+    {
+     "language": "ruby",
+     "code": "puts (1..5).to_a.inspect      # [1, 2, 3, 4, 5]\nputs (1...5).to_a.inspect     # [1, 2, 3, 4]\nputs (\"a\"..\"c\").to_a.inspect  # [\"a\", \"b\", \"c\"]\n\n# Only false and nil are falsy.\n[0, \"\", [], false, nil].each do |value|\n  puts \"#{value.inspect} => #{value ? 'truthy' : 'falsy'}\"\nend"
+    }
+   ]
+  },
+  {
+   "id": "strings",
+   "title": "Strings",
+   "description": "Quoting, interpolation, formatting, and heredocs",
+   "snippets": [
+    {
+     "language": "ruby",
+     "code": "name = \"  Grace Hopper  \"\nputs name.strip                  # Grace Hopper\nputs name.strip.upcase           # GRACE HOPPER\nputs name.include?(\"Hopper\")     # true\nputs name.start_with?(\"  G\")     # true\nputs name.length                 # 16\nputs name[2, 5]                  # Grace\nputs name.split.inspect          # [\"Grace\", \"Hopper\"]\nputs \"a,b,c\".split(\",\").inspect  # [\"a\", \"b\", \"c\"]\nputs \"banana\".sub(\"a\", \"o\")      # bonana\nputs \"banana\".gsub(\"a\", \"o\")     # bonono\nputs \"ruby\".center(8, \"-\")       # --ruby--\nputs \"7\".rjust(3, \"0\")           # 007"
+    },
+    {
+     "language": "ruby",
+     "code": "printf(\"%s scored %d points\\n\", \"Ada\", 98)\nputs format(\"%.2f\", 3.14159)      # 3.14\nputs \"id-%03d\" % 7                # id-007\nputs \"%s/%s\" % [\"2024\", \"11\"]     # 2024/11\n\nprice = 19.5\nputs \"total: $#{price * 2}\"       # total: $39.0\nputs \"total: $%.2f\" % (price * 2) # total: $39.00"
+    },
+    {
+     "language": "ruby",
+     "code": "text = <<~TEXT\n  Dear Grace,\n  Your balance is #{40 + 2}.\nTEXT\nputs text\n\n# Double-quoted strings are mutable unless frozen.\ngreeting = +\"hello\"   # unary + gives an unfrozen copy\ngreeting << \"!\"\nputs greeting         # hello!\nputs greeting.frozen? # false"
+    }
+   ]
+  },
+  {
+   "id": "collections",
+   "title": "Arrays and Hashes",
+   "description": "Arrays, hashes, and the methods that replace manual loops",
+   "snippets": [
+    {
+     "language": "ruby",
+     "code": "fruits = %w[apple banana cherry]\nfruits << \"date\"               # shovel appends\nfruits.push(\"elderberry\")\nputs fruits.inspect            # [\"apple\", \"banana\", \"cherry\", \"date\", \"elderberry\"]\nputs fruits[0]                 # apple\nputs fruits[-1]                # elderberry\nputs fruits.first(2).inspect   # [\"apple\", \"banana\"]\nputs fruits.length             # 5\nputs fruits.include?(\"banana\") # true\nputs fruits.join(\", \")\n\nputs [3, 1, 3, 2].uniq.sort.inspect     # [1, 2, 3]\nputs [1, [2, [3, 4]]].flatten.inspect   # [1, 2, 3, 4]\nputs [nil, 1, nil, 2].compact.inspect   # [1, 2]\nputs [4, 8, 15].sum                     # 27"
+    },
+    {
+     "language": "ruby",
+     "code": "inventory = { apples: 12, pears: 4, plums: 0 }\nputs inventory[:apples]          # 12\ninventory[:pears] += 1\ninventory[:kiwis] = 9\nputs inventory.fetch(:apples)    # 12\nputs inventory.fetch(:mango, 0)  # 0, default when missing\nputs inventory.key?(:plums)      # true\n\ninventory.each { |item, qty| puts \"#{item}: #{qty}\" }\nputs inventory.keys.inspect\nputs inventory.transform_values { |qty| qty * 2 }.inspect\nputs inventory.select { |_, qty| qty.zero? }.keys.inspect  # [:plums]"
+    },
+    {
+     "language": "ruby",
+     "code": "votes = Hash.new(0)              # missing keys read as 0\n%w[red blue red green red].each { |color| votes[color] += 1 }\nputs votes.inspect               # counts per color\n\nconfig = { db: { host: \"localhost\", port: 5432 } }\nputs config.dig(:db, :port)      # 5432\np config.dig(:db, :user)        # nil\n\nqueue = [1, 2, 3]\nputs queue.shift                 # 1, removes from the front\nqueue.unshift(0)\nputs queue.inspect               # [0, 2, 3]\nputs queue.pop                   # 3"
+    }
+   ]
+  },
+  {
+   "id": "control-flow",
+   "title": "Control Flow",
+   "description": "Conditionals, case matching, and the loop forms worth using",
+   "snippets": [
+    {
+     "language": "ruby",
+     "code": "score = 82\n\nif score >= 90\n  grade = \"A\"\nelsif score >= 80\n  grade = \"B\"\nelse\n  grade = \"C\"\nend\nputs grade                       # B\n\nputs \"pass\" if score >= 60       # modifier form\nputs \"not zero\" unless score.zero?"
+    },
+    {
+     "language": "ruby",
+     "code": "def classify(value)\n  case value\n  when 1..5 then \"low\"\n  when 6..10 then \"high\"\n  when String then \"text\"\n  else \"unknown\"\n  end\nend\n\nputs classify(3)      # low\nputs classify(\"x\")    # text\nputs classify(99)     # unknown\n\nhour = 14\ncase\nwhen hour < 6 then puts \"night\"\nwhen hour < 12 then puts \"morning\"\nwhen hour < 18 then puts \"afternoon\"\nelse puts \"evening\"\nend"
+    },
+    {
+     "language": "ruby",
+     "code": "i = 0\nwhile i < 3\n  puts \"while #{i}\"\n  i += 1\nend\n\nuntil i.zero?\n  i -= 1\nend\nputs i          # 0\n\n3.times { |n| puts \"time #{n}\" }\n1.upto(3) { |n| puts \"up #{n}\" }\n3.downto(1) { |n| puts \"down #{n}\" }\n(1..5).step(2) { |n| puts \"step #{n}\" }"
+    }
+   ]
+  },
+  {
+   "id": "blocks",
+   "title": "Blocks and Iterators",
+   "description": "Closures passed to methods, with yield and Enumerable",
+   "snippets": [
+    {
+     "language": "ruby",
+     "code": "numbers = [1, 2, 3, 4, 5]\nputs numbers.map { |n| n * 2 }.inspect                  # [2, 4, 6, 8, 10]\nputs numbers.select(&:even?).inspect                    # [2, 4]\nputs numbers.reject(&:odd?).inspect                     # [2, 4]\nputs numbers.reduce(0) { |sum, n| sum + n }             # 15\nputs numbers.sum                                        # 15\n%w[ant bee cat].each_with_index { |name, i| puts \"#{i}: #{name}\" }\nputs numbers.each_with_object([]) { |n, acc| acc << n * n }.inspect"
+    },
+    {
+     "language": "ruby",
+     "code": "words = %w[apple pie cherry]\n\n# Braces bind tightly; do...end binds to the outer call.\nputs words.map { |w| w.upcase }.join(\" \")   # APPLE PIE CHERRY\n\nwords.each do |word|\n  puts word.length\nend\n\ntotal = words.map do |word|\n  word.length\nend.sum\nputs total   # 14"
+    },
+    {
+     "language": "ruby",
+     "code": "def wrap\n  puts \"[start]\"\n  yield \"payload\" if block_given?\n  puts \"[end]\"\nend\n\nwrap { |body| puts body.upcase }\nwrap\n\ndef apply_twice(value)\n  yield(yield(value))\nend\nputs apply_twice(3) { |n| n + 1 }   # 5"
+    }
+   ]
+  },
+  {
+   "id": "methods",
+   "title": "Methods",
+   "description": "Positional, keyword, and splat arguments with implicit returns",
+   "snippets": [
+    {
+     "language": "ruby",
+     "code": "def greet(name, greeting = \"hello\")\n  \"#{greeting}, #{name}\"\nend\n\nputs greet(\"Grace\")        # hello, Grace\nputs greet(\"Ada\", \"hi\")    # hi, Ada\n\ndef connect(host:, port: 5432, timeout: 5)\n  \"host=#{host} port=#{port} timeout=#{timeout}\"\nend\n\nputs connect(host: \"localhost\")\nputs connect(host: \"db.internal\", port: 6432)"
+    },
+    {
+     "language": "ruby",
+     "code": "def stats(*numbers, scale: 1)\n  return 0, 0.0 if numbers.empty?\n  total = numbers.sum * scale\n  [total, total.to_f / numbers.size]\nend\n\ntotal, average = stats(4, 8, 12, scale: 2)\nputs total     # 48\nputs average   # 16.0\n\ndef options(**flags)\n  flags\nend\nputs options(color: \"red\", size: 3).inspect  # collected as a hash"
+    },
+    {
+     "language": "ruby",
+     "code": "def even?(n)\n  n % 2 == 0\nend\n\ndef shout(text) = text.upcase + \"!\"\n\nputs even?(10)       # true\nputs shout(\"ruby\")   # RUBY!"
+    }
+   ]
+  },
+  {
+   "id": "classes",
+   "title": "Classes",
+   "description": "State, inheritance, and immutable value objects",
+   "snippets": [
+    {
+     "language": "ruby",
+     "code": "class Account\n  attr_reader :owner, :balance\n\n  def initialize(owner, balance = 0)\n    @owner = owner\n    @balance = balance\n  end\n\n  def deposit(amount)\n    raise ArgumentError, \"amount must be positive\" unless amount.positive?\n    @balance += amount\n    self\n  end\n\n  def to_s\n    \"#{@owner}: #{format('%.2f', @balance)}\"\n  end\nend\n\nacct = Account.new(\"Grace\")\nacct.deposit(50).deposit(25)\nputs acct.balance   # 75\nputs acct           # calls to_s"
+    },
+    {
+     "language": "ruby",
+     "code": "class Vehicle\n  attr_reader :wheels\n\n  def initialize(wheels)\n    @wheels = wheels\n  end\n\n  def describe\n    \"a vehicle with #{wheels} wheels\"\n  end\nend\n\nclass Bike < Vehicle\n  def initialize\n    super(2)\n  end\n\n  def describe\n    \"a bike: #{super}\"\n  end\nend\n\nputs Bike.new.describe   # a bike: a vehicle with 2 wheels"
+    },
+    {
+     "language": "ruby",
+     "code": "Point = Data.define(:x, :y) do\n  def distance_to_origin\n    Math.sqrt(x**2 + y**2)\n  end\nend\n\np1 = Point.new(x: 3, y: 4)\np2 = Point.new(x: 3, y: 4)\nputs p1.distance_to_origin  # 5.0\nputs p1 == p2               # true, value equality"
+    }
+   ]
+  },
+  {
+   "id": "modules",
+   "title": "Modules and Mixins",
+   "description": "Namespaces, shared behavior, and method lookup order",
+   "snippets": [
+    {
+     "language": "ruby",
+     "code": "module Greeting\n  def greet\n    \"hello from #{self.class}\"\n  end\nend\n\nclass Person\n  include Greeting\nend\n\nputs Person.new.greet   # hello from Person"
+    },
+    {
+     "language": "ruby",
+     "code": "module MathUtil\n  module_function\n\n  def double(n)\n    n * 2\n  end\nend\n\nputs MathUtil.double(21)   # 42\n\nmodule Version\n  VERSION = \"2.1.0\"\nend\nputs Version::VERSION"
+    },
+    {
+     "language": "ruby",
+     "code": "module Loud\n  def speak\n    super.upcase\n  end\nend\n\nclass Dog\n  prepend Loud\n\n  def speak\n    \"woof\"\n  end\nend\n\nputs Dog.new.speak                  # WOOF\nputs Dog.ancestors.first(3).inspect # [Loud, Dog, Object]"
+    }
+   ]
+  },
+  {
+   "id": "exceptions",
+   "title": "Exceptions",
+   "description": "Rescue, ensure, custom errors, and retry",
+   "snippets": [
+    {
+     "language": "ruby",
+     "code": "def read_age(text)\n  Integer(text)\nrescue ArgumentError\n  warn \"not a number: #{text.inspect}\"\n  0\nensure\n  puts \"checked #{text.inspect}\"\nend\n\nputs read_age(\"36\")\nputs read_age(\"thirty\")"
+    },
+    {
+     "language": "ruby",
+     "code": "class InsufficientFunds < StandardError\n  def initialize(needed)\n    super(\"short by #{needed}\")\n  end\nend\n\ndef withdraw(balance, amount)\n  raise InsufficientFunds, amount - balance if amount > balance\n  balance - amount\nend\n\nbegin\n  withdraw(50, 80)\nrescue InsufficientFunds => e\n  puts e.message   # short by 30\nend\n\nputs withdraw(50, 20)   # 30"
+    },
+    {
+     "language": "ruby",
+     "code": "attempts = 0\n\nbegin\n  attempts += 1\n  raise \"connection refused\" if attempts < 3\n  puts \"connected on attempt #{attempts}\"\nrescue RuntimeError => e\n  retry if attempts < 3\n  puts \"gave up: #{e.message}\"\nend"
+    }
+   ]
+  },
+  {
+   "id": "files",
+   "title": "Files",
+   "description": "Reading, writing, paths, and JSON round trips",
+   "snippets": [
+    {
+     "language": "ruby",
+     "code": "File.write(\"notes.txt\", \"first line\\nsecond line\\n\")\nputs File.read(\"notes.txt\")\n\nFile.open(\"notes.txt\", \"a\") do |file|\n  file.puts \"third line\"\nend\n\nFile.foreach(\"notes.txt\") { |line| puts line.chomp }\nputs File.exist?(\"notes.txt\")   # true\nputs File.size(\"notes.txt\")     # 34"
+    },
+    {
+     "language": "ruby",
+     "code": "require \"fileutils\"\n\nputs File.basename(\"/tmp/report.csv\")   # report.csv\nputs File.dirname(\"/tmp/report.csv\")    # /tmp\nputs File.extname(\"/tmp/report.csv\")    # .csv\n\nFileUtils.mkdir_p(\"tmp/out\")\nDir.glob(\"data/*.csv\").sort.each { |name| puts name }\nputs File.join(\"data\", \"notes.txt\")     # data/notes.txt"
+    },
+    {
+     "language": "ruby",
+     "code": "require \"json\"\n\nFile.write(\"config.json\", JSON.generate({ port: 5432 }))\nconfig = JSON.parse(File.read(\"config.json\"))\nputs config[\"port\"]   # 5432"
+    }
+   ]
+  },
+  {
+   "id": "gems",
+   "title": "Gems and Bundler",
+   "description": "Declaring dependencies, locking versions, and packaging",
+   "snippets": [
+    {
+     "language": "ruby",
+     "code": "# Gemfile\nsource \"https://rubygems.org\"\n\nruby \"3.3.0\"\n\ngem \"rack\", \"~> 3.1\"\ngem \"rake\", \"~> 13.2\"\n\ngroup :test do\n  gem \"minitest\", \"~> 5.25\"\nend"
+    },
+    {
+     "language": "bash",
+     "code": "# Install one gem at a pinned version\ngem install rack -v 3.1.8\n\n# Show installed versions of a gem\ngem list rack\n\n# Add a dependency without editing the Gemfile by hand\nbundle add faraday\n\n# Show gems that have newer releases\nbundle outdated\n\n# Update one gem, keeping the rest locked\nbundle update rack"
+    },
+    {
+     "language": "ruby",
+     "code": "# greet.gemspec\nGem::Specification.new do |spec|\n  spec.name = \"greet\"\n  spec.version = \"0.1.0\"\n  spec.summary = \"Print a greeting from the command line\"\n  spec.authors = [\"Grace Hopper\"]\n  spec.files = Dir[\"lib/**/*.rb\", \"bin/*\"]\n  spec.bindir = \"bin\"\n  spec.executables = [\"greet\"]\n  spec.required_ruby_version = \">= 3.1\"\nend"
+    }
+   ]
+  },
+  {
+   "id": "testing",
+   "title": "Testing",
+   "description": "Minitest and RSpec with the commands that run them",
+   "snippets": [
+    {
+     "language": "ruby",
+     "code": "require \"minitest/autorun\"\n\nclass Calculator\n  def self.add(a, b)\n    raise ArgumentError, \"negatives not allowed\" if a.negative? || b.negative?\n    a + b\n  end\nend\n\nclass CalculatorTest < Minitest::Test\n  def test_adds_two_numbers\n    assert_equal 5, Calculator.add(2, 3)\n  end\n\n  def test_rejects_negative_input\n    error = assert_raises(ArgumentError) { Calculator.add(-1, 2) }\n    assert_equal \"negatives not allowed\", error.message\n  end\nend"
+    },
+    {
+     "language": "ruby",
+     "code": "# spec/calculator_spec.rb\nrequire \"calculator\"\n\nRSpec.describe Calculator do\n  it \"adds two numbers\" do\n    expect(described_class.add(2, 3)).to eq(5)\n  end\n\n  it \"rejects negative input\" do\n    expect { described_class.add(-1, 2) }.to raise_error(ArgumentError)\n  end\nend"
+    },
+    {
+     "language": "bash",
+     "code": "# Run the whole RSpec suite\nbundle exec rspec\n\n# Run one file and one example by line number\nbundle exec rspec spec/calculator_spec.rb:6\n\n# Run Minitest through Rake\nbundle exec rake test\n\n# Run a Minitest file directly\nruby -Itest test/calculator_test.rb"
+    }
+   ]
+  }
+ ]
+}

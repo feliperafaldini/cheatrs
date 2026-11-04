@@ -1,0 +1,278 @@
+{
+ "slug": "vim",
+ "title": "Vim",
+ "label": "Vim",
+ "group": "Tool",
+ "color": "#019733",
+ "desc": "Modal text editor where edits are commands composed from an operator and a motion.",
+ "sections": [
+  {
+   "id": "setup",
+   "title": "Setup",
+   "description": "Install Vim, confirm what the build supports, and open files with the cursor already placed.",
+   "snippets": [
+    {
+     "language": "bash",
+     "code": "# Check the version and the feature list first\nvim --version | head -n 3\n\n# Debian and Ubuntu install a minimal vim-tiny by default\nsudo apt install vim\n\n# macOS ships an old binary; Homebrew keeps a current one\nbrew install vim\n\n# Windows\nwinget install --id vim.vim -e"
+    },
+    {
+     "language": "bash",
+     "code": "# Start on line 42 of a file\nvim +42 notes.md\n\n# Read-only session, saving needs an explicit bang\nvim -R report.txt\n\n# One tab page per file\nvim -p src/main.rs src/lib.rs tests/render.rs\n\n# Skip every vimrc and plugin for this session only\nvim --clean notes.md"
+    }
+   ]
+  },
+  {
+   "id": "modes",
+   "title": "Modes",
+   "description": "Normal mode is home; every other mode is a short visit that Escape ends.",
+   "snippets": [
+    {
+     "language": "text",
+     "code": "Normal      keys are commands, not text; Escape returns here\nInsert      i a o O I A, Escape goes back\nVisual      v by character, V by line, Ctrl-v by block\nReplace     R overwrites, gR keeps the layout of the text\nCommand     : opens the ex line, / and ? open a search\nTerminal    :terminal runs a shell inside a window"
+    },
+    {
+     "language": "vim",
+     "code": "\" Run one Normal command without leaving Insert\n<C-o>dd\n\n\" Type a character by its decimal code point\n<C-v>233\n\n\" While still in Insert: delete a word, then paste a register\n<C-w>\n<C-r>0"
+    }
+   ]
+  },
+  {
+   "id": "moving",
+   "title": "Moving",
+   "description": "Motions accept a count, so a few keystrokes cover long distances.",
+   "snippets": [
+    {
+     "language": "vim",
+     "code": "h j k l     \" one character left, down, up, right\nw b e       \" next word start, previous word start, word end\nge          \" end of the previous word\n0 ^ $       \" first column, first non-blank, end of line\ng_          \" last non-blank character\n\n3w          \" three words forward\n12j         \" twelve lines down"
+    },
+    {
+     "language": "vim",
+     "code": "gg          \" first line of the buffer\nG           \" last line\n42G         \" line 42, same as :42 and 42gg\n%           \" matching bracket\n{  }        \" previous and next paragraph\nH  M  L     \" top, middle and bottom of the screen\n\n<C-d> <C-u> \" half a screen down and up\n<C-f> <C-b> \" a full screen down and up\nzz          \" centre the cursor line"
+    }
+   ]
+  },
+  {
+   "id": "editing",
+   "title": "Editing",
+   "description": "Operators wait for a motion or a text object, so one grammar covers every change.",
+   "snippets": [
+    {
+     "language": "vim",
+     "code": "dw      \" delete to the next word\nd2w     \" delete two words\nd$      \" delete to the end of the line, same as D\ndd      \" delete the whole line\n3dd     \" delete three lines\n\ncw      \" change to the end of the word\ncc      \" change the whole line, same as S\nC       \" change to the end of the line"
+    },
+    {
+     "language": "vim",
+     "code": "yy      \" yank the line\np       \" paste after the cursor or below the line\nP       \" paste before\nx       \" delete the character under the cursor, same as dl\nX       \" delete the character before the cursor\nr-      \" overwrite one character with a dash\n~       \" swap the case of one character\nJ       \" join the next line, with one space"
+    },
+    {
+     "language": "vim",
+     "code": "\" The last change can be replayed wherever the cursor lands\nciw     \" change the word under the cursor\nreport  \" type the replacement, then press Escape\nw       \" move to the next word\n.       \" apply the same change there\n\nu       \" undo the last change\n<C-r>   \" redo it"
+    }
+   ]
+  },
+  {
+   "id": "visual",
+   "title": "Visual Mode",
+   "description": "Select first, then run an operator on exactly what is highlighted.",
+   "snippets": [
+    {
+     "language": "vim",
+     "code": "v       \" character-wise selection\nV       \" line-wise selection\n<C-v>   \" block selection\ngv      \" reselect the last selection\no       \" move the cursor to the other end\n\nd  y  c \" delete, yank or change the selection\n>  <    \" indent or outdent; the dot command repeats it"
+    },
+    {
+     "language": "vim",
+     "code": "\" Block insert: comment out the next three lines\n<C-v>jjI// <Esc>\n\n\" Block append: a semicolon at the end of each line\n<C-v>jjA;<Esc>\n\n\" Replace every selected character with a dash\n<C-v>jjr-"
+    },
+    {
+     "language": "vim",
+     "code": "\" A visual selection is also a range for ex commands\n:'<,'>normal A;      \" append a semicolon to each line\n:'<,'>sort           \" sort the selected lines\n:'<,'>!column -t     \" pipe the lines through an external filter"
+    }
+   ]
+  },
+  {
+   "id": "search",
+   "title": "Search",
+   "description": "A search is a motion, so every command that takes a motion also takes a match.",
+   "snippets": [
+    {
+     "language": "vim",
+     "code": "/pattern    \" search forward\n?pattern    \" search backward\nn           \" next match in the same direction\nN           \" previous match\n*           \" search the word under the cursor, forwards\n#           \" the same word, backwards\ng*          \" like *, but also matches inside longer words"
+    },
+    {
+     "language": "vim",
+     "code": ":set incsearch           \" preview the match while typing\n:set hlsearch            \" keep every match highlighted\n:nohlsearch              \" clear the highlight until the next search\n:set ignorecase smartcase   \" lowercase finds any case, capitals narrow it\n\n/error\\c                 \" ignore case for this pattern only\n/error\\C                 \" force case sensitivity"
+    },
+    {
+     "language": "vim",
+     "code": "\" Matches work as the right-hand side of an operator\nd/end       \" delete up to the next occurrence of end\nc?begin     \" change back to the previous begin\n\n\" Park the cursor on the last character of the match\n/function/e"
+    }
+   ]
+  },
+  {
+   "id": "replace",
+   "title": "Replace",
+   "description": "Substitute acts on a range, and the range defaults to the current line.",
+   "snippets": [
+    {
+     "language": "vim",
+     "code": ":s/teh/the/         \" first occurrence on this line\n:s/teh/the/g        \" every occurrence on this line\n:%s/teh/the/g       \" every line in the buffer\n:%s/teh/the/gc      \" ask before each replacement\n:5,20s/teh/the/g    \" only lines 5 to 20"
+    },
+    {
+     "language": "vim",
+     "code": "\" Trailing whitespace, silently, across the whole file\n:%s/\\s\\+$//e\n\n\" Swap two comma-separated fields with very magic mode\n:%s/\\v(\\w+), (\\w+)/\\2 \\1/g\n\n\" An empty pattern reuses the last search\n:%s//replacement/g\n\n\" A carriage return in the replacement splits the line\n:%s/; /\\r/g"
+    }
+   ]
+  },
+  {
+   "id": "registers",
+   "title": "Registers",
+   "description": "Every delete and yank lands in a register; a quote in front of the command picks which one.",
+   "snippets": [
+    {
+     "language": "vim",
+     "code": ":registers          \" every register and its contents\n\"ayy                \" yank this line into register a\n\"ap                 \" paste register a after the cursor\n\"Ayy                \" append this line to register a\n\nyy                  \" a yank also lands in register 0\np                   \" paste from the unnamed register\n\"0p                 \" paste the last yank, even after a delete"
+    },
+    {
+     "language": "vim",
+     "code": "\"+y     \" the system clipboard, needs +clipboard\n\"+p     \" paste from the system clipboard\n\"*y     \" the X11 primary selection on Linux\n\"_dd    \" the black hole, leaves other registers untouched\n\"-p     \" the small delete register, for deletes under a line\n\"1p     \" the newest of the numbered delete registers"
+    },
+    {
+     "language": "vim",
+     "code": "\" Put text into a register from an expression\n:let @a = \"reviewed\"\n\"ap                 \" paste reviewed\n\n\" The expression register evaluates what you type\n<C-r>=2*21<CR>      \" insert 42 while in Insert mode\n:put =strftime('%Y-%m-%d')   \" insert today's date on a new line"
+    }
+   ]
+  },
+  {
+   "id": "macros",
+   "title": "Macros",
+   "description": "A macro is a register full of keystrokes, recorded once and replayed anywhere.",
+   "snippets": [
+    {
+     "language": "vim",
+     "code": "qa          \" record into register a\nA;<Esc>     \" append a semicolon, then leave Insert\nj           \" move down one line\nq           \" stop recording\n\n@a          \" replay the macro once\n@@          \" replay the last macro again\n5@a         \" replay it five times"
+    },
+    {
+     "language": "vim",
+     "code": "\" A macro is text, so it can be edited like text\n:put a              \" dump register a into the buffer\n\" edit the keys, select only those lines, then yank them back\n\"ay                 \" store the selection in register a\n\n:%normal @a         \" run the macro on every line"
+    }
+   ]
+  },
+  {
+   "id": "buffers",
+   "title": "Buffers",
+   "description": "A buffer is the file in memory; a window is only a viewport onto it.",
+   "snippets": [
+    {
+     "language": "vim",
+     "code": ":ls                 \" list open buffers with numbers and flags\n:e notes.md         \" load a file into a new buffer\n:b 3                \" switch to buffer number 3\n:b notes            \" switch to the buffer whose name matches notes\n:bn  :bp            \" next and previous buffer\n:bfirst  :blast     \" first and last buffer\n<C-^>               \" toggle to the alternate buffer"
+    },
+    {
+     "language": "vim",
+     "code": ":bd                 \" unload this buffer, keep the window open\n:bd 3 5             \" unload buffers 3 and 5\n:bwipeout           \" remove the buffer together with its marks\n:bufdo %s/TODO/DONE/ge | update   \" edit every buffer and save it"
+    }
+   ]
+  },
+  {
+   "id": "windows",
+   "title": "Windows",
+   "description": "Splits inside one tab page share the same list of buffers.",
+   "snippets": [
+    {
+     "language": "vim",
+     "code": ":sp                 \" horizontal split on the same buffer\n:vs notes.md        \" vertical split with another file\n<C-w>s  <C-w>v      \" the same two commands from Normal mode\n<C-w>w              \" cycle through the windows\n<C-w>h  <C-w>j  <C-w>k  <C-w>l   \" move by direction\n<C-w>q              \" close the current window\n<C-w>o              \" keep only this window"
+    },
+    {
+     "language": "vim",
+     "code": "<C-w>=              \" equalise width and height\n<C-w>_              \" maximise the height of this window\n<C-w>|              \" maximise its width\n:resize 24          \" height of 24 rows\n:vertical resize 100   \" width of 100 columns\n\n<C-w>r              \" rotate the windows\n<C-w>x              \" exchange this window with the next\n<C-w>T              \" move this window into its own tab"
+    }
+   ]
+  },
+  {
+   "id": "tabs",
+   "title": "Tabs",
+   "description": "A tab page is a layout of windows, not a file.",
+   "snippets": [
+    {
+     "language": "vim",
+     "code": ":tabnew             \" an empty tab page\n:tabe src/main.rs   \" open a file in a new tab\ngt  gT              \" next and previous tab\n2gt                 \" the second tab\n:tabs               \" list the open tab pages\n:tabclose           \" close the current tab\n:tabonly            \" close every other tab"
+    },
+    {
+     "language": "vim",
+     "code": ":tabmove 0              \" move this tab to the front\n:tabmove                \" move it to the end\n:tabdo %s/foo/bar/ge    \" substitute in every tab\n:tab split              \" copy the current window into a new tab"
+    }
+   ]
+  },
+  {
+   "id": "marks",
+   "title": "Marks",
+   "description": "Marks remember positions, so you can leave a file and return to the exact spot.",
+   "snippets": [
+    {
+     "language": "vim",
+     "code": "ma          \" mark this line as a\n`a          \" jump to the exact column of mark a\n'a          \" jump to the first non-blank of that line\n:marks      \" list every mark and its target\n``          \" the position before the last jump\n`.          \" the line of the last change"
+    },
+    {
+     "language": "vim",
+     "code": "mA          \" uppercase marks are global, across files\n`A          \" open the file and jump to mark A\n\n'[  ']      \" start and end of the last change or yank\ng;  g,      \" walk the change list backwards and forwards\n<C-o> <C-i> \" walk the jump list backwards and forwards\n:delmarks a \" forget one lowercase mark\n:delmarks!  \" forget every lowercase mark"
+    }
+   ]
+  },
+  {
+   "id": "ex-commands",
+   "title": "Ex Commands",
+   "description": "The colon line edits by address, and Normal mode commands can be replayed over a range.",
+   "snippets": [
+    {
+     "language": "vim",
+     "code": ":1,10d          \" delete lines 1 to 10\n:.,$d           \" delete from here to the end\n:%y             \" yank the whole buffer\n:5,15normal A;  \" append a semicolon to lines 5 to 15\n:g/^#/d         \" delete every line that starts with a hash\n:v/TODO/d       \" delete every line that does not contain TODO"
+    },
+    {
+     "language": "vim",
+     "code": ":r !date +%F        \" insert today's date below the cursor\n:r !ls -1           \" insert a directory listing\n:!make test         \" run a shell command and show its output\n:terminal           \" a shell in a window, leave it with exit\n:earlier 10m        \" go back ten minutes in the undo tree"
+    },
+    {
+     "language": "vim",
+     "code": "\" Addresses accept marks and search patterns\n:'a,'bd             \" the lines between marks a and b\n:/begin/,/end/d     \" from the next begin to the next end\n\n\" Save a copy and keep editing the original\n:saveas draft.md"
+    }
+   ]
+  },
+  {
+   "id": "config",
+   "title": "Configuration",
+   "description": "The vimrc is a script run at startup: options, mappings and autocommands live there.",
+   "snippets": [
+    {
+     "language": "vim",
+     "code": "\" Ask Vim which file it actually loaded\n:echo $MYVIMRC\n:edit $MYVIMRC\n:source $MYVIMRC    \" apply it without restarting\n\n\" Windows reads $HOME\\_vimrc instead of ~/.vimrc\n:edit ~/_vimrc"
+    },
+    {
+     "language": "vim",
+     "code": "set nocompatible\nfiletype plugin indent on\nsyntax on\n\nset number relativenumber\nset cursorline\nset scrolloff=6\nset ignorecase smartcase\nset incsearch hlsearch\nset expandtab shiftwidth=4 softtabstop=4\nset undofile\nset signcolumn=yes\nset mouse=a"
+    },
+    {
+     "language": "vim",
+     "code": "let mapleader = \" \"          \" space; declare it before any mapping\n\nnnoremap <leader>w :write<CR>\nnnoremap <leader>e :edit $MYVIMRC<CR>\ninoremap jk <Esc>\nxnoremap <leader>y \"+y\n\naugroup trim_trailing_whitespace\n  autocmd!\n  autocmd BufWritePre *.rs,*.py,*.md keeppatterns %s/\\s\\+$//e\naugroup END"
+    }
+   ]
+  },
+  {
+   "id": "plugins",
+   "title": "Plugins",
+   "description": "Vim has a package loader built in; vim-plug adds fetching, updating and cleanup commands.",
+   "snippets": [
+    {
+     "language": "bash",
+     "code": "# One-time install of the plugin manager\ncurl -fLo ~/.vim/autoload/plug.vim --create-dirs \\\n  https://raw.githubusercontent.com/junegunn/vim-plug/master/plug.vim"
+    },
+    {
+     "language": "vim",
+     "code": "call plug#begin('~/.vim/plugged')\n\nPlug 'tpope/vim-surround'                  \" add, change and delete surrounding pairs\nPlug 'junegunn/fzf', { 'do': { -> fzf#install() } }\nPlug 'preservim/nerdtree', { 'on': 'NERDTreeToggle' }\nPlug 'airblade/vim-gitgutter'\n\ncall plug#end()"
+    },
+    {
+     "language": "vim",
+     "code": ":PlugInstall      \" fetch everything declared in the vimrc\n:PlugUpdate       \" update the installed plugins\n:PlugClean        \" remove plugins no longer declared\n:PlugStatus       \" what is installed and what is missing\n:PlugDiff         \" review the changes from the last update"
+    }
+   ]
+  }
+ ]
+}

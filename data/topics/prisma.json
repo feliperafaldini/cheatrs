@@ -1,0 +1,259 @@
+{
+ "slug": "prisma",
+ "title": "Prisma",
+ "label": "Prisma",
+ "group": "Library",
+ "color": "#2D3748",
+ "desc": "Type-safe ORM for Node.js and TypeScript with a declarative schema, migrations and a generated client.",
+ "sections": [
+  {
+   "id": "setup",
+   "title": "Setup",
+   "description": "Install the Prisma 7 packages, scaffold the project and point the CLI at PostgreSQL.",
+   "snippets": [
+    {
+     "language": "bash",
+     "code": "# Prisma 7 line: CLI, client, and the PostgreSQL driver adapter\nnpm install --save-dev prisma@7 typescript tsx @types/node\nnpm install @prisma/client@7 @prisma/adapter-pg pg dotenv\n\n# Writes prisma/schema.prisma, prisma.config.ts and .env\nnpx prisma init --datasource-provider postgresql"
+    },
+    {
+     "language": "bash",
+     "code": "# The CLI reads .env through prisma.config.ts\ncat > .env <<'EOF'\nDATABASE_URL=\"postgresql://app_user:devsecret@127.0.0.1:5432/warehouse?schema=public\"\nEOF"
+    },
+    {
+     "language": "typescript",
+     "code": "import \"dotenv/config\";\nimport { defineConfig, env } from \"prisma/config\";\n\nexport default defineConfig({\n  schema: \"prisma/schema.prisma\",\n  migrations: {\n    path: \"prisma/migrations\",\n    seed: \"tsx prisma/seed.ts\",\n  },\n  datasource: {\n    url: env(\"DATABASE_URL\"),\n  },\n});"
+    }
+   ]
+  },
+  {
+   "id": "schema",
+   "title": "Schema",
+   "description": "One file holds the generator, the datasource, enums and models the client is built from.",
+   "snippets": [
+    {
+     "language": "prisma",
+     "code": "generator client {\n  provider = \"prisma-client\"\n  output   = \"../src/generated/prisma\"\n}\n\ndatasource db {\n  provider = \"postgresql\"\n}\n\nenum OrderStatus {\n  PENDING\n  PAID\n  SHIPPED\n  CANCELLED\n}\n\nmodel Customer {\n  id        Int      @id @default(autoincrement())\n  email     String   @unique\n  fullName  String\n  createdAt DateTime @default(now())\n\n  orders Order[]\n}\n\nmodel Order {\n  id         Int         @id @default(autoincrement())\n  reference  String      @unique\n  status     OrderStatus @default(PENDING)\n  totalCents Int\n  placedAt   DateTime    @default(now())\n\n  customer   Customer @relation(fields: [customerId], references: [id])\n  customerId Int\n\n  @@index([customerId, placedAt])\n}"
+    },
+    {
+     "language": "bash",
+     "code": "# Parse the schema and report the first error with its line\nnpx prisma validate\n\n# Rewrite the file in canonical form (spacing, alignment, ordering)\nnpx prisma format\n\n# Build the typed client after any model change\nnpx prisma generate"
+    }
+   ]
+  },
+  {
+   "id": "datasource",
+   "title": "Datasource",
+   "description": "Pick a provider in the schema and keep the connection string in Prisma Config.",
+   "snippets": [
+    {
+     "language": "prisma",
+     "code": "datasource db {\n  provider = \"postgresql\"\n  // The URL is not stored here in Prisma 7; it lives in prisma.config.ts\n}"
+    },
+    {
+     "language": "prisma",
+     "code": "datasource db {\n  provider     = \"mysql\"\n  // Emulate foreign keys for databases such as PlanetScale that do not enforce them\n  relationMode = \"prisma\"\n}"
+    },
+    {
+     "language": "bash",
+     "code": "# PostgreSQL, asking the server for TLS\nexport DATABASE_URL=\"postgresql://app_user:devsecret@db.internal:5432/warehouse?sslmode=require\"\n\n# MySQL\nexport DATABASE_URL=\"mysql://app_user:devsecret@db.internal:3306/warehouse\"\n\n# SQLite file, useful for tests and quick local work\nexport DATABASE_URL=\"file:./dev.db\""
+    }
+   ]
+  },
+  {
+   "id": "models",
+   "title": "Models",
+   "description": "Map tables to types with keys, defaults, indexes and PostgreSQL native column types.",
+   "snippets": [
+    {
+     "language": "prisma",
+     "code": "model Product {\n  id         Int      @id @default(autoincrement())\n  sku        String   @unique @db.VarChar(40)\n  title      String   @db.VarChar(160)\n  price      Decimal  @db.Decimal(10, 2)\n  stock      Int      @default(0)\n  metadata   Json?\n  thumbnail  Bytes?\n  tags       String[]\n  releasedOn DateTime @db.Date\n  updatedAt  DateTime @updatedAt\n\n  @@index([title])\n}\n\nmodel WarehouseStock {\n  warehouseId Int\n  productId   Int\n  quantity    Int @default(0)\n\n  @@id([warehouseId, productId])\n  @@map(\"warehouse_stock\")\n}"
+    }
+   ]
+  },
+  {
+   "id": "relations",
+   "title": "Relations",
+   "description": "Connect models through relation fields and choose the action on delete.",
+   "snippets": [
+    {
+     "language": "prisma",
+     "code": "model Author {\n  id      Int      @id @default(autoincrement())\n  email   String   @unique\n  profile Profile?\n  books   Book[]\n}\n\nmodel Profile {\n  id       Int    @id @default(autoincrement())\n  bio      String\n  author   Author @relation(fields: [authorId], references: [id], onDelete: Cascade)\n  // Unique turns the back-reference into a one-to-one relation\n  authorId Int    @unique\n}\n\nmodel Book {\n  id       Int    @id @default(autoincrement())\n  title    String\n  author   Author @relation(fields: [authorId], references: [id], onDelete: Restrict)\n  authorId Int\n  tags     Tag[]\n}\n\nmodel Tag {\n  id    Int    @id @default(autoincrement())\n  label String @unique\n  books Book[]\n}"
+    },
+    {
+     "language": "prisma",
+     "code": "model Student {\n  id       Int          @id @default(autoincrement())\n  name     String\n  courses  Enrollment[]\n}\n\nmodel Course {\n  id       Int          @id @default(autoincrement())\n  code     String       @unique\n  students Enrollment[]\n}\n\nmodel Enrollment {\n  student   Student  @relation(fields: [studentId], references: [id], onDelete: Cascade)\n  studentId Int\n  course    Course   @relation(fields: [courseId], references: [id], onDelete: Cascade)\n  courseId  Int\n  grade     Int?\n  signedAt  DateTime @default(now())\n\n  @@id([studentId, courseId])\n}"
+    }
+   ]
+  },
+  {
+   "id": "migrations",
+   "title": "Migrations",
+   "description": "Version schema changes as SQL files and apply them in development, CI and production.",
+   "snippets": [
+    {
+     "language": "bash",
+     "code": "# Diff the schema against the migrations and create a new SQL file\nnpx prisma migrate dev --name add_order_status\n\n# Prisma 7 no longer generates during migrate; do it explicitly\nnpx prisma generate\n\n# Prototype only: sync the database without writing migration files\nnpx prisma db push"
+    },
+    {
+     "language": "bash",
+     "code": "# Apply every pending migration; safe to run from a deploy job\nnpx prisma migrate deploy\n\n# Show which migrations are applied and which are still waiting\nnpx prisma migrate status\n\n# Record a migration as applied when its SQL was executed by hand\nnpx prisma migrate resolve --applied 20260214120000_add_order_status"
+    },
+    {
+     "language": "bash",
+     "code": "# Drop the development database and replay every migration\nnpx prisma migrate reset\n\n# Seeding is explicit in Prisma 7, including after a reset\nnpx prisma db seed"
+    }
+   ]
+  },
+  {
+   "id": "client",
+   "title": "Client",
+   "description": "Create one adapter-backed client and reuse it for the life of the process.",
+   "snippets": [
+    {
+     "language": "typescript",
+     "code": "import { PrismaPg } from \"@prisma/adapter-pg\";\nimport { PrismaClient } from \"../generated/prisma/client\";\n\nconst globalForPrisma = globalThis as unknown as { prisma?: PrismaClient };\n\nexport const prisma =\n  globalForPrisma.prisma ??\n  new PrismaClient({\n    adapter: new PrismaPg({ connectionString: process.env.DATABASE_URL! }),\n    log: [\"warn\", \"error\"],\n  });\n\n// Reuse the instance across hot reloads instead of opening a pool per reload\nif (process.env.NODE_ENV !== \"production\") {\n  globalForPrisma.prisma = prisma;\n}"
+    },
+    {
+     "language": "typescript",
+     "code": "import { prisma } from \"./prisma\";\n\nasync function main() {\n  await prisma.$connect();\n\n  const customers = await prisma.customer.count();\n  console.log(`${customers} customers`);\n}\n\n// Close the adapter pool so the process can exit without hanging\nprocess.once(\"SIGTERM\", () => {\n  void prisma.$disconnect();\n});\n\nmain().catch(async (error) => {\n  console.error(error);\n  await prisma.$disconnect();\n  process.exitCode = 1;\n});"
+    }
+   ]
+  },
+  {
+   "id": "crud",
+   "title": "CRUD",
+   "description": "Create, read, update and delete rows through the generated model API.",
+   "snippets": [
+    {
+     "language": "typescript",
+     "code": "// Insert one row and get the generated id back\nconst customer = await prisma.customer.create({\n  data: { email: \"grace@example.com\", fullName: \"Grace Hopper\" },\n});\n\n// Insert several rows in one round trip; duplicates are ignored\nawait prisma.product.createMany({\n  data: [\n    { sku: \"KB-01\", title: \"Mechanical keyboard\", price: \"89.90\", stock: 12 },\n    { sku: \"MS-02\", title: \"Wireless mouse\", price: \"39.90\", stock: 30 },\n  ],\n  skipDuplicates: true,\n});\n\n// Insert or update in a single call, keyed by the unique email\nawait prisma.customer.upsert({\n  where: { email: \"ada@example.com\" },\n  update: { fullName: \"Ada Lovelace\" },\n  create: { email: \"ada@example.com\", fullName: \"Ada Lovelace\" },\n});"
+    },
+    {
+     "language": "typescript",
+     "code": "const byEmail = await prisma.customer.findUnique({\n  where: { email: \"grace@example.com\" },\n});\n\nconst paidCustomers = await prisma.customer.findMany({\n  where: { orders: { some: { status: \"PAID\" } } },\n  orderBy: { createdAt: \"desc\" },\n  take: 20,\n});\n\nconst oldestPending = await prisma.order.findFirst({\n  where: { status: \"PENDING\" },\n  orderBy: { placedAt: \"asc\" },\n});"
+    },
+    {
+     "language": "typescript",
+     "code": "await prisma.order.update({\n  where: { reference: \"ORD-1001\" },\n  data: { status: \"SHIPPED\" },\n});\n\nconst cancelled = await prisma.order.updateMany({\n  where: { status: \"PENDING\", placedAt: { lt: new Date(\"2026-01-01\") } },\n  data: { status: \"CANCELLED\" },\n});\n\nawait prisma.order.delete({ where: { reference: \"ORD-0999\" } });\n\nconst removed = await prisma.customer.deleteMany({\n  where: { orders: { none: { status: \"PAID\" } } },\n});"
+    }
+   ]
+  },
+  {
+   "id": "queries",
+   "title": "Queries",
+   "description": "Shape results with select, include, cursors, distinct values and aggregates.",
+   "snippets": [
+    {
+     "language": "typescript",
+     "code": "const customers = await prisma.customer.findMany({\n  select: {\n    email: true,\n    fullName: true,\n    _count: { select: { orders: true } },\n    orders: {\n      select: { reference: true, status: true },\n      orderBy: { placedAt: \"desc\" },\n      take: 3,\n    },\n  },\n});\n\nconst order = await prisma.order.findUnique({\n  where: { reference: \"ORD-1001\" },\n  include: { customer: true },\n});"
+    },
+    {
+     "language": "typescript",
+     "code": "const page = await prisma.product.findMany({\n  orderBy: [{ title: \"asc\" }, { id: \"asc\" }],\n  cursor: { id: 41 },\n  skip: 1,\n  take: 15,\n});\n\n// One row per distinct value of the selected column\nconst statuses = await prisma.order.findMany({\n  distinct: [\"status\"],\n  select: { status: true },\n});"
+    },
+    {
+     "language": "typescript",
+     "code": "const totals = await prisma.order.aggregate({\n  where: { status: \"PAID\" },\n  _sum: { totalCents: true },\n  _avg: { totalCents: true },\n  _count: { _all: true },\n});\n\nconst perCustomer = await prisma.order.groupBy({\n  by: [\"customerId\"],\n  where: { status: \"PAID\" },\n  _sum: { totalCents: true },\n  orderBy: { customerId: \"asc\" },\n});"
+    }
+   ]
+  },
+  {
+   "id": "filters",
+   "title": "Filtering and Sorting",
+   "description": "Narrow rows with comparison, string, logical, date and relation filters.",
+   "snippets": [
+    {
+     "language": "typescript",
+     "code": "const products = await prisma.product.findMany({\n  where: {\n    title: { contains: \"keyboard\", mode: \"insensitive\" },\n    price: { gte: \"50.00\", lt: \"150.00\" },\n    sku: { in: [\"KB-01\", \"KB-02\", \"KB-03\"] },\n    tags: { has: \"wireless\" },\n  },\n  orderBy: { price: \"desc\" },\n});"
+    },
+    {
+     "language": "typescript",
+     "code": "const flagged = await prisma.customer.findMany({\n  where: {\n    OR: [\n      { orders: { some: { status: \"CANCELLED\" } } },\n      { orders: { none: { status: \"PAID\" } } },\n    ],\n    NOT: { email: { endsWith: \"@internal.example\" } },\n  },\n  select: { email: true },\n});\n\nconst vip = await prisma.order.findMany({\n  where: {\n    AND: [\n      { customer: { is: { email: { contains: \"+vip\" } } } },\n      { totalCents: { gt: 10000 } },\n    ],\n  },\n});"
+    },
+    {
+     "language": "typescript",
+     "code": "const placed = await prisma.order.findMany({\n  where: {\n    status: { not: \"CANCELLED\" },\n    placedAt: { gte: new Date(\"2026-01-01\"), lt: new Date(\"2026-07-01\") },\n  },\n  orderBy: [{ status: \"asc\" }, { placedAt: \"desc\" }],\n});"
+    }
+   ]
+  },
+  {
+   "id": "transactions",
+   "title": "Transactions",
+   "description": "Group writes so they commit together or roll back together.",
+   "snippets": [
+    {
+     "language": "typescript",
+     "code": "const [order, product] = await prisma.$transaction([\n  prisma.order.create({\n    data: { reference: \"ORD-1042\", totalCents: 4800, customerId: 7 },\n  }),\n  prisma.product.update({\n    where: { sku: \"KB-01\" },\n    data: { stock: { decrement: 1 } },\n  }),\n]);"
+    },
+    {
+     "language": "typescript",
+     "code": "const order = await prisma.$transaction(\n  async (tx) => {\n    const created = await tx.order.create({\n      data: { reference: \"ORD-1043\", totalCents: 9900, customerId: 7 },\n    });\n\n    await tx.product.update({\n      where: { sku: \"KB-01\" },\n      data: { stock: { decrement: 2 } },\n    });\n\n    return created;\n  },\n  { isolationLevel: \"Serializable\", maxWait: 2000, timeout: 8000 },\n);"
+    }
+   ]
+  },
+  {
+   "id": "raw",
+   "title": "Raw SQL",
+   "description": "Send SQL directly while keeping parameters bound and results typed.",
+   "snippets": [
+    {
+     "language": "typescript",
+     "code": "type RevenueRow = { month: Date; revenue: bigint };\n\nconst rows = await prisma.$queryRaw<RevenueRow[]>`\n  SELECT date_trunc('month', \"placedAt\") AS month,\n         SUM(\"totalCents\")::bigint      AS revenue\n  FROM \"Order\"\n  WHERE \"status\" = 'PAID'\n  GROUP BY 1\n  ORDER BY 1 DESC\n`;"
+    },
+    {
+     "language": "typescript",
+     "code": "const changed = await prisma.$executeRaw`\n  UPDATE \"Product\"\n  SET \"stock\" = \"stock\" - 1\n  WHERE \"sku\" = ${\"KB-01\"} AND \"stock\" > 0\n`;"
+    },
+    {
+     "language": "typescript",
+     "code": "import { Prisma } from \"../generated/prisma/client\";\n\nconst statuses = [\"PAID\", \"SHIPPED\"];\nconst direction = Prisma.raw(\"DESC\");\n\nconst rows = await prisma.$queryRaw`\n  SELECT \"reference\", \"totalCents\"\n  FROM \"Order\"\n  WHERE \"status\" IN (${Prisma.join(statuses)})\n  ORDER BY \"placedAt\" ${direction}\n  LIMIT 25\n`;"
+    }
+   ]
+  },
+  {
+   "id": "seeding",
+   "title": "Seeding",
+   "description": "Insert baseline rows with an idempotent script that runs on demand.",
+   "snippets": [
+    {
+     "language": "typescript",
+     "code": "import \"dotenv/config\";\nimport { PrismaPg } from \"@prisma/adapter-pg\";\nimport { PrismaClient } from \"../src/generated/prisma/client\";\n\nconst prisma = new PrismaClient({\n  adapter: new PrismaPg({ connectionString: process.env.DATABASE_URL! }),\n});\n\nasync function main() {\n  const customer = await prisma.customer.upsert({\n    where: { email: \"ada@example.com\" },\n    update: { fullName: \"Ada Lovelace\" },\n    create: { email: \"ada@example.com\", fullName: \"Ada Lovelace\" },\n  });\n\n  await prisma.order.upsert({\n    where: { reference: \"ORD-1001\" },\n    update: {},\n    create: {\n      reference: \"ORD-1001\",\n      totalCents: 12900,\n      status: \"PAID\",\n      customerId: customer.id,\n    },\n  });\n}\n\nmain()\n  .catch((error) => {\n    console.error(error);\n    process.exitCode = 1;\n  })\n  .finally(() => prisma.$disconnect());"
+    },
+    {
+     "language": "bash",
+     "code": "# prisma.config.ts points migrations.seed at this command\nnpx prisma db seed\n\n# Arguments after -- reach the seed script\nnpx prisma db seed -- --environment development"
+    }
+   ]
+  },
+  {
+   "id": "studio",
+   "title": "Studio",
+   "description": "Browse and edit table data in a local web interface.",
+   "snippets": [
+    {
+     "language": "bash",
+     "code": "# Local table browser on the default port 5555\nnpx prisma studio\n\n# Use another port when 5555 is already taken\nnpx prisma studio --port 4466\n\n# Load an explicit config file\nnpx prisma studio --config ./prisma.config.ts"
+    }
+   ]
+  },
+  {
+   "id": "common-errors",
+   "title": "Common Errors",
+   "description": "Read the error code, then check the connection, constraint or missing row behind it.",
+   "snippets": [
+    {
+     "language": "typescript",
+     "code": "import { Prisma } from \"../generated/prisma/client\";\n\nexport function explain(error: unknown): string {\n  if (error instanceof Prisma.PrismaClientKnownRequestError) {\n    switch (error.code) {\n      case \"P2002\": // unique constraint failed\n        return \"A unique value is already in use.\";\n      case \"P2003\": // foreign key constraint failed\n        return \"A related row is missing or still referenced.\";\n      case \"P2025\": // record required by the operation was not found\n        return \"The record no longer exists.\";\n      default:\n        return `Database error ${error.code}`;\n    }\n  }\n\n  if (error instanceof Prisma.PrismaClientInitializationError) {\n    return \"Cannot reach the database; check DATABASE_URL and that Postgres is up.\";\n  }\n\n  return \"Unexpected database failure.\";\n}"
+    },
+    {
+     "language": "bash",
+     "code": "# Start with the schema and the migration ledger\nnpx prisma validate\nnpx prisma migrate status\n\n# Check the connection without Prisma in the way\npsql \"postgresql://app_user:devsecret@127.0.0.1:5432/warehouse\" -c \"SELECT 1;\"\n\n# Regenerate after editing the schema; Prisma 7 does not do it implicitly\nnpx prisma generate"
+    },
+    {
+     "language": "text",
+     "code": "P1001  Cannot reach the database: wrong host or port, or the container is down\nP1010  Access denied for the user: bad password or no CONNECT privilege\nP2002  Unique constraint failed: a duplicate value for a unique field\nP2003  Foreign key constraint failed: parent row missing or still referenced\nP2025  Record required by update or delete was not found"
+    }
+   ]
+  }
+ ]
+}

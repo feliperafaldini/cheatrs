@@ -1,0 +1,241 @@
+{
+ "slug": "tailwind",
+ "title": "Tailwind",
+ "label": "Tailwind",
+ "group": "Framework",
+ "color": "#06B6D4",
+ "desc": "Utility-first CSS framework that emits only the classes your markup uses, configured directly in CSS.",
+ "sections": [
+  {
+   "id": "setup",
+   "title": "Setup",
+   "description": "Install Tailwind v4 as a Vite plugin or a standalone CLI build, then import it once.",
+   "snippets": [
+    {
+     "language": "bash",
+     "code": "# Vite plugin: the usual path for a bundled app\nnpm install tailwindcss @tailwindcss/vite\n\n# Standalone CLI: compiles a static stylesheet without a bundler\nnpm install -D tailwindcss @tailwindcss/cli\nnpx @tailwindcss/cli -i ./src/input.css -o ./dist/output.css --watch"
+    },
+    {
+     "language": "typescript",
+     "code": "// vite.config.ts: the plugin scans source files and serves the CSS\nimport { defineConfig } from 'vite';\nimport tailwindcss from '@tailwindcss/vite';\n\nexport default defineConfig({\n  plugins: [tailwindcss()],\n});"
+    },
+    {
+     "language": "css",
+     "code": "/* src/input.css: one import brings in every utility and variant */\n@import \"tailwindcss\";\n\n/* Files outside the automatic scan must be listed explicitly */\n@source \"../templates/**/*.html\";"
+    }
+   ]
+  },
+  {
+   "id": "utilities",
+   "title": "Utility Classes",
+   "description": "Single-purpose classes compose in the markup instead of growing a stylesheet.",
+   "snippets": [
+    {
+     "language": "html",
+     "code": "<!-- One class per decision: nothing to name, nothing to purge by hand -->\n<button class=\"rounded-lg bg-cyan-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-cyan-700\">\n  Save changes\n</button>\n\n<!-- Arbitrary values fill the gaps in the default scale -->\n<div class=\"w-[37rem] bg-[#0f172a] p-[18px] text-[13px]\">\n  Exact numbers only where the scale has no step.\n</div>"
+    },
+    {
+     "language": "html",
+     "code": "<!-- Variants stack left to right and target the same utility -->\n<ul class=\"divide-y divide-slate-200 rounded-xl border border-slate-200\">\n  <li class=\"px-4 py-3 hover:bg-slate-50\">Inbox</li>\n  <li class=\"px-4 py-3 hover:bg-slate-50\">Drafts</li>\n</ul>\n\n<!-- Negative values, alpha and feature queries are modifiers too -->\n<div class=\"-mt-2 bg-slate-900/75 supports-[backdrop-filter]:backdrop-blur-md\"></div>"
+    }
+   ]
+  },
+  {
+   "id": "spacing",
+   "title": "Spacing",
+   "description": "Margin, padding and gap share one scale where every step is 0.25rem.",
+   "snippets": [
+    {
+     "language": "html",
+     "code": "<!-- One step on the scale equals 0.25rem, so p-4 is 1rem -->\n<div class=\"p-1\">4px</div>\n<div class=\"p-2\">8px</div>\n<div class=\"p-4\">16px</div>\n<div class=\"p-8\">32px</div>\n<div class=\"p-16\">64px</div>\n\n<!-- v4 derives any whole step from the spacing variable -->\n<div class=\"mt-13 px-[18px]\">52px on top, 18px on the sides</div>"
+    },
+    {
+     "language": "html",
+     "code": "<!-- Axis shorthands: x is inline, y is block -->\n<section class=\"mx-auto max-w-3xl px-6 py-12\">\n  <h2 class=\"mb-6 text-2xl font-semibold\">Release notes</h2>\n  <!-- space-y only adds margin between siblings, never outside -->\n  <div class=\"space-y-3\">\n    <p>First item</p>\n    <p>Second item</p>\n  </div>\n</section>\n\n<!-- Auto margins centre a fixed-width block -->\n<div class=\"mx-auto mt-8 w-full max-w-sm\">Centered</div>"
+    }
+   ]
+  },
+  {
+   "id": "sizing",
+   "title": "Sizing",
+   "description": "Width, height and aspect utilities mix fractions, scales, viewport units and content limits.",
+   "snippets": [
+    {
+     "language": "html",
+     "code": "<!-- Fractions follow the parent; spacing steps are fixed -->\n<div class=\"w-1/2\">Half of the parent</div>\n<div class=\"w-64 max-w-full\">16rem, never wider than the screen</div>\n<img class=\"h-48 w-full object-cover\" src=\"/cover.jpg\" alt=\"Cover\" />\n<section class=\"min-h-dvh\">At least one dynamic viewport height</section>"
+    },
+    {
+     "language": "html",
+     "code": "<!-- size-* sets width and height together -->\n<div class=\"size-10 rounded-full bg-cyan-600\"></div>\n\n<!-- min-w-0 lets a flex child shrink so the text can truncate -->\n<div class=\"flex items-center gap-3\">\n  <p class=\"min-w-0 flex-1 truncate\">A long file name that must not push the toolbar</p>\n</div>\n\n<article class=\"mx-auto w-full max-w-prose px-4\">\n  <p>Comfortable line length for reading.</p>\n</article>"
+    },
+    {
+     "language": "html",
+     "code": "<!-- Aspect ratio reserves space before the image loads -->\n<figure class=\"aspect-video w-full overflow-hidden rounded-xl\">\n  <img class=\"size-full object-cover\" src=\"/still.jpg\" alt=\"\" />\n</figure>"
+    }
+   ]
+  },
+  {
+   "id": "colors",
+   "title": "Colors",
+   "description": "A 50 to 950 palette per hue, with opacity and arbitrary colour values on any utility.",
+   "snippets": [
+    {
+     "language": "html",
+     "code": "<!-- Each hue runs from 50 (lightest) to 950 (darkest) -->\n<div class=\"rounded-lg bg-cyan-50 p-4 text-cyan-900 ring-1 ring-cyan-200\">Info</div>\n<button class=\"bg-cyan-600 text-white hover:bg-cyan-700 active:bg-cyan-800\">Primary</button>\n<p class=\"text-slate-500\">Secondary text</p>\n\n<!-- The slash sets alpha without a second class -->\n<div class=\"bg-slate-900/80 p-4 text-white/70\">Overlay caption</div>"
+    },
+    {
+     "language": "html",
+     "code": "<!-- Gradients: direction plus colour stops -->\n<div class=\"bg-linear-to-r from-cyan-500 via-sky-500 to-blue-600 p-8 text-white\">\n  Gradient panel\n</div>\n\n<!-- Arbitrary colour syntax works anywhere a colour is accepted -->\n<span class=\"bg-[oklch(62%_0.19_250)] px-2 py-1 text-white\">Custom</span>\n<span class=\"border-b-2 border-[#0f172a] pb-0.5\">Underlined</span>"
+    }
+   ]
+  },
+  {
+   "id": "typography",
+   "title": "Typography",
+   "description": "Size, weight, leading and wrapping utilities set a readable type scale.",
+   "snippets": [
+    {
+     "language": "html",
+     "code": "<!-- text-* sets font-size and a matching line-height -->\n<h1 class=\"text-4xl font-bold tracking-tight text-slate-900\">Ship faster with fewer classes</h1>\n<p class=\"mt-3 text-lg leading-relaxed text-slate-600\">\n  Body copy stays readable at a comfortable measure.\n</p>\n<p class=\"mt-1 text-sm font-medium text-slate-500\">Updated 3 minutes ago</p>"
+    },
+    {
+     "language": "html",
+     "code": "<!-- Wrapping and overflow helpers for real copy -->\n<h2 class=\"text-balance text-2xl font-semibold\">A headline that breaks evenly across lines</h2>\n<p class=\"mt-2 text-pretty leading-7 text-slate-600\">Long paragraphs avoid single-word last lines.</p>\n\n<p class=\"line-clamp-3\">Three lines, then an ellipsis, without extra JavaScript.</p>\n<span class=\"block max-w-64 truncate\">report-final-final-v2.xlsx</span>"
+    }
+   ]
+  },
+  {
+   "id": "flex",
+   "title": "Flexbox",
+   "description": "One-dimensional layout with axis control, gaps and grow or shrink behaviour.",
+   "snippets": [
+    {
+     "language": "html",
+     "code": "<!-- Row is the default direction; gap replaces child margins -->\n<nav class=\"flex items-center justify-between gap-4 px-6 py-3\">\n  <a href=\"/\" class=\"text-lg font-semibold\">Acme</a>\n  <div class=\"flex items-center gap-2\">\n    <a href=\"/login\" class=\"text-sm text-slate-600 hover:text-slate-900\">Log in</a>\n    <a href=\"/start\" class=\"rounded-md bg-cyan-600 px-3 py-1.5 text-sm font-medium text-white\">Start</a>\n  </div>\n</nav>"
+    },
+    {
+     "language": "html",
+     "code": "<!-- shrink-0 protects fixed boxes; min-w-0 lets text truncate -->\n<div class=\"flex items-center gap-3\">\n  <img class=\"size-12 shrink-0 rounded-full\" src=\"/avatar.jpg\" alt=\"\" />\n  <div class=\"min-w-0 flex-1\">\n    <p class=\"truncate font-medium\">A long project name that keeps going</p>\n    <p class=\"text-sm text-slate-500\">Edited yesterday</p>\n  </div>\n  <button class=\"shrink-0 rounded-md border border-slate-300 px-3 py-1.5 text-sm\">Open</button>\n</div>"
+    },
+    {
+     "language": "html",
+     "code": "<!-- Stack on small screens, then switch to a row -->\n<div class=\"flex flex-col gap-1 sm:flex-row sm:items-center sm:gap-3\">\n  <span class=\"order-2 text-xs text-slate-500 sm:order-1\">v2.4.0</span>\n  <span class=\"order-1 sm:order-2\">Changelog</span>\n</div>\n\n<!-- wrap keeps a growing tag list inside the card -->\n<div class=\"flex flex-wrap gap-2\">\n  <span class=\"rounded-full bg-slate-100 px-3 py-1 text-xs\">css</span>\n  <span class=\"rounded-full bg-slate-100 px-3 py-1 text-xs\">layout</span>\n</div>"
+    }
+   ]
+  },
+  {
+   "id": "grid",
+   "title": "Grid",
+   "description": "Two-dimensional layout with column counts, spans and explicit templates.",
+   "snippets": [
+    {
+     "language": "html",
+     "code": "<!-- Mobile: one column. Wide: three equal tracks -->\n<div class=\"grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3\">\n  <article class=\"rounded-xl border border-slate-200 p-5\">First</article>\n  <article class=\"rounded-xl border border-slate-200 p-5\">Second</article>\n  <article class=\"rounded-xl border border-slate-200 p-5\">Third</article>\n</div>"
+    },
+    {
+     "language": "html",
+     "code": "<!-- Twelve columns with spans for an editorial layout -->\n<div class=\"grid grid-cols-12 gap-4\">\n  <aside class=\"col-span-12 lg:col-span-3\">Filters</aside>\n  <main class=\"col-span-12 lg:col-span-9\">Results</main>\n</div>\n\n<!-- Place a single item in both axes -->\n<div class=\"grid min-h-64 place-items-center bg-slate-50\">Centered</div>"
+    },
+    {
+     "language": "html",
+     "code": "<!-- Explicit tracks: fixed sidebar, fluid main, three rows -->\n<div class=\"grid grid-cols-[240px_minmax(0,1fr)] grid-rows-[auto_1fr_auto] gap-4\">\n  <header class=\"col-span-2\">Header</header>\n  <aside>Sidebar</aside>\n  <main>Content</main>\n  <footer class=\"col-span-2\">Footer</footer>\n</div>"
+    }
+   ]
+  },
+  {
+   "id": "responsive",
+   "title": "Responsive",
+   "description": "Mobile-first breakpoint prefixes and container queries adapt the same markup.",
+   "snippets": [
+    {
+     "language": "html",
+     "code": "<!-- Base styles are mobile; prefixes apply from that width up -->\n<div class=\"grid grid-cols-1 gap-4 p-4 md:grid-cols-2 lg:grid-cols-3 lg:gap-8\">\n  <article class=\"rounded-xl bg-white p-5 shadow-sm\">One</article>\n  <article class=\"rounded-xl bg-white p-5 shadow-sm\">Two</article>\n  <article class=\"rounded-xl bg-white p-5 shadow-sm\">Three</article>\n</div>\n\n<!-- Default breakpoints: sm 40rem, md 48rem, lg 64rem, xl 80rem, 2xl 96rem -->\n<img class=\"w-full md:w-1/2 lg:w-1/3\" src=\"/photo.jpg\" alt=\"\" />"
+    },
+    {
+     "language": "html",
+     "code": "<!-- max-* targets below a breakpoint; combine two for a range -->\n<nav class=\"hidden max-lg:block\">Mobile menu</nav>\n<div class=\"hidden md:max-lg:flex\">Visible only from 48rem to 64rem</div>"
+    },
+    {
+     "language": "html",
+     "code": "<!-- Container queries respond to the component's own width -->\n<div class=\"@container rounded-xl border border-slate-200 p-4\">\n  <div class=\"grid grid-cols-1 gap-4 @md:grid-cols-2\">\n    <img class=\"aspect-video w-full rounded-lg object-cover\" src=\"/thumb.jpg\" alt=\"\" />\n    <p class=\"text-sm text-slate-600\">The card reflows before the viewport does.</p>\n  </div>\n</div>"
+    }
+   ]
+  },
+  {
+   "id": "states",
+   "title": "Hover and Focus",
+   "description": "Variant prefixes react to pointer, keyboard, form and parent state.",
+   "snippets": [
+    {
+     "language": "html",
+     "code": "<!-- focus-visible keeps the ring for keyboard users only -->\n<button class=\"rounded-md bg-cyan-600 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-cyan-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cyan-600 active:bg-cyan-800 disabled:cursor-not-allowed disabled:opacity-50\">\n  Publish\n</button>"
+    },
+    {
+     "language": "html",
+     "code": "<!-- group-* styles children from the parent's state -->\n<a href=\"/post\" class=\"group flex items-center gap-3 rounded-lg p-3 hover:bg-slate-50\">\n  <span class=\"text-slate-500 group-hover:text-cyan-700\">Read the article</span>\n  <svg class=\"size-4 transition-transform group-hover:translate-x-1\" viewBox=\"0 0 16 16\" aria-hidden=\"true\">\n    <path d=\"M2 8h11M9 3l5 5-5 5\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" />\n  </svg>\n</a>\n\n<!-- peer-* reads the state of an earlier sibling -->\n<label class=\"flex items-center gap-2\">\n  <input type=\"checkbox\" class=\"peer size-4 accent-cyan-600\" />\n  <span class=\"text-slate-400 peer-checked:text-slate-900\">Send me a weekly digest</span>\n</label>"
+    },
+    {
+     "language": "html",
+     "code": "<!-- Data and ARIA variants follow attributes your code already sets -->\n<button data-state=\"open\" class=\"rounded-md px-3 py-1.5 data-[state=open]:bg-cyan-50 data-[state=open]:text-cyan-800\">\n  Filters\n</button>\n\n<input aria-invalid=\"true\" class=\"rounded-md border border-slate-300 aria-invalid:border-red-500\" />\n\n<!-- A parent reacts to a descendant state -->\n<label class=\"flex items-center gap-2 rounded-lg border border-slate-300 p-3 has-[:checked]:border-cyan-500 has-[:checked]:bg-cyan-50\">\n  <input type=\"checkbox\" class=\"size-4 accent-cyan-600\" />\n  <span class=\"text-sm\">Include archived items</span>\n</label>"
+    }
+   ]
+  },
+  {
+   "id": "dark-mode",
+   "title": "Dark Mode",
+   "description": "The dark variant follows the OS by default and can switch to a class or attribute.",
+   "snippets": [
+    {
+     "language": "html",
+     "code": "<!-- No setup: dark: follows the operating system preference -->\n<body class=\"bg-white text-slate-900 dark:bg-slate-950 dark:text-slate-100\">\n  <main class=\"mx-auto max-w-2xl p-6\">\n    <h1 class=\"text-2xl font-semibold\">Dashboard</h1>\n    <p class=\"mt-2 text-slate-600 dark:text-slate-400\">\n      Contrast stays readable in both themes.\n    </p>\n  </main>\n</body>"
+    },
+    {
+     "language": "css",
+     "code": "/* app.css: switch the dark variant to a class instead of the OS setting */\n@import \"tailwindcss\";\n\n/* Now dark: matches .dark and anything inside it */\n@custom-variant dark (&:where(.dark, .dark *));"
+    },
+    {
+     "language": "javascript",
+     "code": "// Run in <head> before first paint so the wrong theme never flashes\nconst stored = localStorage.getItem('theme');\nconst prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;\n\ndocument.documentElement.classList.toggle('dark', stored ? stored === 'dark' : prefersDark);\n\n// Call this from the theme switch\nfunction setTheme(theme) {\n  localStorage.setItem('theme', theme);\n  document.documentElement.classList.toggle('dark', theme === 'dark');\n}"
+    }
+   ]
+  },
+  {
+   "id": "config",
+   "title": "Configuration",
+   "description": "Design tokens, custom utilities and plugins are declared in CSS with at-rules.",
+   "snippets": [
+    {
+     "language": "css",
+     "code": "/* app.css: v4 reads configuration from CSS, no tailwind.config.js */\n@import \"tailwindcss\";\n\n@theme {\n  /* Tokens generate utilities: bg-brand-500, font-display, rounded-card */\n  --color-brand-50: oklch(97% 0.02 200);\n  --color-brand-500: oklch(62% 0.16 200);\n  --color-brand-900: oklch(32% 0.09 200);\n\n  --font-display: \"Satoshi\", system-ui, sans-serif;\n  --radius-card: 1.25rem;\n  --breakpoint-3xl: 120rem;\n}"
+    },
+    {
+     "language": "css",
+     "code": "/* A custom utility still accepts variants such as hover: and lg: */\n@utility content-auto {\n  content-visibility: auto;\n  contain-intrinsic-size: 800px;\n}\n\n/* Named component class built from utilities */\n@layer components {\n  .btn-primary {\n    @apply inline-flex items-center gap-2 rounded-lg bg-cyan-600 px-4 py-2 text-sm font-semibold text-white hover:bg-cyan-700;\n  }\n}"
+    },
+    {
+     "language": "css",
+     "code": "/* Plugins load from CSS and can take their own options */\n@plugin \"@tailwindcss/typography\";\n@plugin \"@tailwindcss/forms\" {\n  strategy: class;\n}\n\n/* Scan templates outside the entry point, skipping generated mail */\n@source \"../templates/**/*.html\";\n@source not \"../templates/email\";"
+    }
+   ]
+  },
+  {
+   "id": "components",
+   "title": "Component Patterns",
+   "description": "Repeated class lists become small components or named classes with variants.",
+   "snippets": [
+    {
+     "language": "html",
+     "code": "<!-- Card: layout, spacing and states in one readable block -->\n<article class=\"group overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm transition hover:shadow-md\">\n  <img class=\"aspect-video w-full object-cover\" src=\"/cover.jpg\" alt=\"\" />\n  <div class=\"space-y-2 p-5\">\n    <h3 class=\"text-lg font-semibold text-slate-900 group-hover:text-cyan-700\">Design tokens in practice</h3>\n    <p class=\"line-clamp-2 text-sm text-slate-600\">How a small set of decisions keeps a product consistent.</p>\n    <a href=\"/post\" class=\"inline-flex items-center gap-1 text-sm font-medium text-cyan-700\">Read more</a>\n  </div>\n</article>"
+    },
+    {
+     "language": "jsx",
+     "code": "// Variants live in one map; layout classes come from the caller\nconst styles = {\n  base: 'inline-flex items-center justify-center gap-2 rounded-lg text-sm font-semibold transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 disabled:opacity-50',\n  primary: 'bg-cyan-600 text-white hover:bg-cyan-700 focus-visible:outline-cyan-600',\n  ghost: 'text-slate-700 hover:bg-slate-100 focus-visible:outline-slate-400',\n};\n\nexport function Button({ variant = 'primary', className = '', ...props }) {\n  return <button className={`${styles.base} ${styles[variant]} ${className}`} {...props} />;\n}"
+    },
+    {
+     "language": "html",
+     "code": "<!-- Form field: label, control, hint and error share one rhythm -->\n<label class=\"block max-w-sm\">\n  <span class=\"mb-1 block text-sm font-medium text-slate-700\">Email address</span>\n  <input\n    type=\"email\"\n    class=\"w-full rounded-lg border border-slate-300 px-3 py-2 text-sm placeholder:text-slate-400 focus:border-cyan-500 focus:ring-2 focus:ring-cyan-200 focus:outline-hidden\"\n    placeholder=\"you@example.com\"\n  />\n  <span class=\"mt-1 block text-sm text-slate-500\">We only use it for receipts.</span>\n</label>"
+    }
+   ]
+  }
+ ]
+}

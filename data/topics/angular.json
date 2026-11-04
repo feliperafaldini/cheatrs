@@ -1,0 +1,236 @@
+{
+ "slug": "angular",
+ "title": "Angular",
+ "label": "Angular",
+ "group": "Framework",
+ "color": "#DD0031",
+ "desc": "Opinionated TypeScript framework with dependency injection, routing and signals built in.",
+ "sections": [
+  {
+   "id": "setup",
+   "title": "Setup",
+   "description": "Install the CLI, scaffold a standalone workspace and start the dev server.",
+   "snippets": [
+    {
+     "language": "bash",
+     "code": "# Install the CLI globally, then create a standalone workspace\nnpm install -g @angular/cli\nng new shop --style=scss --routing --ssr=false\ncd shop\n\n# Daily commands\nng serve --port 4200 --open\nng generate component product-card\nng build --configuration production"
+    },
+    {
+     "language": "typescript",
+     "code": "// src/main.ts: every standalone app bootstraps a root component\nimport { bootstrapApplication } from '@angular/platform-browser';\nimport { appConfig } from './app/app.config';\nimport { AppComponent } from './app/app.component';\n\nbootstrapApplication(AppComponent, appConfig)\n  .catch((err) => console.error(err));"
+    },
+    {
+     "language": "typescript",
+     "code": "// src/app/app.config.ts: application-wide providers live here\nimport { ApplicationConfig, provideZoneChangeDetection } from '@angular/core';\nimport { provideRouter } from '@angular/router';\nimport { routes } from './app.routes';\n\nexport const appConfig: ApplicationConfig = {\n  providers: [\n    provideZoneChangeDetection({ eventCoalescing: true }),\n    provideRouter(routes),\n  ],\n};"
+    }
+   ]
+  },
+  {
+   "id": "components",
+   "title": "Components",
+   "description": "Standalone components own a template, styles and a TypeScript class.",
+   "snippets": [
+    {
+     "language": "typescript",
+     "code": "import { Component, input, output } from '@angular/core';\n\n@Component({\n  selector: 'app-product-card',\n  templateUrl: './product-card.component.html',\n  styleUrl: './product-card.component.scss',\n})\nexport class ProductCardComponent {\n  // Signal inputs: read them like functions\n  readonly name = input.required<string>();\n  readonly price = input(0);\n\n  // Signal output: emit typed payloads to the parent\n  readonly added = output<string>();\n\n  addToCart(): void {\n    this.added.emit(this.name());\n  }\n}"
+    },
+    {
+     "language": "typescript",
+     "code": "import { Component } from '@angular/core';\nimport { ProductCardComponent } from './product-card.component';\n\n@Component({\n  selector: 'app-catalog',\n  imports: [ProductCardComponent],\n  template: `\n    <h2>Catalog</h2>\n    <app-product-card\n      name=\"Mechanical keyboard\"\n      [price]=\"320\"\n      (added)=\"logAdd($event)\" />\n  `,\n})\nexport class CatalogComponent {\n  logAdd(name: string): void {\n    console.log(`${name} added to the cart`);\n  }\n}"
+    }
+   ]
+  },
+  {
+   "id": "templates",
+   "title": "Templates",
+   "description": "Built-in control flow blocks replace most structural directives.",
+   "snippets": [
+    {
+     "language": "html",
+     "code": "<h1>{{ title }}</h1>\n\n@if (products.length > 0) {\n  <ul>\n    @for (product of products; track product.id) {\n      <li>{{ product.name }} - {{ product.price | currency:'BRL' }}</li>\n    } @empty {\n      <li>No products yet.</li>\n    }\n  </ul>\n} @else {\n  <p>Loading catalog...</p>\n}\n\n@switch (status) {\n  @case ('paid') { <span>Paid</span> }\n  @case ('shipped') { <span>On the way</span> }\n  @default { <span>Pending</span> }\n}"
+    },
+    {
+     "language": "html",
+     "code": "<!-- Pipes format values without touching the component -->\n<p>{{ 1299.9 | currency:'BRL':'symbol':'1.2-2' }}</p>\n<p>{{ createdAt | date:'dd/MM/yyyy HH:mm' }}</p>\n<p>{{ description | slice:0:80 }}...</p>\n\n<!-- AsyncPipe unwraps an Observable and unsubscribes for you -->\n@if (orders$ | async; as orders) {\n  <span>{{ orders.length }} orders</span>\n}"
+    }
+   ]
+  },
+  {
+   "id": "bindings",
+   "title": "Bindings",
+   "description": "Move data into the DOM and events back into the class.",
+   "snippets": [
+    {
+     "language": "html",
+     "code": "<!-- Property, attribute, class and style bindings -->\n<img [src]=\"coverUrl\" [alt]=\"title\" />\n<input [attr.aria-label]=\"title\" [disabled]=\"saving\" />\n<div [class.featured]=\"isFeatured\" [style.width.px]=\"240\"></div>\n\n<!-- Event binding reads the native event -->\n<button type=\"button\" (click)=\"save()\">Save</button>\n<input [value]=\"email\" (input)=\"email = $any($event.target).value\" />"
+    },
+    {
+     "language": "typescript",
+     "code": "import { Component, model } from '@angular/core';\n\n@Component({\n  selector: 'app-rating',\n  template: `\n    @for (star of [1, 2, 3, 4, 5]; track star) {\n      <button type=\"button\" (click)=\"value.set(star)\">\n        {{ star <= value() ? 'on' : 'off' }}\n      </button>\n    }\n  `,\n})\nexport class RatingComponent {\n  // model() creates a writable input usable as [(value)]=\"score\"\n  readonly value = model(0);\n}"
+    }
+   ]
+  },
+  {
+   "id": "directives",
+   "title": "Directives",
+   "description": "Attach behaviour to elements, or render templates conditionally.",
+   "snippets": [
+    {
+     "language": "typescript",
+     "code": "import { Directive, input } from '@angular/core';\n\n@Directive({\n  selector: '[appHighlight]',\n  // Host bindings update the element without Renderer2\n  host: { '[style.backgroundColor]': 'color()' },\n})\nexport class HighlightDirective {\n  readonly color = input('yellow');\n}"
+    },
+    {
+     "language": "html",
+     "code": "<!-- ngClass and ngStyle take objects with conditional values -->\n<div [ngClass]=\"{ active: isActive, muted: !isActive }\">\n  {{ status }}\n</div>\n\n<div [ngStyle]=\"{ 'font-size.px': 14, 'border-color': accent }\">\n  Styled by directive\n</div>\n\n<!-- Reusable template fragment rendered by ngTemplateOutlet -->\n<ng-template #emptyState>\n  <p>No orders found.</p>\n</ng-template>\n\n@if (orders.length === 0) {\n  <ng-container *ngTemplateOutlet=\"emptyState\" />\n}"
+    }
+   ]
+  },
+  {
+   "id": "services",
+   "title": "Services",
+   "description": "Plain classes that hold shared state and business logic.",
+   "snippets": [
+    {
+     "language": "typescript",
+     "code": "import { Injectable, computed, signal } from '@angular/core';\n\nexport interface CartItem {\n  name: string;\n  price: number;\n  qty: number;\n}\n\n@Injectable({ providedIn: 'root' })\nexport class CartService {\n  private readonly items = signal<CartItem[]>([]);\n\n  // Expose read-only state to components\n  readonly list = this.items.asReadonly();\n  readonly count = computed(() => this.items().reduce((n, i) => n + i.qty, 0));\n  readonly total = computed(() => this.items().reduce((sum, i) => sum + i.price * i.qty, 0));\n\n  add(item: CartItem): void {\n    this.items.update((current) => [...current, item]);\n  }\n\n  clear(): void {\n    this.items.set([]);\n  }\n}"
+    },
+    {
+     "language": "typescript",
+     "code": "import { Injectable } from '@angular/core';\nimport { BehaviorSubject } from 'rxjs';\n\n@Injectable({ providedIn: 'root' })\nexport class ThemeService {\n  private readonly theme = new BehaviorSubject<'light' | 'dark'>('light');\n  readonly theme$ = this.theme.asObservable();\n\n  toggle(): void {\n    this.theme.next(this.theme.value === 'light' ? 'dark' : 'light');\n  }\n}"
+    }
+   ]
+  },
+  {
+   "id": "injection",
+   "title": "Dependency Injection",
+   "description": "Provide dependencies with inject(), tokens and scoped providers.",
+   "snippets": [
+    {
+     "language": "typescript",
+     "code": "import { Injectable, InjectionToken, inject } from '@angular/core';\nimport { HttpClient } from '@angular/common/http';\n\nexport const API_URL = new InjectionToken<string>('API_URL');\n\n@Injectable({ providedIn: 'root' })\nexport class OrderService {\n  private readonly http = inject(HttpClient);\n  private readonly baseUrl = inject(API_URL);\n\n  // Optional dependencies return null when no provider exists\n  private readonly logger = inject(LoggerService, { optional: true });\n\n  list() {\n    return this.http.get<Order[]>(`${this.baseUrl}/orders`);\n  }\n}"
+    },
+    {
+     "language": "typescript",
+     "code": "import { bootstrapApplication } from '@angular/platform-browser';\nimport { AppComponent } from './app/app.component';\nimport { API_URL } from './app/order.service';\n\n// useValue, useClass and useFactory all work with tokens\nbootstrapApplication(AppComponent, {\n  providers: [\n    { provide: API_URL, useValue: 'https://api.shop.dev' },\n  ],\n});"
+    }
+   ]
+  },
+  {
+   "id": "routing",
+   "title": "Routing",
+   "description": "Map URLs to standalone components with lazy loading and guards.",
+   "snippets": [
+    {
+     "language": "typescript",
+     "code": "import { Routes } from '@angular/router';\nimport { authGuard } from './auth.guard';\n\nexport const routes: Routes = [\n  {\n    path: '',\n    loadComponent: () => import('./home/home.component').then((m) => m.HomeComponent),\n  },\n  {\n    path: 'products/:id',\n    loadComponent: () =>\n      import('./product/product.component').then((m) => m.ProductComponent),\n  },\n  {\n    path: 'admin',\n    canActivate: [authGuard],\n    loadChildren: () => import('./admin/admin.routes').then((m) => m.adminRoutes),\n  },\n  { path: '**', redirectTo: '' },\n];"
+    },
+    {
+     "language": "typescript",
+     "code": "import { inject } from '@angular/core';\nimport { CanActivateFn, Router } from '@angular/router';\nimport { AuthService } from './auth.service';\n\n// Functional guard: no class or interface needed\nexport const authGuard: CanActivateFn = () => {\n  const auth = inject(AuthService);\n  const router = inject(Router);\n\n  return auth.isLoggedIn() ? true : router.createUrlTree(['/login']);\n};"
+    },
+    {
+     "language": "html",
+     "code": "<nav>\n  <a routerLink=\"/\" routerLinkActive=\"active\" [routerLinkActiveOptions]=\"{ exact: true }\">Home</a>\n  <a routerLink=\"/products\" routerLinkActive=\"active\">Products</a>\n</nav>\n\n<!-- Routed components render here -->\n<router-outlet />"
+    }
+   ]
+  },
+  {
+   "id": "forms",
+   "title": "Forms",
+   "description": "Typed reactive forms with validation, or template-driven forms with ngModel.",
+   "snippets": [
+    {
+     "language": "typescript",
+     "code": "import { Component, inject } from '@angular/core';\nimport { NonNullableFormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';\n\n@Component({\n  selector: 'app-signup',\n  imports: [ReactiveFormsModule],\n  templateUrl: './signup.component.html',\n})\nexport class SignupComponent {\n  private readonly fb = inject(NonNullableFormBuilder);\n\n  readonly form = this.fb.group({\n    email: ['', [Validators.required, Validators.email]],\n    password: ['', [Validators.required, Validators.minLength(8)]],\n    plan: ['free'],\n  });\n\n  submit(): void {\n    if (this.form.invalid) {\n      this.form.markAllAsTouched();\n      return;\n    }\n    console.log(this.form.getRawValue());\n  }\n}"
+    },
+    {
+     "language": "html",
+     "code": "<form [formGroup]=\"form\" (ngSubmit)=\"submit()\">\n  <label>\n    Email\n    <input type=\"email\" formControlName=\"email\" />\n  </label>\n  @if (form.controls.email.hasError('email')) {\n    <p>Enter a valid email.</p>\n  }\n  @if (form.controls.email.touched && form.controls.email.hasError('required')) {\n    <p>Email is required.</p>\n  }\n\n  <label>\n    Password\n    <input type=\"password\" formControlName=\"password\" />\n  </label>\n\n  <button type=\"submit\" [disabled]=\"form.invalid\">Create account</button>\n</form>"
+    },
+    {
+     "language": "typescript",
+     "code": "import { Component } from '@angular/core';\nimport { FormsModule } from '@angular/forms';\n\n@Component({\n  selector: 'app-search',\n  imports: [FormsModule],\n  template: `\n    <input [(ngModel)]=\"term\" placeholder=\"Search products\" />\n    <p>Searching for: {{ term }}</p>\n  `,\n})\nexport class SearchComponent {\n  term = 'keyboard';\n}"
+    }
+   ]
+  },
+  {
+   "id": "http",
+   "title": "HTTP Client",
+   "description": "Typed requests, interceptors and fetch-based transport.",
+   "snippets": [
+    {
+     "language": "typescript",
+     "code": "import { HttpClient } from '@angular/common/http';\nimport { Injectable, inject } from '@angular/core';\nimport { Observable } from 'rxjs';\n\nexport interface Product {\n  id: number;\n  name: string;\n  price: number;\n}\n\n@Injectable({ providedIn: 'root' })\nexport class ProductService {\n  private readonly http = inject(HttpClient);\n\n  list(): Observable<Product[]> {\n    return this.http.get<Product[]>('https://api.shop.dev/products');\n  }\n\n  get(id: number): Observable<Product> {\n    return this.http.get<Product>(`https://api.shop.dev/products/${id}`);\n  }\n\n  create(body: Omit<Product, 'id'>): Observable<Product> {\n    return this.http.post<Product>('https://api.shop.dev/products', body);\n  }\n}"
+    },
+    {
+     "language": "typescript",
+     "code": "import { ApplicationConfig } from '@angular/core';\nimport {\n  provideHttpClient,\n  withFetch,\n  withInterceptors,\n} from '@angular/common/http';\nimport { authInterceptor } from './auth.interceptor';\n\n// Modern setup: HttpClient comes from a provider, not a module\nexport const appConfig: ApplicationConfig = {\n  providers: [\n    provideHttpClient(withFetch(), withInterceptors([authInterceptor])),\n  ],\n};"
+    },
+    {
+     "language": "typescript",
+     "code": "import { HttpInterceptorFn } from '@angular/common/http';\n\n// Functional interceptor: clone the request and add the header\nexport const authInterceptor: HttpInterceptorFn = (req, next) => {\n  const token = localStorage.getItem('token');\n  if (!token) {\n    return next(req);\n  }\n\n  return next(\n    req.clone({ setHeaders: { Authorization: `Bearer ${token}` } }),\n  );\n};"
+    }
+   ]
+  },
+  {
+   "id": "rxjs",
+   "title": "RxJS",
+   "description": "Compose async streams and bridge them into signals.",
+   "snippets": [
+    {
+     "language": "typescript",
+     "code": "import { Component, inject } from '@angular/core';\nimport { FormControl } from '@angular/forms';\nimport { HttpClient } from '@angular/common/http';\nimport { toSignal } from '@angular/core/rxjs-interop';\nimport { Observable, debounceTime, distinctUntilChanged, switchMap } from 'rxjs';\nimport { Product } from './product.service';\n\n@Component({\n  selector: 'app-search',\n  template: `\n    <input [formControl]=\"query\" placeholder=\"Search\" />\n    @for (product of results(); track product.id) {\n      <p>{{ product.name }}</p>\n    }\n  `,\n})\nexport class SearchComponent {\n  private readonly http = inject(HttpClient);\n\n  readonly query = new FormControl('', { nonNullable: true });\n\n  private search(term: string): Observable<Product[]> {\n    return this.http.get<Product[]>('https://api.shop.dev/products', {\n      params: { q: term },\n    });\n  }\n\n  // switchMap cancels the previous request when a new term arrives\n  readonly results = toSignal(\n    this.query.valueChanges.pipe(\n      debounceTime(300),\n      distinctUntilChanged(),\n      switchMap((term) => this.search(term)),\n    ),\n    { initialValue: [] as Product[] },\n  );\n}"
+    },
+    {
+     "language": "typescript",
+     "code": "import { Component, inject } from '@angular/core';\nimport { takeUntilDestroyed } from '@angular/core/rxjs-interop';\nimport { interval } from 'rxjs';\nimport { ThemeService } from './theme.service';\n\n@Component({ selector: 'app-clock', template: '{{ tick }}' })\nexport class ClockComponent {\n  private readonly theme = inject(ThemeService);\n  tick = 0;\n\n  constructor() {\n    // Automatically unsubscribes when the component is destroyed\n    interval(1000)\n      .pipe(takeUntilDestroyed())\n      .subscribe((value) => (this.tick = value));\n\n    this.theme.theme$.pipe(takeUntilDestroyed()).subscribe(console.log);\n  }\n}"
+    }
+   ]
+  },
+  {
+   "id": "signals",
+   "title": "Signals",
+   "description": "Fine-grained reactivity for local and shared state.",
+   "snippets": [
+    {
+     "language": "typescript",
+     "code": "import { Injectable, computed, effect, signal } from '@angular/core';\n\nexport interface Item {\n  name: string;\n  price: number;\n  qty: number;\n}\n\n@Injectable({ providedIn: 'root' })\nexport class CartStore {\n  readonly items = signal<Item[]>([]);\n\n  // computed re-evaluates only when a dependency changes\n  readonly total = computed(() =>\n    this.items().reduce((sum, item) => sum + item.price * item.qty, 0),\n  );\n  readonly isEmpty = computed(() => this.items().length === 0);\n\n  constructor() {\n    // Side effects run after the signal graph settles\n    effect(() => console.log('cart total', this.total()));\n  }\n\n  add(item: Item): void {\n    this.items.update((list) => [...list, item]);\n  }\n}"
+    },
+    {
+     "language": "typescript",
+     "code": "import { Component, signal } from '@angular/core';\n\n@Component({\n  selector: 'app-counter',\n  template: `\n    <p>Count: {{ count() }}</p>\n    <button type=\"button\" (click)=\"increment()\">+1</button>\n    <button type=\"button\" (click)=\"reset()\">Reset</button>\n  `,\n})\nexport class CounterComponent {\n  readonly count = signal(0);\n\n  increment(): void {\n    this.count.update((value) => value + 1);\n  }\n\n  reset(): void {\n    this.count.set(0);\n  }\n}"
+    }
+   ]
+  },
+  {
+   "id": "testing",
+   "title": "Testing",
+   "description": "TestBed for components and HttpTestingController for requests.",
+   "snippets": [
+    {
+     "language": "typescript",
+     "code": "import { ComponentFixture, TestBed } from '@angular/core/testing';\nimport { ProductCardComponent } from './product-card.component';\n\ndescribe('ProductCardComponent', () => {\n  let fixture: ComponentFixture<ProductCardComponent>;\n\n  beforeEach(async () => {\n    await TestBed.configureTestingModule({\n      imports: [ProductCardComponent],\n    }).compileComponents();\n\n    fixture = TestBed.createComponent(ProductCardComponent);\n    fixture.componentRef.setInput('name', 'Desk lamp');\n    fixture.detectChanges();\n  });\n\n  it('renders the product name', () => {\n    expect(fixture.nativeElement.textContent).toContain('Desk lamp');\n  });\n});"
+    },
+    {
+     "language": "typescript",
+     "code": "import { TestBed } from '@angular/core/testing';\nimport { provideHttpClient } from '@angular/common/http';\nimport {\n  HttpTestingController,\n  provideHttpClientTesting,\n} from '@angular/common/http/testing';\nimport { ProductService } from './product.service';\n\ndescribe('ProductService', () => {\n  let service: ProductService;\n  let http: HttpTestingController;\n\n  beforeEach(() => {\n    TestBed.configureTestingModule({\n      providers: [provideHttpClient(), provideHttpClientTesting()],\n    });\n    service = TestBed.inject(ProductService);\n    http = TestBed.inject(HttpTestingController);\n  });\n\n  afterEach(() => http.verify());\n\n  it('fetches the product list', () => {\n    service.list().subscribe((products) => expect(products.length).toBe(2));\n\n    const req = http.expectOne('https://api.shop.dev/products');\n    expect(req.request.method).toBe('GET');\n    req.flush([\n      { id: 1, name: 'Desk', price: 900 },\n      { id: 2, name: 'Lamp', price: 120 },\n    ]);\n  });\n});"
+    }
+   ]
+  },
+  {
+   "id": "build",
+   "title": "Build and Deploy",
+   "description": "Produce an optimized bundle and tune budgets for production.",
+   "snippets": [
+    {
+     "language": "bash",
+     "code": "# Development build with source maps\nng build\n\n# Production build: optimization, hashing and budgets\nng build --configuration production\n\n# Inspect the result locally\nnpx http-server dist/shop/browser -p 8080"
+    },
+    {
+     "language": "json",
+     "code": "{\n  \"projects\": {\n    \"shop\": {\n      \"architect\": {\n        \"build\": {\n          \"configurations\": {\n            \"production\": {\n              \"outputHashing\": \"all\",\n              \"budgets\": [\n                {\n                  \"type\": \"initial\",\n                  \"maximumWarning\": \"500kB\",\n                  \"maximumError\": \"1MB\"\n                },\n                {\n                  \"type\": \"anyComponentStyle\",\n                  \"maximumWarning\": \"4kB\",\n                  \"maximumError\": \"8kB\"\n                }\n              ]\n            }\n          }\n        }\n      }\n    }\n  }\n}"
+    }
+   ]
+  }
+ ]
+}

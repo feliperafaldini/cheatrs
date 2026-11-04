@@ -1,0 +1,268 @@
+{
+ "slug": "redis",
+ "title": "Redis",
+ "label": "Redis",
+ "group": "Database",
+ "color": "#DC382D",
+ "desc": "In-memory data store used as a cache, message broker and low-latency database.",
+ "sections": [
+  {
+   "id": "setup",
+   "title": "Setup",
+   "description": "Install the server, start it and set the first connection defaults.",
+   "snippets": [
+    {
+     "language": "bash",
+     "code": "# Debian or Ubuntu\nsudo apt update\nsudo apt install redis-server redis-tools\nsudo systemctl enable --now redis-server\n\n# macOS with Homebrew\nbrew install redis\nbrew services start redis\n\n# Confirm the server answers on the default port\nredis-cli PING"
+    },
+    {
+     "language": "bash",
+     "code": "docker run --name redis-cache \\\n  -p 6379:6379 \\\n  -v redis-data:/data \\\n  -d redis:7.4\n\n# Open a client inside the running container\ndocker exec -it redis-cache redis-cli"
+    },
+    {
+     "language": "text",
+     "code": "# redis.conf\nbind 127.0.0.1 -::1\nport 6379\nprotected-mode yes\nrequirepass devsecret\nmaxmemory 512mb\nmaxmemory-policy allkeys-lru\nappendonly yes"
+    }
+   ]
+  },
+  {
+   "id": "connection",
+   "title": "Connection",
+   "description": "Open a client session and inspect how the server sees it.",
+   "snippets": [
+    {
+     "language": "bash",
+     "code": "# Host, port and logical database index\nredis-cli -h 127.0.0.1 -p 6379 -n 2\n\n# Password without the warning banner\nredis-cli -a devsecret --no-auth-warning\n\n# URI form; rediss:// adds TLS\nredis-cli -u redis://default:devsecret@cache.internal:6379/0\nredis-cli -u rediss://cache.internal:6380/0\n\n# Read the password from the environment instead of the command line\nREDISCLI_AUTH=devsecret redis-cli -h 127.0.0.1 PING"
+    },
+    {
+     "language": "bash",
+     "code": "# Name this connection so it is easy to find in CLIENT LIST\nredis-cli CLIENT SETNAME worker-1\nredis-cli CLIENT GETNAME\n\n# Every open connection, with age and last command\nredis-cli CLIENT LIST\nredis-cli CLIENT INFO\n\n# Build, role and uptime of the server\nredis-cli INFO server\nredis-cli INFO replication"
+    }
+   ]
+  },
+  {
+   "id": "strings",
+   "title": "Strings",
+   "description": "Store plain values, counters and byte ranges under a single key.",
+   "snippets": [
+    {
+     "language": "bash",
+     "code": "# Write with a 15 minute lifetime\nSET session:42 \"token-9f2c\" EX 900\nGET session:42\n\n# NX writes only when the key is absent; XX only when it exists\nSET session:42 \"token-9f2c\" NX\nSET session:42 \"token-1a7b\" XX KEEPTTL\n\n# Return the previous value while replacing it\nSET session:42 \"token-77d1\" GET\n\n# Read and delete in one atomic step\nGETDEL session:42"
+    },
+    {
+     "language": "bash",
+     "code": "SET page:views 120\nINCR page:views          # 121\nINCRBY page:views 40     # 161\nDECRBY page:views 5      # 156\nINCRBYFLOAT price:usd 12.50"
+    },
+    {
+     "language": "bash",
+     "code": "APPEND log:line \"first;\"\nAPPEND log:line \"second;\"\nGETRANGE log:line 0 4     # \"first\"\nSTRLEN log:line            # 13\nSETRANGE log:line 6 \"SECOND\"\n\nMSET user:1:name \"Ana\" user:2:name \"Rui\"\nMGET user:1:name user:2:name user:3:name"
+    }
+   ]
+  },
+  {
+   "id": "hashes",
+   "title": "Hashes",
+   "description": "Keep small records as field-value maps without separate keys.",
+   "snippets": [
+    {
+     "language": "bash",
+     "code": "HSET user:1001 name \"Ana Lima\" email \"ana@example.com\" age 34\nHGET user:1001 name\nHMGET user:1001 name email\nHGETALL user:1001\nHKEYS user:1001\nHLEN user:1001\nHEXISTS user:1001 phone"
+    },
+    {
+     "language": "bash",
+     "code": "HINCRBY user:1001 age 1\nHINCRBYFLOAT metrics:cpu 0.75\n\n# Set only when the field does not exist yet\nHSETNX user:1001 country \"BR\"\n\nHDEL user:1001 email\nHSCAN user:1001 0 MATCH \"na*\" COUNT 100"
+    }
+   ]
+  },
+  {
+   "id": "lists",
+   "title": "Lists",
+   "description": "Use insertion-ordered sequences for queues, feeds and stacks.",
+   "snippets": [
+    {
+     "language": "bash",
+     "code": "RPUSH queue:jobs \"render-101\" \"render-102\" \"render-103\"\nLRANGE queue:jobs 0 -1\nLPOP queue:jobs\nRPOP queue:jobs 2\nLLEN queue:jobs\nLINDEX queue:jobs 0"
+    },
+    {
+     "language": "bash",
+     "code": "LPUSH feed:ana \"post-9\" \"post-8\"\n\n# Keep only the newest 50 entries\nLTRIM feed:ana 0 49\n\nLINSERT feed:ana BEFORE \"post-8\" \"post-7\"\nLREM feed:ana 1 \"post-9\"\nLPOS feed:ana \"post-8\""
+    },
+    {
+     "language": "bash",
+     "code": "# Block up to 5 seconds for the next job\nBLPOP queue:jobs 5\n\n# Move atomically, waiting up to 10 seconds for a source item\nBLMOVE queue:jobs queue:active LEFT RIGHT 10"
+    }
+   ]
+  },
+  {
+   "id": "sets",
+   "title": "Sets",
+   "description": "Track unique members and compare groups with set algebra.",
+   "snippets": [
+    {
+     "language": "bash",
+     "code": "SADD tags:post:7 \"redis\" \"cache\" \"backend\"\nSCARD tags:post:7\nSISMEMBER tags:post:7 \"cache\"\nSMISMEMBER tags:post:7 \"cache\" \"sql\"\nSMEMBERS tags:post:7\nSREM tags:post:7 \"backend\""
+    },
+    {
+     "language": "bash",
+     "code": "SADD online:mon \"ana\" \"rui\" \"lia\"\nSADD online:tue \"rui\" \"tom\"\n\nSINTER online:mon online:tue\nSUNION online:mon online:tue\nSDIFF online:mon online:tue\n\nSINTERSTORE both_days online:mon online:tue"
+    },
+    {
+     "language": "bash",
+     "code": "SRANDMEMBER deck 2\nSPOP deck\nSMOVE queue:a queue:b \"job-9\"\nSSCAN tags:post:7 0 MATCH \"c*\""
+    }
+   ]
+  },
+  {
+   "id": "sorted-sets",
+   "title": "Sorted Sets",
+   "description": "Rank members by score and query them by value or range.",
+   "snippets": [
+    {
+     "language": "bash",
+     "code": "ZADD leaderboard 1200 \"ana\" 980 \"rui\" 1450 \"lia\"\n\n# Raise the score only if the new one is higher, count changed members\nZADD leaderboard GT CH 1300 \"ana\"\n\nZRANGE leaderboard 0 -1 WITHSCORES\nZREVRANGE leaderboard 0 2 WITHSCORES\nZSCORE leaderboard \"rui\"\nZRANK leaderboard \"rui\"\nZINCRBY leaderboard 75 \"rui\""
+    },
+    {
+     "language": "bash",
+     "code": "ZADD events 1700000000 \"deploy\" 1700003600 \"rollback\" 1700007200 \"deploy-hotfix\"\nZCOUNT events 1700000000 1700003600\nZRANGEBYSCORE events 1700000000 1700003600 WITHSCORES\n\n# Exclusive lower bound, open upper bound, first two results\nZRANGEBYSCORE events \"(1700000000\" \"+inf\" LIMIT 0 2\nZREMRANGEBYSCORE events \"-inf\" 1700000000"
+    },
+    {
+     "language": "bash",
+     "code": "ZADD names 0 \"ana\" 0 \"bruno\" 0 \"carla\" 0 \"diego\"\nZRANGEBYLEX names \"[bruno\" \"[diego\"\nZRANGEBYLEX names \"-\" \"+\" LIMIT 1 2\nZLEXCOUNT names \"[ana\" \"[carla\""
+    }
+   ]
+  },
+  {
+   "id": "keys",
+   "title": "Keys and Scanning",
+   "description": "Find keys without blocking the server and inspect their metadata.",
+   "snippets": [
+    {
+     "language": "bash",
+     "code": "# One cursor step; call again with the returned cursor until it is 0\nSCAN 0 MATCH \"user:*\" COUNT 200\nSCAN 0 TYPE hash COUNT 500\nSCAN 1240 MATCH \"session:*\" COUNT 200"
+    },
+    {
+     "language": "bash",
+     "code": "EXISTS user:1001 user:1002\nTYPE user:1001\nDBSIZE\nRANDOMKEY\n\nRENAME draft:7 post:7\nCOPY post:7 post:7:backup\nUNLINK temp:upload:9"
+    },
+    {
+     "language": "bash",
+     "code": "# KEYS walks the whole keyspace and blocks the server; use it only in emergencies\nKEYS \"user:*\"\n\nOBJECT ENCODING user:1001\nOBJECT FREQ user:1001     # requires an LFU maxmemory-policy\nOBJECT IDLETIME user:1001"
+    }
+   ]
+  },
+  {
+   "id": "expiration",
+   "title": "Expiration",
+   "description": "Give keys a lifetime and control when it starts or ends.",
+   "snippets": [
+    {
+     "language": "bash",
+     "code": "SET cache:home:1 \"html-v42\" EX 300\nTTL cache:home:1\nPTTL cache:home:1\nPERSIST cache:home:1\n\n# NX applies only when no TTL exists; XX GT extends only a shorter one\nEXPIRE cache:home:1 60 NX\nEXPIRE cache:home:1 120 XX GT\nEXPIRETIME cache:home:1"
+    },
+    {
+     "language": "bash",
+     "code": "SET otp:ana \"481920\" PX 90000\n\n# Keep the value, reset its lifetime\nGETEX otp:ana EX 120\n\n# A short lock that disappears on its own\nSET lock:report \"worker-3\" NX PX 30000"
+    },
+    {
+     "language": "bash",
+     "code": "# Absolute deadlines in Unix time survive relative-TTL drift\nEXPIREAT session:42 1767225600\nPEXPIREAT session:42 1767225600000"
+    }
+   ]
+  },
+  {
+   "id": "pubsub",
+   "title": "Pub/Sub",
+   "description": "Fan out messages to connected subscribers in real time.",
+   "snippets": [
+    {
+     "language": "bash",
+     "code": "# First terminal: wait for messages on two channels\nredis-cli SUBSCRIBE orders:created orders:cancelled\n\n# Second terminal: send one message, the reply counts receivers\nredis-cli PUBLISH orders:created '{\"id\":8123,\"total\":149.90}'"
+    },
+    {
+     "language": "bash",
+     "code": "# Pattern subscription covers every channel with the prefix\nredis-cli PSUBSCRIBE \"orders:*\"\n\nredis-cli PUBSUB CHANNELS \"orders:*\"\nredis-cli PUBSUB NUMSUB orders:created\nredis-cli PUBSUB NUMPAT"
+    },
+    {
+     "language": "bash",
+     "code": "# Sharded pub/sub keeps channels on one cluster slot\nredis-cli SSUBSCRIBE cache:invalidate\nredis-cli SPUBLISH cache:invalidate \"user:1001\""
+    }
+   ]
+  },
+  {
+   "id": "transactions",
+   "title": "Transactions",
+   "description": "Batch commands and guard them with optimistic locking.",
+   "snippets": [
+    {
+     "language": "bash",
+     "code": "# Queue the commands, then run them as one block\nMULTI\nSET account:1:balance 900\nINCRBY account:2:balance 100\nEXEC"
+    },
+    {
+     "language": "bash",
+     "code": "# Discard the queue before EXEC and nothing is applied\nMULTI\nDECRBY stock:sku:44 2\nDISCARD"
+    },
+    {
+     "language": "bash",
+     "code": "# Abort if account:1:balance changes between WATCH and EXEC\nWATCH account:1:balance\nGET account:1:balance\nMULTI\nDECRBY account:1:balance 250\nINCRBY account:2:balance 250\nEXEC\n\n# EXEC replies nil when the watched key was modified by someone else\nUNWATCH"
+    }
+   ]
+  },
+  {
+   "id": "streams",
+   "title": "Streams",
+   "description": "Append an ordered log and consume it with consumer groups.",
+   "snippets": [
+    {
+     "language": "bash",
+     "code": "XADD orders '*' customer \"ana\" total 149.90\n\n# Cap the log near 10000 entries, trimming whole nodes\nXADD orders MAXLEN ~ 10000 '*' customer \"rui\" total 39.50\n\nXLEN orders\nXRANGE orders - + COUNT 10\nXREVRANGE orders + - COUNT 3\nXREAD COUNT 5 BLOCK 2000 STREAMS orders '$'"
+    },
+    {
+     "language": "bash",
+     "code": "# Create the group at the start of the stream, creating the stream if needed\nXGROUP CREATE orders workers 0 MKSTREAM\n\n# '>' means never-delivered entries for this group\nXREADGROUP GROUP workers worker-1 COUNT 10 STREAMS orders '>'\n\nXACK orders workers 1731234567890-0\nXPENDING orders workers\nXPENDING orders workers - + 10"
+    },
+    {
+     "language": "bash",
+     "code": "# Take over entries idle for more than 60 seconds\nXAUTOCLAIM orders workers worker-2 60000 0-0 COUNT 20\nXCLAIM orders workers worker-1 60000 1731234567890-0\n\nXINFO STREAM orders\nXINFO GROUPS orders"
+    }
+   ]
+  },
+  {
+   "id": "persistence",
+   "title": "Persistence",
+   "description": "Choose between snapshots and an append-only file for durability.",
+   "snippets": [
+    {
+     "language": "bash",
+     "code": "# Snapshot in a background child process\nredis-cli BGSAVE\nredis-cli LASTSAVE\nredis-cli INFO persistence\n\n# Replace the automatic snapshot rules at runtime\nredis-cli CONFIG SET save \"3600 1 300 100 60 10000\"\nredis-cli CONFIG GET save"
+    },
+    {
+     "language": "bash",
+     "code": "# Turn on the append-only file and fsync once per second\nredis-cli CONFIG SET appendonly yes\nredis-cli CONFIG SET appendfsync everysec\n\n# Compact the log in the background\nredis-cli BGREWRITEAOF"
+    },
+    {
+     "language": "text",
+     "code": "# redis.conf\ndir /var/lib/redis\ndbfilename dump.rdb\nsave 3600 1 300 100 60 10000\nappendonly yes\nappendfsync everysec\nauto-aof-rewrite-percentage 100"
+    }
+   ]
+  },
+  {
+   "id": "performance",
+   "title": "Performance",
+   "description": "Measure latency, memory and slow commands before tuning.",
+   "snippets": [
+    {
+     "language": "bash",
+     "code": "# Round-trip latency and a live command counter\nredis-cli --latency\nredis-cli --stat\n\n# Largest keys and hottest keys in the dataset\nredis-cli --bigkeys\nredis-cli --hotkeys    # needs an LFU maxmemory-policy"
+    },
+    {
+     "language": "bash",
+     "code": "# Log commands slower than 5 milliseconds\nredis-cli CONFIG SET slowlog-log-slower-than 5000\nredis-cli SLOWLOG GET 10\nredis-cli SLOWLOG RESET\n\nredis-cli LATENCY DOCTOR\nredis-cli LATENCY HISTORY command"
+    },
+    {
+     "language": "bash",
+     "code": "redis-cli INFO memory\nredis-cli MEMORY USAGE user:1001 SAMPLES 0\nredis-cli MEMORY DOCTOR\n\n# Cap memory and evict the least recently used keys when full\nredis-cli CONFIG SET maxmemory 1gb\nredis-cli CONFIG SET maxmemory-policy allkeys-lru"
+    }
+   ]
+  }
+ ]
+}

@@ -1,0 +1,230 @@
+{
+ "slug": "htmx",
+ "title": "htmx",
+ "label": "htmx",
+ "group": "Library",
+ "color": "#3D72D7",
+ "desc": "HTML attributes that send requests, swap fragments and keep pages server-rendered.",
+ "sections": [
+  {
+   "id": "setup",
+   "title": "Setup",
+   "description": "Load htmx 2 from a local build or a CDN and make the first request.",
+   "snippets": [
+    {
+     "language": "bash",
+     "code": "# Install the runtime and copy the browser build next to the other assets\nnpm install htmx.org@2.0.11\ncp node_modules/htmx.org/dist/htmx.min.js public/js/htmx.min.js\n\n# The CDN build works without a bundler\n# https://cdn.jsdelivr.net/npm/htmx.org@2.0.11/dist/htmx.min.js"
+    },
+    {
+     "language": "html",
+     "code": "<!doctype html>\n<html lang=\"en\">\n<head>\n  <meta charset=\"utf-8\">\n  <title>Status board</title>\n  <script src=\"/js/htmx.min.js\" defer></script>\n</head>\n<body hx-boost=\"true\">\n  <h1>Status board</h1>\n  <button hx-get=\"/clock\" hx-target=\"#clock\" hx-swap=\"innerHTML\">Refresh</button>\n  <span id=\"clock\">09:41 UTC</span>\n</body>\n</html>"
+    }
+   ]
+  },
+  {
+   "id": "attributes",
+   "title": "Core Attributes",
+   "description": "The hx-* vocabulary: verbs, targets, swaps and confirmation on plain markup.",
+   "snippets": [
+    {
+     "language": "html",
+     "code": "<section id=\"inbox\">\n  <!-- hx-get and hx-delete pick the HTTP method -->\n  <button hx-get=\"/notifications\" hx-target=\"#list\" hx-swap=\"innerHTML\">Load</button>\n  <button hx-delete=\"/notifications\"\n          hx-target=\"#list\"\n          hx-swap=\"innerHTML\"\n          hx-confirm=\"Delete every notification?\">Clear all</button>\n\n  <!-- the form posts its fields and appends the returned rows -->\n  <form hx-post=\"/notifications\" hx-target=\"#list\" hx-swap=\"beforeend\">\n    <input name=\"text\" value=\"Deploy finished\" required>\n    <button type=\"submit\">Add</button>\n  </form>\n\n  <ul id=\"list\">\n    <li>Nightly backup done</li>\n  </ul>\n</section>"
+    },
+    {
+     "language": "html",
+     "code": "<!-- hx-target and hx-swap are inherited by every descendant -->\n<body hx-target=\"#main\" hx-swap=\"innerHTML\">\n  <nav>\n    <a hx-get=\"/inbox\">Inbox</a>\n    <a hx-get=\"/archive\">Archive</a>\n  </nav>\n  <main id=\"main\">Pick a folder</main>\n</body>"
+    }
+   ]
+  },
+  {
+   "id": "requests",
+   "title": "Requests",
+   "description": "Control what is sent, which headers travel and what the server sends back.",
+   "snippets": [
+    {
+     "language": "html",
+     "code": "<!-- hx-params keeps only the named fields in the body -->\n<form hx-post=\"/preview\" hx-target=\"#preview\" hx-params=\"title, body\">\n  <input name=\"title\" value=\"Q3 review\">\n  <textarea name=\"body\">Revenue grew 12%.</textarea>\n  <input name=\"draft\" value=\"never sent\">\n  <button type=\"submit\">Preview</button>\n</form>\n\n<!-- per-request headers and an 8s timeout -->\n<button hx-get=\"/rates?base=EUR\"\n        hx-headers='{\"X-Client\": \"dashboard\"}'\n        hx-request='{\"timeout\": 8000}'\n        hx-target=\"#rates\">Refresh rates</button>\n<footer id=\"rates\">1 EUR = 1.09 USD</footer>"
+    },
+    {
+     "language": "javascript",
+     "code": "// Add a CSRF token to every request htmx issues\ndocument.body.addEventListener(\"htmx:configRequest\", (event) => {\n  const token = document.querySelector('meta[name=\"csrf-token\"]').content;\n  event.detail.headers[\"X-CSRF-Token\"] = token;\n});\n\n// Trigger a request from plain JavaScript and swap into an existing element\nhtmx.ajax(\"GET\", \"/search?q=lamp\", { target: \"#results\", swap: \"innerHTML\" });"
+    },
+    {
+     "language": "javascript",
+     "code": "// Express: response headers can retarget, reswap and notify the page\napp.post(\"/cart/items\", (req, res) => {\n  res.set(\"HX-Trigger\", \"cart-updated\");\n  res.set(\"HX-Retarget\", \"#cart-panel\");\n  res.set(\"HX-Reswap\", \"outerHTML\");\n  res.send('<div id=\"cart-panel\">3 items, 41.70 EUR</div>');\n});"
+    }
+   ]
+  },
+  {
+   "id": "targets",
+   "title": "Targets",
+   "description": "Point a request at an element with CSS or htmx's extended selectors.",
+   "snippets": [
+    {
+     "language": "html",
+     "code": "<table id=\"tasks\">\n  <tr>\n    <td>Draft budget</td>\n    <td>\n      <!-- closest walks up from the button to the row -->\n      <button hx-get=\"/tasks/42/edit\"\n              hx-target=\"closest tr\"\n              hx-swap=\"outerHTML\">Edit</button>\n    </td>\n  </tr>\n</table>"
+    },
+    {
+     "language": "html",
+     "code": "<!-- hx-select keeps only #main from a full-page response -->\n<a hx-get=\"/reports/2026\"\n   hx-target=\"#main\"\n   hx-select=\"#main\"\n   hx-swap=\"outerHTML\">2026 report</a>\n\n<main id=\"main\"><h1>Reports</h1></main>"
+    },
+    {
+     "language": "html",
+     "code": "<div class=\"field\">\n  <input name=\"coupon\" value=\"SPRING26\">\n  <!-- include the whole field group, swap the sibling hint -->\n  <button hx-post=\"/coupon\"\n          hx-include=\"closest .field\"\n          hx-target=\"next .hint\"\n          hx-swap=\"innerHTML\">Apply</button>\n  <p class=\"hint\">No coupon applied</p>\n</div>"
+    }
+   ]
+  },
+  {
+   "id": "swaps",
+   "title": "Swaps",
+   "description": "Choose how the response lands, when it lands and where the viewport goes.",
+   "snippets": [
+    {
+     "language": "html",
+     "code": "<section id=\"activity\">\n  <h2>Activity</h2>\n  <ul><li>ana opened invoice 1042</li></ul>\n</section>\n\n<!-- wait for the fade, then keep the newest row in view -->\n<button hx-get=\"/activity?page=2\"\n        hx-target=\"#activity\"\n        hx-swap=\"innerHTML swap:120ms settle:80ms scroll:bottom show:top\">\n  Show older\n</button>"
+    },
+    {
+     "language": "html",
+     "code": "<!-- response body: the main fragment plus an out-of-band badge -->\n<div id=\"cart-panel\">3 items, 41.70 EUR</div>\n<span id=\"cart-badge\" hx-swap-oob=\"innerHTML\">3</span>"
+    },
+    {
+     "language": "html",
+     "code": "<!-- delete removes the row without touching its neighbours -->\n<button hx-delete=\"/tasks/42\"\n        hx-target=\"closest tr\"\n        hx-swap=\"outerHTML swap:200ms settle:100ms\">Delete task</button>"
+    }
+   ]
+  },
+  {
+   "id": "triggers",
+   "title": "Triggers",
+   "description": "Decide which browser event fires a request and how often it may fire.",
+   "snippets": [
+    {
+     "language": "html",
+     "code": "<!-- debounce typing, but still react to the search field's own event -->\n<input type=\"search\"\n       name=\"q\"\n       placeholder=\"Search orders\"\n       hx-get=\"/search\"\n       hx-trigger=\"input changed delay:300ms, search\"\n       hx-target=\"#results\"\n       hx-swap=\"innerHTML\">\n<ul id=\"results\"><li>Order 1042</li></ul>"
+    },
+    {
+     "language": "html",
+     "code": "<!-- load once when the element scrolls into view -->\n<div hx-get=\"/feed?page=2\" hx-trigger=\"revealed\" hx-target=\"#feed\" hx-swap=\"beforeend\">\n  Loading page 2\n</div>\n\n<!-- poll every 5 seconds while the page is open -->\n<output hx-get=\"/jobs/status\" hx-trigger=\"every 5s\" hx-swap=\"innerHTML\">queued</output>\n\n<!-- react to an event that bubbles from anywhere in the body -->\n<div hx-get=\"/cart\" hx-trigger=\"cart-updated from:body\" hx-swap=\"innerHTML\"></div>"
+    },
+    {
+     "language": "html",
+     "code": "<!-- key filters restrict the event without extra JavaScript -->\n<input name=\"code\"\n       hx-get=\"/codes/lookup\"\n       hx-trigger=\"keyup[key=='Enter'], blur\"\n       hx-target=\"#code-result\">\n\n<!-- once removes the trigger after the first click -->\n<button hx-post=\"/exports\" hx-trigger=\"click once\" hx-target=\"#exports\">Start export</button>\n<pre id=\"code-result\"></pre>"
+    }
+   ]
+  },
+  {
+   "id": "forms",
+   "title": "Forms",
+   "description": "Submit forms, add fields htmx would not send, and keep the URL in sync.",
+   "snippets": [
+    {
+     "language": "html",
+     "code": "<form hx-post=\"/checkout\" hx-target=\"#summary\" hx-swap=\"outerHTML\">\n  <input name=\"email\" type=\"email\" value=\"ana@example.com\" required>\n  <input name=\"quantity\" type=\"number\" value=\"2\" min=\"1\" max=\"10\">\n  <input type=\"hidden\" name=\"sku\" value=\"LAMP-7\">\n  <button type=\"submit\">Place order</button>\n</form>\n<div id=\"summary\">No order yet</div>"
+    },
+    {
+     "language": "html",
+     "code": "<form id=\"filters\" hx-get=\"/products\" hx-target=\"#grid\" hx-push-url=\"true\">\n  <input name=\"city\" value=\"Lisbon\">\n  <label><input type=\"checkbox\" name=\"instant\" checked> Instant delivery</label>\n  <button type=\"submit\">Filter</button>\n</form>\n\n<select id=\"sort\" name=\"sort\">\n  <option value=\"price\">Price</option>\n  <option value=\"rating\">Rating</option>\n</select>\n\n<!-- pull values from outside the element and add one fixed field -->\n<button hx-get=\"/products\"\n        hx-include=\"#filters, #sort\"\n        hx-vals='{\"page\": 1}'\n        hx-target=\"#grid\">Apply sort</button>"
+    },
+    {
+     "language": "html",
+     "code": "<!-- file inputs need multipart encoding -->\n<form hx-post=\"/receipts\"\n      hx-encoding=\"multipart/form-data\"\n      hx-target=\"#receipts\"\n      hx-swap=\"beforeend\">\n  <input type=\"file\" name=\"receipt\" accept=\"image/png,application/pdf\" required>\n  <button type=\"submit\">Upload</button>\n</form>\n<ul id=\"receipts\"><li>receipt-1041.pdf</li></ul>"
+    }
+   ]
+  },
+  {
+   "id": "validation",
+   "title": "Validation",
+   "description": "Combine native constraint checks with server-side 422 responses.",
+   "snippets": [
+    {
+     "language": "html",
+     "code": "<!-- htmx blocks the request until the browser reports the form valid -->\n<form hx-post=\"/signup\" hx-target=\"#signup-result\">\n  <input name=\"email\" type=\"email\" required>\n  <input name=\"age\" type=\"number\" min=\"18\" max=\"120\" required>\n  <button type=\"submit\">Create account</button>\n</form>\n<p id=\"signup-result\"></p>"
+    },
+    {
+     "language": "javascript",
+     "code": "// A 422 keeps the form on screen: allow the error fragment to be swapped\ndocument.body.addEventListener(\"htmx:beforeSwap\", (event) => {\n  if (event.detail.xhr.status === 422) {\n    event.detail.shouldSwap = true;\n    event.detail.isError = false;\n  }\n});"
+    },
+    {
+     "language": "html",
+     "code": "<!-- validate a single field while it is being typed -->\n<input name=\"email\"\n       type=\"email\"\n       required\n       hx-validate=\"true\"\n       hx-post=\"/signup/validate\"\n       hx-trigger=\"change, keyup changed delay:500ms\"\n       hx-target=\"next .field-error\"\n       hx-swap=\"innerHTML\">\n<p class=\"field-error\">Email is available</p>"
+    }
+   ]
+  },
+  {
+   "id": "indicators",
+   "title": "Loading Indicators",
+   "description": "Show progress with CSS classes, spinners and disabled controls.",
+   "snippets": [
+    {
+     "language": "html",
+     "code": "<button hx-get=\"/price?sku=LAMP-7\" hx-target=\"#price\" hx-indicator=\"#spinner\">\n  Check price\n</button>\n<span id=\"spinner\" class=\"htmx-indicator\" role=\"status\">Loading price</span>\n<p id=\"price\">45.90 EUR</p>"
+    },
+    {
+     "language": "css",
+     "code": "/* htmx adds .htmx-request to the requesting element and to the indicator */\n.htmx-indicator {\n  opacity: 0;\n  transition: opacity 150ms ease;\n}\n\n.htmx-request .htmx-indicator,\n.htmx-request.htmx-indicator {\n  opacity: 1;\n}"
+    },
+    {
+     "language": "html",
+     "code": "<!-- keep the control inert for the duration of the request -->\n<form hx-post=\"/orders\" hx-target=\"#orders\" hx-disabled-elt=\"find button\">\n  <input name=\"sku\" value=\"LAMP-7\" required>\n  <button type=\"submit\">Place order</button>\n</form>\n\n<button hx-post=\"/orders/42/cancel\" hx-disabled-elt=\"this\" hx-target=\"#orders\">\n  Cancel order\n</button>"
+    }
+   ]
+  },
+  {
+   "id": "events",
+   "title": "Events",
+   "description": "Hook into the request lifecycle or listen for events the server sends.",
+   "snippets": [
+    {
+     "language": "javascript",
+     "code": "const toast = document.querySelector(\"#toast\");\n\ndocument.body.addEventListener(\"htmx:beforeRequest\", (event) => {\n  event.detail.elt.classList.add(\"working\");\n});\n\ndocument.body.addEventListener(\"htmx:afterRequest\", (event) => {\n  event.detail.elt.classList.remove(\"working\");\n  if (!event.detail.successful) {\n    toast.textContent = \"Request failed, try again\";\n  }\n});"
+    },
+    {
+     "language": "javascript",
+     "code": "// HX-Trigger: {\"cart-updated\": {\"value\": 3}} fires this handler\ndocument.body.addEventListener(\"cart-updated\", (event) => {\n  console.log(\"cart now holds\", event.detail.value, \"items\");\n});\n\n// React only when the swapped target is the cart itself\ndocument.body.addEventListener(\"htmx:afterSwap\", (event) => {\n  if (event.detail.target.id === \"cart\") {\n    event.detail.target.dataset.updated = \"true\";\n  }\n});"
+    },
+    {
+     "language": "html",
+     "code": "<!-- hx-on:: uses a double colon for htmx's own events -->\n<button hx-get=\"/invoices\"\n        hx-target=\"#invoices\"\n        hx-swap=\"innerHTML\"\n        hx-on::after-request=\"if (event.detail.successful) this.textContent = 'Loaded'\">\n  Load invoices\n</button>\n<ul id=\"invoices\"><li>INV-1042</li></ul>"
+    }
+   ]
+  },
+  {
+   "id": "extensions",
+   "title": "Extensions",
+   "description": "Opt into JSON bodies, DOM morphing and per-status response targets.",
+   "snippets": [
+    {
+     "language": "html",
+     "code": "<script src=\"https://cdn.jsdelivr.net/npm/htmx.org@2.0.11/dist/htmx.min.js\"></script>\n<script src=\"https://cdn.jsdelivr.net/npm/htmx-ext-json-enc@2.0.3/json-enc.js\"></script>\n\n<!-- json-enc sends the fields as an application/json body -->\n<form hx-post=\"/api/orders\" hx-ext=\"json-enc\" hx-target=\"#receipt\">\n  <input name=\"sku\" value=\"LAMP-7\">\n  <input name=\"quantity\" type=\"number\" value=\"2\">\n  <button type=\"submit\">Order</button>\n</form>\n<pre id=\"receipt\">{\"id\": \"ord_8842\", \"total\": 91.8}</pre>"
+    },
+    {
+     "language": "html",
+     "code": "<script src=\"https://cdn.jsdelivr.net/npm/htmx.org@2.0.11/dist/htmx.min.js\"></script>\n<script src=\"https://cdn.jsdelivr.net/npm/idiomorph@0.8.0/dist/idiomorph-ext.min.js\"></script>\n\n<!-- morph preserves focus and scroll while the markup changes -->\n<section id=\"cart\"\n         hx-ext=\"morph\"\n         hx-get=\"/cart\"\n         hx-trigger=\"every 10s\"\n         hx-swap=\"morph\">\n  <h2>Cart</h2>\n  <p>3 items, 41.70 EUR</p>\n</section>"
+    },
+    {
+     "language": "html",
+     "code": "<script src=\"https://cdn.jsdelivr.net/npm/htmx.org@2.0.11/dist/htmx.min.js\"></script>\n<script src=\"https://cdn.jsdelivr.net/npm/htmx-ext-response-targets@2.0.4/response-targets.js\"></script>\n\n<!-- swap a 422 into the error box instead of the success target -->\n<form hx-ext=\"response-targets\"\n      hx-post=\"/login\"\n      hx-target=\"#login-ok\"\n      hx-target-422=\"#login-errors\">\n  <input name=\"email\" type=\"email\" value=\"ana@example.com\" required>\n  <input name=\"password\" type=\"password\" value=\"correct-horse\" required>\n  <button type=\"submit\">Sign in</button>\n</form>\n<div id=\"login-errors\"></div>\n<div id=\"login-ok\"></div>"
+    }
+   ]
+  },
+  {
+   "id": "patterns",
+   "title": "Common Patterns",
+   "description": "Small compositions for endless feeds, inline editing and destructive actions.",
+   "snippets": [
+    {
+     "language": "html",
+     "code": "<ul id=\"rows\">\n  <li>Order 1042, shipped</li>\n  <li>Order 1043, packed</li>\n</ul>\n\n<!-- the sentinel loads the next page and is replaced by the new one -->\n<div hx-get=\"/rows?page=3\"\n     hx-trigger=\"revealed\"\n     hx-target=\"#rows\"\n     hx-swap=\"beforeend\"\n     hx-select=\"li\">Loading page 3</div>"
+    },
+    {
+     "language": "html",
+     "code": "<tr id=\"task-42\">\n  <!-- first click swaps the cell for the edit form -->\n  <td hx-get=\"/tasks/42/edit\"\n      hx-trigger=\"click\"\n      hx-target=\"#task-42\"\n      hx-swap=\"outerHTML\">Draft budget</td>\n  <td>ana@example.com</td>\n</tr>"
+    },
+    {
+     "language": "html",
+     "code": "<tr id=\"task-42\">\n  <td>Draft budget</td>\n  <td>\n    <button hx-delete=\"/tasks/42\"\n            hx-confirm=\"Delete this task?\"\n            hx-target=\"closest tr\"\n            hx-swap=\"outerHTML swap:200ms\">Delete</button>\n  </td>\n</tr>"
+    }
+   ]
+  }
+ ]
+}

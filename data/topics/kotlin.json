@@ -1,0 +1,244 @@
+{
+ "slug": "kotlin",
+ "title": "Kotlin",
+ "label": "Kotlin",
+ "group": "Language",
+ "color": "#7F52FF",
+ "desc": "Concise JVM language with null safety, data classes, and coroutines.",
+ "sections": [
+  {
+   "id": "setup",
+   "title": "Setup",
+   "description": "Install the toolchain, then build and run a project with Gradle",
+   "snippets": [
+    {
+     "language": "bash",
+     "code": "# Install the compiler and runner with SDKMAN\nsdk install kotlin 2.2.0\n\n# Confirm the version on the PATH\nkotlin -version\n\n# Produce a self-contained jar\nkotlinc Main.kt -include-runtime -d app.jar\n\n# Launch it on any Java 17 or newer runtime\njava -jar app.jar"
+    },
+    {
+     "language": "bash",
+     "code": "# Scaffold a Kotlin application with the Gradle Kotlin DSL\ngradle init --type kotlin-application --dsl kotlin --project-name demo --package demo\n\n# Compile and run the application entry point\n./gradlew run\n\n# Run the tests and open the HTML report\n./gradlew test\nxdg-open build/reports/tests/test/index.html"
+    },
+    {
+     "language": "kotlin",
+     "code": "plugins {\n    kotlin(\"jvm\") version \"2.2.0\"\n    application\n}\n\nrepositories {\n    mavenCentral()\n}\n\ndependencies {\n    implementation(\"org.jetbrains.kotlinx:kotlinx-coroutines-core:1.10.2\")\n    testImplementation(kotlin(\"test\"))\n}\n\napplication {\n    mainClass.set(\"demo.MainKt\")\n}\n\ntasks.test {\n    useJUnitPlatform()\n}"
+    }
+   ]
+  },
+  {
+   "id": "syntax",
+   "title": "Syntax",
+   "description": "Entry point, bindings, string templates, and control flow",
+   "snippets": [
+    {
+     "language": "kotlin",
+     "code": "package demo\n\nimport kotlin.math.max\n\nfun main() {\n    val name = \"Ada\"       // read-only binding\n    var visits = 3         // can be reassigned\n    visits += 1\n\n    // Templates accept a bare name or a full expression.\n    println(\"$name has $visits visits, best ${max(41, 7)}\")\n\n    /* Block comments nest, unlike Java. */\n    val grade = when {\n        visits > 4 -> \"regular\"\n        visits > 1 -> \"returning\"\n        else -> \"new\"\n    }\n    println(\"grade: $grade\")\n}"
+    },
+    {
+     "language": "kotlin",
+     "code": "fun main() {\n    for (i in 1..3) print(i)                 // 123\n    println()\n    for (i in 3 downTo 1 step 2) print(i)     // 31\n    println()\n\n    val letter = 'B'\n    println(if (letter in 'A'..'Z') \"upper\" else \"other\") // upper\n\n    var attempts = 0\n    while (attempts < 2) {\n        attempts++\n    }\n    println(attempts) // 2\n}"
+    }
+   ]
+  },
+  {
+   "id": "types",
+   "title": "Types",
+   "description": "Built-in value types, explicit conversions, aliases, and smart casts",
+   "snippets": [
+    {
+     "language": "kotlin",
+     "code": "fun main() {\n    val count: Int = 12\n    val ratio: Double = 0.75\n    val active: Boolean = true\n    val grade: Char = 'A'\n    val note: String = \"ready\"\n\n    // Kotlin never widens numbers implicitly.\n    val widened: Long = count.toLong()\n    val truncated: Int = 3.9.toInt()      // 3\n    val parsed: Int = \"2048\".toInt()\n    val text: String = count.toString()\n\n    println(listOf(widened, truncated, parsed, text, ratio, active, grade, note))\n}"
+    },
+    {
+     "language": "kotlin",
+     "code": "typealias UserId = Long\n\ndata class Point(val x: Int, val y: Int)\n\nfun main() {\n    val id: UserId = 7L\n    val byte: UByte = 255.toUByte()\n    val anything: Any = Point(1, 2)\n\n    // The check lets x be read without a second cast.\n    if (anything is Point) {\n        println(anything.x) // 1\n    }\n    println(\"id=$id byte=$byte\")\n}"
+    }
+   ]
+  },
+  {
+   "id": "null-safety",
+   "title": "Null Safety",
+   "description": "Optional values handled with safe calls, Elvis, and early returns",
+   "snippets": [
+    {
+     "language": "kotlin",
+     "code": "fun main() {\n    val nickname: String? = null\n    val city: String? = \"Recife\"\n\n    // A safe call stops the chain when the receiver is null.\n    println(nickname?.length)      // null\n    println(city?.uppercase())     // RECIFE\n\n    // Elvis chooses a fallback.\n    val label = nickname ?: \"anonymous\"\n    println(label)                 // anonymous\n\n    // let receives the non-null value.\n    city?.let { println(\"city has ${it.length} letters\") } // city has 6 letters\n}"
+    },
+    {
+     "language": "kotlin",
+     "code": "fun describe(value: String?): String {\n    if (value == null) return \"missing\"\n    return \"value is $value\"\n}\n\nfun main() {\n    val raw: String? = \"  \"\n    val cleaned = raw?.trim()?.takeIf { it.isNotEmpty() }\n    println(cleaned ?: \"blank\") // blank\n\n    val forced = requireNotNull(cleaned) { \"cleaned must not be null\" }\n    println(forced.length) // 0\n\n    println(describe(null)) // missing\n}"
+    }
+   ]
+  },
+  {
+   "id": "functions",
+   "title": "Functions",
+   "description": "Defaults, named arguments, varargs, and expression bodies",
+   "snippets": [
+    {
+     "language": "kotlin",
+     "code": "fun greet(name: String, greeting: String = \"hello\"): String = \"$greeting, $name\"\n\nfun total(vararg prices: Int): Int = prices.sum()\n\nfun main() {\n    println(greet(\"Ada\"))                           // hello, Ada\n    println(greet(name = \"Grace\", greeting = \"hi\")) // hi, Grace\n    println(total(4, 8, 15))                        // 27\n\n    // A local function is visible only inside main.\n    fun twice(value: Int) = value * 2\n    println(twice(21)) // 42\n}"
+    },
+    {
+     "language": "kotlin",
+     "code": "tailrec fun factorial(n: Int, acc: Long): Long =\n    if (n <= 1) acc else factorial(n - 1, acc * n)\n\nfun main() {\n    println(factorial(5, 1L)) // 120\n}"
+    }
+   ]
+  },
+  {
+   "id": "classes",
+   "title": "Classes",
+   "description": "Constructors, inheritance, interfaces, and controlled mutation",
+   "snippets": [
+    {
+     "language": "kotlin",
+     "code": "import java.util.Locale\n\nopen class Shape(val name: String) {\n    open fun area(): Double = 0.0\n}\n\nclass Circle(private val radius: Double) : Shape(\"circle\") {\n    override fun area(): Double = Math.PI * radius * radius\n}\n\ninterface Named {\n    val label: String\n    fun shout() = label.uppercase()\n}\n\nclass Badge(override val label: String) : Named\n\nfun main() {\n    val circle = Circle(2.0)\n    println(\"${circle.name}: ${\"%.2f\".format(Locale.ROOT, circle.area())}\") // circle: 12.57\n    println(Badge(\"new\").shout()) // NEW\n}"
+    },
+    {
+     "language": "kotlin",
+     "code": "class Counter(start: Int) {\n    var value: Int = start\n        private set\n\n    val isZero: Boolean\n        get() = value == 0\n\n    init {\n        require(start >= 0) { \"start must not be negative\" }\n    }\n\n    fun increment() {\n        value++\n    }\n\n    companion object {\n        fun fresh(): Counter = Counter(0)\n    }\n}\n\nfun main() {\n    val counter = Counter.fresh()\n    counter.increment()\n    println(counter.value)  // 1\n    println(counter.isZero) // false\n}"
+    }
+   ]
+  },
+  {
+   "id": "data-classes",
+   "title": "Data Classes",
+   "description": "Value semantics from copy, equality, and destructuring",
+   "snippets": [
+    {
+     "language": "kotlin",
+     "code": "data class User(val id: Long, val name: String, val active: Boolean = true)\n\nfun main() {\n    val ada = User(1, \"Ada\")\n    val renamed = ada.copy(name = \"Ada Lovelace\")\n\n    println(ada)            // User(id=1, name=Ada, active=true)\n    println(renamed.name)   // Ada Lovelace\n    println(renamed == ada) // false\n\n    val (id, name) = renamed\n    println(\"$id / $name\")  // 1 / Ada Lovelace\n}"
+    },
+    {
+     "language": "kotlin",
+     "code": "import java.util.Locale\n\ndata class Money(val cents: Long, val currency: String) {\n    init {\n        require(cents >= 0) { \"cents must not be negative\" }\n    }\n\n    val display: String\n        get() = \"%.2f %s\".format(Locale.ROOT, cents / 100.0, currency)\n}\n\nfun main() {\n    val price = Money(1999, \"BRL\")\n    println(price.display)      // 19.99 BRL\n    println(price.component1()) // 1999\n}"
+    }
+   ]
+  },
+  {
+   "id": "collections",
+   "title": "Collections",
+   "description": "Read-only and mutable lists, sets, and maps with their usual operations",
+   "snippets": [
+    {
+     "language": "kotlin",
+     "code": "fun main() {\n    val names = listOf(\"ada\", \"grace\", \"alan\")\n    val scores = mapOf(\"ada\" to 98, \"grace\" to 91)\n    val tags = mutableSetOf(\"jvm\", \"android\")\n\n    tags.add(\"server\")\n\n    println(names[1])                            // grace\n    println(scores[\"alan\"] ?: 0)                 // 0\n    println(names.firstOrNull { it.length > 4 }) // grace\n    println(tags)                                // [jvm, android, server]\n}"
+    },
+    {
+     "language": "kotlin",
+     "code": "data class Order(val id: Int, val total: Int)\n\nfun main() {\n    val orders = listOf(Order(1, 40), Order(2, 75), Order(3, 120))\n\n    val big = orders.filter { it.total >= 75 }\n    val ids = orders.map { it.id }\n    val bySize = orders.groupBy { if (it.total < 100) \"small\" else \"large\" }\n    val sum = orders.sumOf { it.total }\n\n    println(big.map { it.id }) // [2, 3]\n    println(ids)               // [1, 2, 3]\n    println(bySize.keys)       // [small, large]\n    println(sum)               // 235\n}"
+    },
+    {
+     "language": "kotlin",
+     "code": "fun main() {\n    val stock = mutableMapOf(\"tea\" to 3, \"coffee\" to 5)\n    stock[\"tea\"] = stock.getValue(\"tea\") + 2\n    stock.remove(\"coffee\")\n\n    for ((item, count) in stock) {\n        println(\"$item: $count\") // tea: 5\n    }\n}"
+    }
+   ]
+  },
+  {
+   "id": "lambdas",
+   "title": "Lambdas",
+   "description": "Function values, trailing lambdas, and scope helpers",
+   "snippets": [
+    {
+     "language": "kotlin",
+     "code": "fun applyTwice(value: Int, operation: (Int) -> Int): Int =\n    operation(operation(value))\n\nfun main() {\n    println(applyTwice(5) { it * 2 }) // 20\n\n    val add = { a: Int, b: Int -> a + b }\n    println(add(3, 4)) // 7\n\n    val words = listOf(\"pear\", \"fig\", \"banana\")\n    println(words.sortedBy { it.length })           // [fig, pear, banana]\n    println((1..5).fold(0) { acc, n -> acc + n })   // 15\n}"
+    },
+    {
+     "language": "kotlin",
+     "code": "fun main() {\n    val lengths = mutableListOf<Int>()\n\n    val text = \"  kotlin  \"\n        .also { println(\"raw: '$it'\") } // raw: '  kotlin  '\n        .trim()\n        .let { it.uppercase() }\n\n    val result = lengths.apply {\n        add(text.length)\n        add(text.count { ch -> ch == 'T' })\n    }\n\n    println(text)   // KOTLIN\n    println(result) // [6, 1]\n}"
+    }
+   ]
+  },
+  {
+   "id": "extensions",
+   "title": "Extension Functions",
+   "description": "Adding members to existing types without inheritance",
+   "snippets": [
+    {
+     "language": "kotlin",
+     "code": "fun String.initials(): String =\n    split(\" \").filter { it.isNotBlank() }.map { it.first() }.joinToString(\"\")\n\nfun Int.isEven(): Boolean = this % 2 == 0\n\nfun main() {\n    println(\"Ada Lovelace\".initials()) // AL\n    println(7.isEven())                // false\n}"
+    },
+    {
+     "language": "kotlin",
+     "code": "fun String?.orFallback(fallback: String): String =\n    if (this == null || this.isBlank()) fallback else this\n\nval String.wordCount: Int\n    get() = trim().split(Regex(\"\\\\s+\")).count { it.isNotEmpty() }\n\nfun main() {\n    val empty: String? = \"   \"\n    println(empty.orFallback(\"none\"))  // none\n    println(\"one two three\".wordCount) // 3\n}"
+    }
+   ]
+  },
+  {
+   "id": "coroutines",
+   "title": "Coroutines",
+   "description": "Suspending work, structured concurrency, and dispatcher switching",
+   "snippets": [
+    {
+     "language": "kotlin",
+     "code": "import kotlinx.coroutines.delay\nimport kotlinx.coroutines.runBlocking\n\nsuspend fun fetchPrice(item: String): Int {\n    delay(100) // pretend this talks to a server\n    return item.length * 10\n}\n\nfun main() = runBlocking {\n    println(fetchPrice(\"keyboard\")) // 80\n}"
+    },
+    {
+     "language": "kotlin",
+     "code": "import kotlinx.coroutines.async\nimport kotlinx.coroutines.delay\nimport kotlinx.coroutines.launch\nimport kotlinx.coroutines.runBlocking\n\nsuspend fun fetchOne(): Int {\n    delay(100)\n    return 10\n}\n\nsuspend fun fetchTwo(): Int {\n    delay(100)\n    return 20\n}\n\nfun main() = runBlocking {\n    val first = async { fetchOne() }\n    val second = async { fetchTwo() }\n    println(first.await() + second.await()) // 30\n\n    launch {\n        repeat(3) {\n            println(\"tick $it\")\n            delay(50)\n        }\n    }\n}"
+    },
+    {
+     "language": "kotlin",
+     "code": "import kotlinx.coroutines.Dispatchers\nimport kotlinx.coroutines.delay\nimport kotlinx.coroutines.runBlocking\nimport kotlinx.coroutines.withContext\nimport kotlinx.coroutines.withTimeoutOrNull\n\nsuspend fun readSize(): Int = withContext(Dispatchers.IO) {\n    \"0123456789\".length // blocking file or network work fits here\n}\n\nfun main() = runBlocking {\n    println(readSize()) // 10\n\n    val slow = withTimeoutOrNull(1_000) {\n        delay(5_000)\n        \"finished\"\n    }\n    println(slow) // null\n}"
+    }
+   ]
+  },
+  {
+   "id": "interop",
+   "title": "Java Interop",
+   "description": "Annotations and nullability rules at the Java boundary",
+   "snippets": [
+    {
+     "language": "kotlin",
+     "code": "object Registry {\n    @JvmStatic\n    fun start() = println(\"started\")\n\n    @JvmField\n    val version = \"2.2\"\n}\n\nclass Greeter {\n    @JvmOverloads\n    fun greet(name: String, greeting: String = \"hello\") = \"$greeting, $name\"\n}"
+    },
+    {
+     "language": "java",
+     "code": "public class Main {\n    public static void main(String[] args) {\n        Registry.start();                              // static method\n        System.out.println(Registry.version);          // static field\n        System.out.println(new Greeter().greet(\"Ada\")); // hello, Ada\n    }\n}"
+    },
+    {
+     "language": "kotlin",
+     "code": "@Throws(IllegalArgumentException::class)\nfun positive(text: String): Int {\n    val value = text.toInt()\n    require(value > 0) { \"value must be positive\" }\n    return value\n}\n\nfun main() {\n    // Java calls return platform types; choose the nullability yourself.\n    val home: String? = System.getProperty(\"user.home\")\n    println(home?.length)\n\n    println(positive(\"42\")) // 42\n}"
+    }
+   ]
+  },
+  {
+   "id": "testing",
+   "title": "Testing",
+   "description": "kotlin.test assertions running on the JUnit 5 platform",
+   "snippets": [
+    {
+     "language": "kotlin",
+     "code": "import kotlin.test.Test\nimport kotlin.test.assertEquals\nimport kotlin.test.assertFailsWith\n\nclass Calculator {\n    fun add(a: Int, b: Int) = a + b\n    fun divide(a: Int, b: Int) = a / b\n}\n\nclass CalculatorTest {\n    private val calculator = Calculator()\n\n    @Test\n    fun addsTwoNumbers() {\n        assertEquals(7, calculator.add(3, 4))\n    }\n\n    @Test\n    fun rejectsDivisionByZero() {\n        assertFailsWith<ArithmeticException> {\n            calculator.divide(9, 0)\n        }\n    }\n}"
+    },
+    {
+     "language": "kotlin",
+     "code": "plugins {\n    kotlin(\"jvm\") version \"2.2.0\"\n}\n\nrepositories {\n    mavenCentral()\n}\n\ndependencies {\n    testImplementation(kotlin(\"test\"))\n}\n\ntasks.test {\n    useJUnitPlatform()\n}"
+    },
+    {
+     "language": "bash",
+     "code": "# Run every test in the project\n./gradlew test\n\n# Run a single test method\n./gradlew test --tests \"CalculatorTest.addsTwoNumbers\""
+    }
+   ]
+  },
+  {
+   "id": "common-errors",
+   "title": "Common Errors",
+   "description": "Compile errors and surprising results that bite beginners",
+   "snippets": [
+    {
+     "language": "kotlin",
+     "code": "fun main() {\n    val name = \"Ada\"\n    // name = \"Grace\" // error: val cannot be reassigned\n\n    var count: Int? = 3\n    // val doubled = count * 2 // error: count is Int? and must be unwrapped\n\n    val safe = (count ?: 0) * 2\n    println(\"$name $safe\") // Ada 6\n\n    var visits: Int? = null\n    // visits += 1 // error: same nullable arithmetic problem\n    visits = (visits ?: 0) + 1\n    println(visits) // 1\n}"
+    },
+    {
+     "language": "kotlin",
+     "code": "fun main() {\n    println(7 / 2)     // 2, integer division truncates\n    println(7 / 2.0)   // 3.5, one Double is enough\n    println(0.1 + 0.2) // 0.30000000000000004\n\n    val a = \"tea\"\n    val b = buildString {\n        append(\"te\")\n        append(\"a\")\n    }\n    println(a == b)  // true, structural equality\n    println(a === b) // false, separate objects\n}"
+    },
+    {
+     "language": "kotlin",
+     "code": "fun main() {\n    val fixed = listOf(1, 2, 3)\n    // fixed.add(4) // error: List has no add method\n\n    val mutable = fixed.toMutableList()\n    mutable.add(4)\n    println(mutable) // [1, 2, 3, 4]\n\n    val prices = mapOf(\"tea\" to 3)\n    println(prices[\"coffee\"] ?: -1) // -1\n}"
+    }
+   ]
+  }
+ ]
+}

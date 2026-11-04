@@ -1,0 +1,172 @@
+{
+ "slug": "motion",
+ "title": "Motion",
+ "label": "Motion",
+ "group": "Library",
+ "color": "#FFF312",
+ "desc": "A declarative animation library for React and the DOM, with springs, gestures and layout transitions.",
+ "sections": [
+  {
+   "id": "setup",
+   "title": "Setup",
+   "description": "Install the package and wrap the tree so reduced-motion preferences are honoured.",
+   "snippets": [
+    {
+     "language": "bash",
+     "code": "# The motion package serves both React (motion/react) and plain DOM (motion)\nnpm install motion"
+    },
+    {
+     "language": "jsx",
+     "code": "import { motion, MotionConfig } from \"motion/react\"\n\nexport default function App() {\n  return (\n    // \"user\" follows prefers-reduced-motion instead of animating regardless\n    <MotionConfig reducedMotion=\"user\">\n      <motion.div\n        initial={{ opacity: 0, y: 12 }}\n        animate={{ opacity: 1, y: 0 }}\n        transition={{ duration: 0.4, ease: \"easeOut\" }}\n        style={{ padding: 16, borderRadius: 8, background: \"#1b1b1f\", color: \"#f5f5f5\" }}\n      >\n        Motion is ready\n      </motion.div>\n    </MotionConfig>\n  )\n}"
+    },
+    {
+     "language": "js",
+     "code": "import { animate } from \"motion\"\n\n// Works on any DOM element, no framework involved\nanimate(\"#badge\", { opacity: [0, 1], y: [8, 0] }, { duration: 0.4, ease: \"easeOut\" })"
+    }
+   ]
+  },
+  {
+   "id": "animation",
+   "title": "Animation",
+   "description": "The animate prop states the target; initial fixes the first frame.",
+   "snippets": [
+    {
+     "language": "jsx",
+     "code": "import { motion } from \"motion/react\"\n\nexport default function Pulse() {\n  return (\n    <motion.div\n      initial={{ scale: 0.8, opacity: 0 }}\n      animate={{ scale: 1, opacity: 1 }}\n      transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}\n      style={{ width: 64, height: 64, borderRadius: 12, background: \"#FFF312\" }}\n    />\n  )\n}"
+    },
+    {
+     "language": "jsx",
+     "code": "// Arrays become keyframes; times places every stop between 0 and 1\n<motion.div\n  animate={{ x: [0, 40, 0], rotate: [0, 90, 0] }}\n  transition={{ duration: 1.2, times: [0, 0.5, 1], repeat: Infinity, repeatDelay: 0.4 }}\n  style={{ width: 40, height: 40, background: \"#FFF312\" }}\n/>"
+    }
+   ]
+  },
+  {
+   "id": "variants",
+   "title": "Variants",
+   "description": "Named states live on the parent and reach every child that declares the same names.",
+   "snippets": [
+    {
+     "language": "jsx",
+     "code": "import { motion } from \"motion/react\"\n\nconst list = {\n  hidden: { opacity: 0 },\n  visible: {\n    opacity: 1,\n    transition: { staggerChildren: 0.08, delayChildren: 0.1 },\n  },\n}\n\nconst item = {\n  hidden: { opacity: 0, y: 8 },\n  visible: { opacity: 1, y: 0 },\n}\n\nexport default function InboxList() {\n  return (\n    <motion.ul initial=\"hidden\" animate=\"visible\" variants={list}>\n      {[\"Inbox\", \"Drafts\", \"Sent\"].map((name) => (\n        <motion.li key={name} variants={item}>\n          {name}\n        </motion.li>\n      ))}\n    </motion.ul>\n  )\n}"
+    },
+    {
+     "language": "jsx",
+     "code": "// Variant functions receive `custom`, so each row staggers by its own index\nconst row = {\n  hidden: (index: number) => ({ opacity: 0, x: -12 * index }),\n  visible: (index: number) => ({ opacity: 1, x: 0, transition: { delay: index * 0.05 } }),\n}\n\nexport function Row() {\n  return <motion.li custom={2} variants={row} initial=\"hidden\" animate=\"visible\" />\n}"
+    }
+   ]
+  },
+  {
+   "id": "gestures",
+   "title": "Gestures",
+   "description": "Hover, tap and drag states are props on the same motion component as the animation.",
+   "snippets": [
+    {
+     "language": "jsx",
+     "code": "import { motion } from \"motion/react\"\n\n<motion.button\n  whileHover={{ scale: 1.05 }}\n  whileTap={{ scale: 0.97 }}\n  transition={{ type: \"spring\", stiffness: 400, damping: 25 }}\n  style={{ padding: \"10px 18px\", borderRadius: 8, border: 0, background: \"#FFF312\", color: \"#111\" }}\n>\n  Save\n</motion.button>"
+    },
+    {
+     "language": "jsx",
+     "code": "import { useRef } from \"react\"\nimport { motion } from \"motion/react\"\n\nexport default function Draggable() {\n  const bounds = useRef(null)\n\n  return (\n    <div ref={bounds} style={{ width: 320, height: 220, border: \"1px solid #555\" }}>\n      <motion.div\n        drag\n        dragConstraints={bounds}\n        dragElastic={0.1}\n        dragMomentum={false}\n        whileDrag={{ scale: 1.04 }}\n        style={{ width: 80, height: 60, background: \"#FFF312\", cursor: \"grab\" }}\n      />\n    </div>\n  )\n}"
+    }
+   ]
+  },
+  {
+   "id": "layout",
+   "title": "Layout Animation",
+   "description": "The layout prop animates box changes caused by a render rather than by a style.",
+   "snippets": [
+    {
+     "language": "jsx",
+     "code": "import { useState } from \"react\"\nimport { motion } from \"motion/react\"\n\nexport default function Collapse() {\n  const [open, setOpen] = useState(false)\n\n  return (\n    <motion.div layout style={{ display: \"flex\", gap: 12, alignItems: \"center\" }}>\n      {open && (\n        <motion.div\n          layout\n          key=\"panel\"\n          style={{ width: 120, height: 80, borderRadius: 8, background: \"#FFF312\" }}\n        />\n      )}\n      <button onClick={() => setOpen((value) => !value)}>Toggle</button>\n    </motion.div>\n  )\n}"
+    },
+    {
+     "language": "jsx",
+     "code": "// layoutId pairs elements across renders and morphs one into the other\nconst tabs = [\"Overview\", \"Activity\", \"Settings\"]\n\n{tabs.map((tab) => (\n  <button\n    key={tab}\n    onClick={() => setActive(tab)}\n    style={{ position: \"relative\", padding: \"8px 14px\" }}\n  >\n    {tab}\n    {active === tab && (\n      <motion.span\n        layoutId=\"tab-underline\"\n        style={{ position: \"absolute\", left: 0, right: 0, bottom: 0, height: 2, background: \"#FFF312\" }}\n      />\n    )}\n  </button>\n))}"
+    }
+   ]
+  },
+  {
+   "id": "scroll",
+   "title": "Scroll",
+   "description": "Scroll position becomes a motion value that can drive any transform.",
+   "snippets": [
+    {
+     "language": "jsx",
+     "code": "import { useRef } from \"react\"\nimport { motion, useScroll, useTransform } from \"motion/react\"\n\nexport default function ReadingProgress() {\n  const ref = useRef(null)\n  const { scrollYProgress } = useScroll({ target: ref, offset: [\"start end\", \"end start\"] })\n  const opacity = useTransform(scrollYProgress, [0, 0.5, 1], [0.2, 1, 0.2])\n\n  return (\n    <>\n      <motion.div\n        style={{\n          scaleX: scrollYProgress,\n          transformOrigin: \"0% 50%\",\n          position: \"fixed\",\n          top: 0,\n          left: 0,\n          right: 0,\n          height: 4,\n          background: \"#FFF312\",\n        }}\n      />\n      <section ref={ref} style={{ height: 800 }}>\n        <motion.p style={{ opacity }}>Fades in and out with the scroll position</motion.p>\n      </section>\n    </>\n  )\n}"
+    },
+    {
+     "language": "jsx",
+     "code": "// whileInView fires once the element crosses the viewport margin\n<motion.div\n  initial={{ opacity: 0, y: 24 }}\n  whileInView={{ opacity: 1, y: 0 }}\n  viewport={{ once: true, margin: \"-80px\" }}\n  transition={{ duration: 0.5 }}\n  style={{ padding: 24, background: \"#1b1b1f\", color: \"#f5f5f5\" }}\n/>"
+    }
+   ]
+  },
+  {
+   "id": "spring",
+   "title": "Spring",
+   "description": "Springs describe physics: stiffness, damping and mass stand in for duration and easing.",
+   "snippets": [
+    {
+     "language": "jsx",
+     "code": "// stiffness pulls towards the target, damping removes the oscillation, mass adds inertia\n<motion.div\n  animate={{ x: 240 }}\n  transition={{ type: \"spring\", stiffness: 260, damping: 20, mass: 0.8 }}\n  style={{ width: 56, height: 56, borderRadius: 8, background: \"#FFF312\" }}\n/>"
+    },
+    {
+     "language": "jsx",
+     "code": "// bounce is a shortcut: 0 is fully damped, 1 overshoots freely\n<motion.div\n  animate={{ y: 0 }}\n  transition={{ type: \"spring\", bounce: 0.35, duration: 0.6 }}\n  style={{ width: 56, height: 56, borderRadius: 8, background: \"#FFF312\" }}\n/>"
+    },
+    {
+     "language": "jsx",
+     "code": "import { motion, useMotionValue, useSpring } from \"motion/react\"\n\nexport default function Follower() {\n  const x = useMotionValue(0)\n  const y = useMotionValue(0)\n  const smoothX = useSpring(x, { stiffness: 300, damping: 30 })\n  const smoothY = useSpring(y, { stiffness: 300, damping: 30 })\n\n  return (\n    <div\n      onPointerMove={(event) => {\n        const box = event.currentTarget.getBoundingClientRect()\n        x.set(event.clientX - box.left - 24)\n        y.set(event.clientY - box.top - 24)\n      }}\n      style={{ position: \"relative\", height: 240, background: \"#121216\" }}\n    >\n      <motion.div\n        style={{\n          x: smoothX,\n          y: smoothY,\n          position: \"absolute\",\n          width: 48,\n          height: 48,\n          borderRadius: 24,\n          background: \"#FFF312\",\n        }}\n      />\n    </div>\n  )\n}"
+    }
+   ]
+  },
+  {
+   "id": "transitions",
+   "title": "Transitions",
+   "description": "Timing is set once for the whole animation or one property at a time.",
+   "snippets": [
+    {
+     "language": "jsx",
+     "code": "// `default` covers every property; named keys override it\n<motion.div\n  animate={{ x: 120, opacity: 1, backgroundColor: \"#FFF312\" }}\n  transition={{\n    default: { type: \"spring\", stiffness: 300, damping: 24 },\n    opacity: { duration: 0.6, delay: 0.1 },\n  }}\n  style={{ width: 56, height: 56 }}\n/>"
+    },
+    {
+     "language": "jsx",
+     "code": "// repeatType \"reverse\" plays the keyframes backwards on every other pass\n<motion.div\n  animate={{ rotate: [0, 12, 0] }}\n  transition={{ duration: 1.5, ease: \"easeInOut\", repeat: Infinity, repeatType: \"reverse\" }}\n  style={{ width: 40, height: 40, background: \"#FFF312\" }}\n/>"
+    }
+   ]
+  },
+  {
+   "id": "exit",
+   "title": "Exit Animations",
+   "description": "AnimatePresence keeps an unmounting node alive until its exit animation finishes.",
+   "snippets": [
+    {
+     "language": "jsx",
+     "code": "import { AnimatePresence, motion } from \"motion/react\"\n\nexport default function Toast({ visible }) {\n  return (\n    // mode \"wait\" finishes the exit before the next child enters\n    <AnimatePresence mode=\"wait\">\n      {visible && (\n        <motion.div\n          key=\"toast\"\n          initial={{ opacity: 0, y: 16 }}\n          animate={{ opacity: 1, y: 0 }}\n          exit={{ opacity: 0, y: 16 }}\n          transition={{ duration: 0.2 }}\n          style={{ padding: 12, borderRadius: 8, background: \"#FFF312\", color: \"#111\" }}\n        >\n          Saved\n        </motion.div>\n      )}\n    </AnimatePresence>\n  )\n}"
+    },
+    {
+     "language": "jsx",
+     "code": "// \"popLayout\" pulls the item out of flow at once so its siblings close the gap\n<AnimatePresence mode=\"popLayout\" initial={false}>\n  {items.map((item) => (\n    <motion.li\n      key={item}\n      layout\n      initial={{ opacity: 0, scale: 0.9 }}\n      animate={{ opacity: 1, scale: 1 }}\n      exit={{ opacity: 0, scale: 0.9 }}\n    >\n      {item}\n    </motion.li>\n  ))}\n</AnimatePresence>"
+    }
+   ]
+  },
+  {
+   "id": "performance",
+   "title": "Performance",
+   "description": "Keep the work on the compositor and stop React from re-rendering on every frame.",
+   "snippets": [
+    {
+     "language": "jsx",
+     "code": "// Motion values update the style directly, so dragging causes no React render\nexport function DragBox() {\n  const x = useMotionValue(0)\n  const rotate = useTransform(x, [0, 400], [0, 180])\n  return (\n    <motion.div\n      drag=\"x\"\n      dragConstraints={{ left: 0, right: 400 }}\n      style={{ x, rotate, width: 64, height: 64, background: \"#FFF312\" }}\n    />\n  )\n}"
+    },
+    {
+     "language": "jsx",
+     "code": "import { LazyMotion, domAnimation, m } from \"motion/react\"\n\n// m plus domAnimation ships a smaller bundle than the full motion component\n<LazyMotion features={domAnimation} strict>\n  <m.div animate={{ opacity: 1 }} transition={{ duration: 0.3 }}>\n    Loaded on demand\n  </m.div>\n</LazyMotion>"
+    },
+    {
+     "language": "jsx",
+     "code": "import { motion, useReducedMotion } from \"motion/react\"\n\n// Skip the travel, keep the state change for people who ask for less motion\nexport function Fade() {\n  const reduce = useReducedMotion()\n  return (\n    <motion.div\n      animate={{ opacity: 1, y: reduce ? 0 : 24 }}\n      transition={{ duration: reduce ? 0 : 0.4 }}\n    />\n  )\n}"
+    }
+   ]
+  }
+ ]
+}

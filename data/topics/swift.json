@@ -1,0 +1,228 @@
+{
+ "slug": "swift",
+ "title": "Swift",
+ "label": "Swift",
+ "group": "Language",
+ "color": "#F05138",
+ "desc": "Apple's compiled language for iOS, macOS and server work, built on value types and safe optionals.",
+ "sections": [
+  {
+   "id": "setup",
+   "title": "Setup",
+   "description": "Install the compiler on macOS or Linux and run a first executable.",
+   "snippets": [
+    {
+     "language": "bash",
+     "code": "# macOS: the compiler ships with the command line tools\nxcode-select --install\nswift --version\n\n# Linux: install the official toolchain manager, then a toolchain\ncurl -O https://download.swift.org/swiftly/linux/swiftly-x86_64.tar.gz\ntar zxf swiftly-x86_64.tar.gz\n./swiftly init\n\n# Create a package and run it\nswift package init --type executable\nswift run\nswift build -c release"
+    },
+    {
+     "language": "swift",
+     "code": "// main.swift: top-level code runs as the entry point\nlet audience = \"Swift\"\nprint(\"Hello, \\(audience)!\")\n\n// Any other file in the target uses @main instead\n// @main\n// struct Greeter {\n//     static func main() {\n//         print(\"Started from @main\")\n//     }\n// }"
+    }
+   ]
+  },
+  {
+   "id": "syntax",
+   "title": "Syntax",
+   "description": "Bindings, interpolation and the control-flow forms used every day.",
+   "snippets": [
+    {
+     "language": "swift",
+     "code": "// Constants and variables\nlet maximumAttempts = 3\nvar attempts = 0\nattempts += 1\n\n// Inferred and explicit types, then interpolation\nlet ratio: Double = 0.75\nlet name = \"Felipe\"\nprint(\"\\(name): \\(attempts)/\\(maximumAttempts) attempts, \\(Int(ratio * 100))%\")\n\n// Multi-line strings keep their indentation relative to the closing quotes\nlet banner = \"\"\"\nRetry limit: \\(maximumAttempts)\nProgress: \\(Int(ratio * 100))%\n\"\"\"\nprint(banner)"
+    },
+    {
+     "language": "swift",
+     "code": "let scores = [72, 91, 58, 88]\n\nfor score in scores {\n    if score < 60 {\n        print(\"\\(score): fail\")\n    } else if score < 85 {\n        print(\"\\(score): pass\")\n    } else {\n        print(\"\\(score): distinction\")\n    }\n}\n\n// guard exits early when the condition fails\nfunc grade(for score: Int) -> String {\n    guard score >= 0, score <= 100 else { return \"invalid\" }\n\n    switch score {\n    case 90...100: return \"A\"\n    case 80..<90: return \"B\"\n    case 70..<80: return \"C\"\n    default: return \"F\"\n    }\n}\n\nprint(grade(for: 91))"
+    }
+   ]
+  },
+  {
+   "id": "types",
+   "title": "Types",
+   "description": "Primitive values, tuples, explicit conversions and safe downcasting.",
+   "snippets": [
+    {
+     "language": "swift",
+     "code": "let population: Int = 8_100_000\nlet pi: Double = 3.14159\nlet ready: Bool = true\nlet city: String = \"Sao Paulo\"\nlet initial: Character = \"S\"\n\n// Tuples group values without declaring a type\nlet coordinate = (lat: -23.55, lon: -46.63)\nprint(\"\\(city): \\(coordinate.lat), \\(coordinate.lon)\")\n\n// Numeric conversion is always explicit\nlet whole = Int(pi)\nlet scaled = Double(population) * 1.5\ntypealias Meters = Double\nlet distance: Meters = 42.0\nprint(whole, scaled, distance)"
+    },
+    {
+     "language": "swift",
+     "code": "let values: [Any] = [42, \"text\", 3.5, true]\n\nfor value in values {\n    switch value {\n    case let number as Int: print(\"Int: \\(number)\")\n    case let text as String: print(\"String: \\(text)\")\n    case let flag as Bool: print(\"Bool: \\(flag)\")\n    default: print(\"Other\")\n    }\n}\n\n// A conditional cast returns nil instead of trapping\nlet raw: Any = \"123\"\nif let number = raw as? Int {\n    print(number)\n} else {\n    print(\"not an Int\")\n}"
+    }
+   ]
+  },
+  {
+   "id": "optionals",
+   "title": "Optionals",
+   "description": "Bind, chain and default a value that may be missing.",
+   "snippets": [
+    {
+     "language": "swift",
+     "code": "var nickname: String? = nil\n\n// Optional binding shadows the name with the unwrapped value\nif let nickname {\n    print(\"Hello, \\(nickname)\")\n}\n\n// guard let keeps the value for the rest of the scope\nfunc displayName(for user: String?) -> String {\n    guard let user else { return \"anonymous\" }\n    return user\n}\n\n// Nil coalescing and optional chaining\nlet shown = nickname ?? \"guest\"\nlet length = nickname?.count\nprint(shown, length ?? 0)"
+    },
+    {
+     "language": "swift",
+     "code": "struct Profile {\n    var website: String?\n}\n\nlet profile: Profile? = Profile(website: \"https://swift.org/learn\")\nlet host = profile?.website?.split(separator: \"/\").first\nprint(host ?? \"none\")\n\n// Assigning through a chain only happens when every link is non-nil\nvar mutable = profile\nmutable?.website = \"https://example.com\"\nprint(mutable?.website ?? \"missing\")\n\nlet count = profile?.website?.count\nprint(count ?? 0)"
+    }
+   ]
+  },
+  {
+   "id": "functions",
+   "title": "Functions",
+   "description": "Labels, defaults, variadics, inout parameters and error propagation.",
+   "snippets": [
+    {
+     "language": "swift",
+     "code": "// External and internal parameter names\nfunc greet(person name: String, loudly: Bool = false) -> String {\n    let text = \"Hello, \\(name)\"\n    return loudly ? text.uppercased() : text\n}\n\nprint(greet(person: \"Ana\"))\nprint(greet(person: \"Ana\", loudly: true))\n\n// Variadic input, tuple output\nfunc total(_ numbers: Int...) -> (sum: Int, average: Double) {\n    let sum = numbers.reduce(0, +)\n    return (sum, Double(sum) / Double(numbers.count))\n}\n\nprint(total(4, 8, 15, 16))\n\n// inout writes back to the caller's variable\nfunc doubleInPlace(_ value: inout Int) {\n    value *= 2\n}\nvar counter = 21\ndoubleInPlace(&counter)\nprint(counter)"
+    },
+    {
+     "language": "swift",
+     "code": "enum ValidationError: Error {\n    case tooShort(minimum: Int)\n    case hasDigit\n}\n\nfunc validate(password: String) throws -> Bool {\n    guard password.count >= 8 else {\n        throw ValidationError.tooShort(minimum: 8)\n    }\n    guard !password.contains(where: \\.isNumber) else {\n        throw ValidationError.hasDigit\n    }\n    return true\n}\n\ndo {\n    try validate(password: \"swiftlang\")\n    print(\"accepted\")\n} catch ValidationError.tooShort(let minimum) {\n    print(\"needs at least \\(minimum) characters\")\n} catch {\n    print(\"rejected: \\(error)\")\n}"
+    }
+   ]
+  },
+  {
+   "id": "structs",
+   "title": "Structs and Classes",
+   "description": "Value semantics with memberwise init versus reference-type classes.",
+   "snippets": [
+    {
+     "language": "swift",
+     "code": "struct Point {\n    var x: Double\n    var y: Double\n\n    // Computed property, no stored value\n    var magnitude: Double {\n        (x * x + y * y).squareRoot()\n    }\n\n    // Mutating methods can change stored properties\n    mutating func move(by dx: Double, dy: Double) {\n        x += dx\n        y += dy\n    }\n}\n\nvar point = Point(x: 3, y: 4)\nprint(point.magnitude)\npoint.move(by: 1, dy: 0)\nprint(point.x)\n\n// Copies are independent because Point is a value type\nvar copy = point\ncopy.x = 99\nprint(point.x, copy.x)"
+    },
+    {
+     "language": "swift",
+     "code": "class Vehicle {\n    let wheels: Int\n    var speed = 0.0\n\n    init(wheels: Int) {\n        self.wheels = wheels\n    }\n\n    func accelerate(by delta: Double) {\n        speed += delta\n    }\n\n    var summary: String {\n        \"\\(wheels) wheels at \\(speed) km/h\"\n    }\n}\n\nfinal class Bicycle: Vehicle {\n    init() {\n        super.init(wheels: 2)\n    }\n\n    override func accelerate(by delta: Double) {\n        super.accelerate(by: delta / 3)\n    }\n}\n\nlet bike = Bicycle()\nbike.accelerate(by: 30)\nprint(bike.summary)"
+    }
+   ]
+  },
+  {
+   "id": "enums",
+   "title": "Enums",
+   "description": "Raw values, associated data and exhaustive pattern matching.",
+   "snippets": [
+    {
+     "language": "swift",
+     "code": "enum Direction: String, CaseIterable {\n    case north = \"N\"\n    case east = \"E\"\n    case south = \"S\"\n    case west = \"W\"\n\n    var opposite: Direction {\n        switch self {\n        case .north: return .south\n        case .east: return .west\n        case .south: return .north\n        case .west: return .east\n        }\n    }\n}\n\nprint(Direction.north.rawValue)\nprint(Direction.allCases.count)\nprint(Direction.east.opposite)"
+    },
+    {
+     "language": "swift",
+     "code": "enum Payment {\n    case cash(amount: Int)\n    case card(amount: Int, last4: String)\n    case transfer(amount: Int, iban: String)\n}\n\nfunc summary(for payment: Payment) -> String {\n    switch payment {\n    case .cash(let amount):\n        return \"cash \\(amount)\"\n    case .card(let amount, let last4):\n        return \"card \\(last4) for \\(amount)\"\n    case .transfer(let amount, let iban):\n        return \"transfer \\(iban) of \\(amount)\"\n    }\n}\n\nprint(summary(for: .card(amount: 250, last4: \"4242\")))"
+    }
+   ]
+  },
+  {
+   "id": "protocols",
+   "title": "Protocols",
+   "description": "Requirements, default implementations and associated types.",
+   "snippets": [
+    {
+     "language": "swift",
+     "code": "protocol Describable {\n    var name: String { get }\n    func describe() -> String\n}\n\n// A protocol extension supplies a shared implementation\nextension Describable {\n    func describe() -> String {\n        \"I am \\(name)\"\n    }\n}\n\nstruct Team: Describable {\n    let name: String\n    let members: Int\n}\n\nprint(Team(name: \"Core\", members: 4).describe())\n\n// Mixed conformances are used through an existential\nlet items: [any Describable] = [Team(name: \"Core\", members: 4)]\nprint(items.map { $0.describe() })"
+    },
+    {
+     "language": "swift",
+     "code": "protocol Container {\n    associatedtype Item\n    var items: [Item] { get }\n    mutating func add(_ item: Item)\n}\n\nstruct Stack<Element>: Container {\n    private(set) var items: [Element] = []\n\n    mutating func add(_ item: Element) {\n        items.append(item)\n    }\n\n    mutating func pop() -> Element? {\n        items.popLast()\n    }\n}\n\nvar stack = Stack<Int>()\nstack.add(1)\nstack.add(2)\nprint(stack.pop() ?? -1)\n\n// Existentials need the `any` keyword since Swift 5.7\nlet containers: [any Container] = [stack]\nprint(containers.count)"
+    }
+   ]
+  },
+  {
+   "id": "generics",
+   "title": "Generics",
+   "description": "Reusable code constrained at compile time, plus opaque return types.",
+   "snippets": [
+    {
+     "language": "swift",
+     "code": "// Constrained generic function\nfunc largest<T: Comparable>(in values: [T]) -> T? {\n    values.max()\n}\n\nprint(largest(in: [3, 9, 4]) ?? 0)\nprint(largest(in: [\"a\", \"z\", \"m\"]) ?? \"-\")\n\n// A generic type stays unconstrained until an extension adds a rule\nstruct History<Element> {\n    private var storage: [Element] = []\n\n    mutating func record(_ element: Element) {\n        storage.append(element)\n    }\n}\n\nextension History where Element: Equatable {\n    func contains(_ element: Element) -> Bool {\n        storage.contains(element)\n    }\n}\n\nvar history = History<Int>()\nhistory.record(4)\nhistory.record(9)\nprint(history.contains(9))"
+    },
+    {
+     "language": "swift",
+     "code": "struct Box<Value> {\n    let wrapped: Value\n\n    func map<Result>(_ transform: (Value) -> Result) -> Box<Result> {\n        Box<Result>(wrapped: transform(wrapped))\n    }\n}\n\nlet doubled = Box(wrapped: 21).map { $0 * 2 }\nprint(doubled.wrapped)\n\n// `some` hides the concrete type but keeps static dispatch\nfunc counter() -> some Sequence<Int> {\n    [1, 2, 3]\n}\n\nprint(Array(counter()))"
+    }
+   ]
+  },
+  {
+   "id": "closures",
+   "title": "Closures",
+   "description": "Inline functions, shorthand arguments and captured state.",
+   "snippets": [
+    {
+     "language": "swift",
+     "code": "let numbers = [5, 2, 8, 1]\n\n// Shorthand arguments work for single-expression closures\nlet ascending = numbers.sorted { $0 < $1 }\nlet doubled = numbers.map { $0 * 2 }\nlet even = numbers.filter { $0.isMultiple(of: 2) }\n\nprint(ascending, doubled, even)\n\n// A closure stored in a variable needs an explicit signature\nlet clamp: (Int, Int, Int) -> Int = { value, low, high in\n    min(max(value, low), high)\n}\nprint(clamp(12, 0, 10))"
+    },
+    {
+     "language": "swift",
+     "code": "func makeCounter() -> () -> Int {\n    var count = 0\n    return {\n        count += 1\n        return count\n    }\n}\n\nlet next = makeCounter()\nprint(next())\nprint(next())\n\n// @escaping is required when the closure outlives the call\nfunc store(_ work: @escaping () -> Void) -> () -> Void {\n    work\n}\n\nlet stored = store { print(\"ran later\") }\nstored()"
+    }
+   ]
+  },
+  {
+   "id": "collections",
+   "title": "Collections",
+   "description": "Arrays, dictionaries and sets with the usual transforms.",
+   "snippets": [
+    {
+     "language": "swift",
+     "code": "var queue = [\"ana\", \"bruno\", \"carla\"]\nqueue.append(\"diego\")\nqueue.remove(at: 0)\nprint(queue)\nprint(queue.contains(\"carla\"))\nprint(queue.first ?? \"empty\")\n\n// Safe access without trapping on a bad index\nif queue.indices.contains(2) {\n    print(queue[2])\n}"
+    },
+    {
+     "language": "swift",
+     "code": "var ages = [\"ana\": 31, \"bruno\": 24]\nages[\"carla\"] = 45\nages[\"bruno\"] = nil            // removes the entry\nages[\"ana\"] = 32\n\nfor (name, age) in ages.sorted(by: { $0.key < $1.key }) {\n    print(\"\\(name): \\(age)\")\n}\n\n// Default value avoids an optional result\nprint(ages[\"zoe\", default: 0])\n\nvar visits: [String: Int] = [:]\nvisits[\"home\", default: 0] += 1\nprint(visits)"
+    },
+    {
+     "language": "swift",
+     "code": "let first: Set<String> = [\"swift\", \"rust\", \"go\"]\nlet second: Set<String> = [\"go\", \"python\"]\n\nprint(first.union(second).sorted())\nprint(first.intersection(second))\nprint(first.subtracting(second).count)\nprint(first.isSuperset(of: second))\n\nlet prices = [19.9, 5.0, 42.5, 8.25]\nlet expensive = prices.filter { $0 > 10 }\nlet withTax = expensive.map { $0 * 1.2 }\nprint(expensive.count, withTax.reduce(0, +))\n\nlet byLength = Dictionary(grouping: [\"one\", \"two\", \"three\"], by: \\.count)\nprint(byLength[3]?.sorted() ?? [])"
+    }
+   ]
+  },
+  {
+   "id": "concurrency",
+   "title": "Concurrency",
+   "description": "Structured async work, task groups and actor isolation.",
+   "snippets": [
+    {
+     "language": "swift",
+     "code": "func fetchScore(for player: String) async -> Int {\n    try? await Task.sleep(for: .milliseconds(100))\n    return player.count * 10\n}\n\n// await suspends without blocking the thread\nTask {\n    let score = await fetchScore(for: \"ana\")\n    print(\"score: \\(score)\")\n}\n\n// Sequential awaits run one after the other\nfunc combined() async -> Int {\n    let first = await fetchScore(for: \"ana\")\n    let second = await fetchScore(for: \"bruno\")\n    return first + second\n}"
+    },
+    {
+     "language": "swift",
+     "code": "func fetchScore(for player: String) async -> Int {\n    try? await Task.sleep(for: .seconds(1))\n    return player.count * 10\n}\n\n// A task group runs its children concurrently and waits for all of them\nfunc totalScores(for players: [String]) async -> Int {\n    await withTaskGroup(of: Int.self) { group in\n        for player in players {\n            group.addTask { await fetchScore(for: player) }\n        }\n\n        var total = 0\n        for await score in group {\n            total += score\n        }\n        return total\n    }\n}\n\nTask {\n    print(await totalScores(for: [\"ana\", \"bruno\", \"carla\"]))\n}"
+    },
+    {
+     "language": "swift",
+     "code": "actor Counter {\n    private var value = 0\n\n    func increment() -> Int {\n        value += 1\n        return value\n    }\n\n    func current() -> Int {\n        value\n    }\n}\n\nlet counter = Counter()\n\nTask {\n    _ = await counter.increment()\n    let second = await counter.increment()\n    print(second, await counter.current())\n}\n\n// UI state belongs on the main actor\n@MainActor\nfinal class ViewModel {\n    var isLoading = false\n\n    func load() async {\n        isLoading = true\n        defer { isLoading = false }\n    }\n}"
+    }
+   ]
+  },
+  {
+   "id": "testing",
+   "title": "Testing",
+   "description": "Unit tests with XCTest and the newer Swift Testing macros.",
+   "snippets": [
+    {
+     "language": "swift",
+     "code": "import XCTest\n\nstruct Cart {\n    private(set) var prices: [Double] = []\n\n    mutating func add(price: Double) {\n        prices.append(price)\n    }\n\n    var total: Double {\n        prices.reduce(0, +)\n    }\n}\n\nfinal class CartTests: XCTestCase {\n    func testTotalAddsLineItems() {\n        var cart = Cart()\n        cart.add(price: 12.5)\n        cart.add(price: 7.5)\n        XCTAssertEqual(cart.total, 20.0, accuracy: 0.001)\n    }\n\n    func testEmptyCartHasZeroTotal() throws {\n        XCTAssertEqual(Cart().total, 0.0)\n    }\n}"
+    },
+    {
+     "language": "swift",
+     "code": "import Testing\n\nfunc isPalindrome(_ text: String) -> Bool {\n    let cleaned = text.lowercased().filter(\\.isLetter)\n    return cleaned == String(cleaned.reversed())\n}\n\n@Test func palindromeDetection() {\n    #expect(isPalindrome(\"A man a plan a canal Panama\"))\n    #expect(!isPalindrome(\"swift\"))\n}\n\n@Test(\"Short strings are palindromes\", arguments: [\"\", \"a\", \"aa\"])\nfunc shortStrings(value: String) {\n    #expect(isPalindrome(value))\n}"
+    }
+   ]
+  },
+  {
+   "id": "common-errors",
+   "title": "Common Errors",
+   "description": "The failures that show up first, with the fix beside them.",
+   "snippets": [
+    {
+     "language": "swift",
+     "code": "// Force unwrapping nil crashes the process\nlet raw: String? = nil\n// let value = raw!                 // fatal error: unexpectedly found nil\n\n// Arrays trap on an out-of-range index\nlet items = [10, 20, 30]\n// let last = items[3]              // fatal error: index out of range\nlet last = items[items.count - 1]   // 30\n\n// A let binding cannot be mutated\nstruct Counter { var value = 0 }\nlet counter = Counter()\n// counter.value += 1               // error: cannot assign to property\n\n// A throwing call needs try\nenum ParseError: Error { case empty }\nfunc parse(_ text: String) throws -> Int {\n    guard let number = Int(text) else { throw ParseError.empty }\n    return number\n}\nlet number = try? parse(\"42\")\nprint(number ?? -1)"
+    },
+    {
+     "language": "swift",
+     "code": "@MainActor\nfinal class Settings {\n    var theme = \"dark\"\n}\n\n// Reading a main-actor property from a plain task is a compile error:\n// Task { print(Settings().theme) }\n\n// Hop to the actor instead\nTask { @MainActor in\n    print(Settings().theme)\n}\n\n// A shared mutable variable captured by concurrent tasks is rejected:\n// var total = 0\n// Task { total += 1 }\n\n// An actor owns the state and serializes access\nactor Tally {\n    private var count = 0\n\n    func bump() {\n        count += 1\n    }\n\n    func value() -> Int {\n        count\n    }\n}\n\n// Heavy synchronous work should not block the main actor\nfunc checksum(_ bytes: [UInt8]) -> UInt64 {\n    bytes.reduce(0) { $0 &+ UInt64($1) }\n}\nprint(checksum([1, 2, 3]))"
+    }
+   ]
+  }
+ ]
+}

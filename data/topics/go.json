@@ -1,0 +1,278 @@
+{
+ "slug": "go",
+ "title": "Go",
+ "label": "Go",
+ "group": "Language",
+ "color": "#00ADD8",
+ "desc": "Statically typed language with garbage collection and lightweight concurrency.",
+ "sections": [
+  {
+   "id": "setup",
+   "title": "Setup",
+   "description": "Create a module, then build, vet, and test the package",
+   "snippets": [
+    {
+     "language": "bash",
+     "code": "# Name the module after the import path it will serve\ngo mod init example.com/greet\n\n# Run the main package in the current directory\ngo run .\n\n# Build a binary called greet into bin/\ngo build -o bin/greet ."
+    },
+    {
+     "language": "bash",
+     "code": "# Report suspicious code without executing it\ngo vet ./...\n\n# Rewrite files into canonical formatting\ngofmt -w .\n\n# Fail the check when any file still needs formatting\ntest -z \"$(gofmt -l .)\"\n\n# Run every test in the module\ngo test ./..."
+    },
+    {
+     "language": "go",
+     "code": "package main\n\nimport \"fmt\"\n\nfunc main() {\n\tfmt.Println(\"hello from Go\")\n}"
+    }
+   ]
+  },
+  {
+   "id": "modules",
+   "title": "Modules",
+   "description": "One go.mod per module; dependency versions live there",
+   "snippets": [
+    {
+     "language": "text",
+     "code": "module example.com/inventory\n\ngo 1.22\n\nrequire golang.org/x/text v0.14.0"
+    },
+    {
+     "language": "bash",
+     "code": "# Record a dependency at a chosen version\ngo get golang.org/x/text@v0.14.0\n\n# Drop requirements that nothing imports any more\ngo mod tidy\n\n# List the modules used by the current build\ngo list -m all\n\n# Point a dependency at a local checkout while developing\ngo mod edit -replace golang.org/x/text=../text-fork"
+    }
+   ]
+  },
+  {
+   "id": "syntax",
+   "title": "Syntax",
+   "description": "Packages, imports, comments, and brace placement",
+   "snippets": [
+    {
+     "language": "go",
+     "code": "// Package main is the entry point for the command.\npackage main\n\nimport (\n\t\"fmt\"\n\t\"strings\"\n)\n\nfunc main() {\n\t// Statements end at the newline, not at a semicolon.\n\tname := strings.TrimSpace(\"  Grace  \")\n\tfmt.Printf(\"hello, %s\\n\", name)\n\n\t/* Block comments span lines.\n\t   They do not nest. */\n\tfmt.Println(len(name)) // 5\n}"
+    }
+   ]
+  },
+  {
+   "id": "types",
+   "title": "Types",
+   "description": "Primitive kinds, zero values, and explicit conversions",
+   "snippets": [
+    {
+     "language": "go",
+     "code": "package main\n\nimport \"fmt\"\n\nfunc main() {\n\tvar count int = 7 // platform-sized signed integer\n\tvar ratio float64 = 0.75\n\tvar initial byte = 'G' // byte is an alias for uint8\n\tvar symbol rune = '世'  // rune is an alias for int32\n\tvar active bool = true\n\n\tfmt.Println(count, ratio, initial, symbol, active)\n}"
+    },
+    {
+     "language": "go",
+     "code": "package main\n\nimport (\n\t\"fmt\"\n\t\"strconv\"\n)\n\ntype Level int\n\nconst (\n\tLow    Level = iota // 0\n\tMedium              // 1\n\tHigh                // 2\n)\n\nfunc main() {\n\tvar zero int\n\tvar empty string\n\tfmt.Printf(\"%d %q\\n\", zero, empty) // 0 \"\"\n\n\tsmall := 300\n\ttruncated := uint8(small) // wraps around: 44\n\tfmt.Println(truncated)\n\n\ttext := strconv.Itoa(42) // int to string\n\tn, err := strconv.Atoi(\"17\")\n\tfmt.Println(text, n, err, High)\n}"
+    },
+    {
+     "language": "go",
+     "code": "package main\n\nimport \"fmt\"\n\nfunc main() {\n\tgrid := [2][3]int{{1, 2, 3}, {4, 5, 6}}\n\tnames := []string{\"ada\", \"grace\"}\n\tscores := map[string]int{\"ada\": 98}\n\tvar missing *int\n\n\tfmt.Println(grid[1][2], len(names), scores[\"ada\"], missing == nil)\n}"
+    }
+   ]
+  },
+  {
+   "id": "variables",
+   "title": "Variables",
+   "description": "Declaration forms, short assignment, and constants",
+   "snippets": [
+    {
+     "language": "go",
+     "code": "package main\n\nimport \"fmt\"\n\nvar version = \"1.4.0\" // package level, type inferred\n\nfunc main() {\n\tvar greeting string = \"hello\" // explicit type\n\tcity := \"Recife\"              // short form, functions only\n\tvar a, b int = 3, 9\n\n\t// Swap without a temporary variable\n\ta, b = b, a\n\n\t// The blank identifier discards a value\n\t_, err := fmt.Println(greeting, city, version)\n\tfmt.Println(a, b, err)\n}"
+    },
+    {
+     "language": "go",
+     "code": "package main\n\nimport \"fmt\"\n\nconst (\n\tAppName  = \"ledger\"\n\tMaxItems = 250\n\tPi       = 3.14159\n)\n\nfunc main() {\n\t// Untyped constants take the type required by the context.\n\tconst dozen = 12\n\tvar count int = dozen\n\tvar total float64 = dozen * Pi\n\n\tfmt.Println(AppName, MaxItems, count, total)\n}"
+    }
+   ]
+  },
+  {
+   "id": "control-flow",
+   "title": "Control Flow",
+   "description": "Branches with local variables, switches, and loop forms",
+   "snippets": [
+    {
+     "language": "go",
+     "code": "package main\n\nimport \"fmt\"\n\nfunc grade(score int) string {\n\tif score >= 90 { // no parentheses around the condition\n\t\treturn \"A\"\n\t} else if score >= 80 {\n\t\treturn \"B\"\n\t}\n\treturn \"C\"\n}\n\nfunc main() {\n\tif n := len(\"gopher\"); n == 6 {\n\t\tfmt.Println(\"length\", n) // n lives only inside this if\n\t}\n\n\tswitch day := 3; day {\n\tcase 1, 7:\n\t\tfmt.Println(\"weekend\")\n\tcase 3:\n\t\tfmt.Println(\"midweek\")\n\t\tfallthrough\n\tdefault:\n\t\tfmt.Println(\"check the calendar\")\n\t}\n\tfmt.Println(grade(85))\n}"
+    },
+    {
+     "language": "go",
+     "code": "package main\n\nimport \"fmt\"\n\nfunc main() {\n\t// Three-clause loop\n\tfor i := 0; i < 3; i++ {\n\t\tfmt.Print(i, \" \")\n\t}\n\n\t// While-style loop\n\ttotal := 0\n\tfor total < 10 {\n\t\ttotal += 4\n\t}\n\n\t// Range over a slice, then over an integer (Go 1.22+)\n\tfor index, word := range []string{\"a\", \"b\"} {\n\t\tfmt.Print(index, word, \" \")\n\t}\n\tfor i := range 3 {\n\t\tfmt.Print(i, \" \")\n\t}\n\tfmt.Println(total)\n}"
+    },
+    {
+     "language": "go",
+     "code": "package main\n\nimport \"fmt\"\n\nfunc main() {\nouter:\n\tfor row := 0; row < 3; row++ {\n\t\tfor col := 0; col < 3; col++ {\n\t\t\tif col == 1 {\n\t\t\t\tcontinue outer // skip to the next row\n\t\t\t}\n\t\t\tif row == 2 {\n\t\t\t\tbreak outer // leave both loops\n\t\t\t}\n\t\t\tfmt.Println(row, col)\n\t\t}\n\t}\n}"
+    }
+   ]
+  },
+  {
+   "id": "functions",
+   "title": "Functions",
+   "description": "Multiple results, variadic arguments, closures, and defer",
+   "snippets": [
+    {
+     "language": "go",
+     "code": "package main\n\nimport \"fmt\"\n\nfunc divide(a, b int) (int, error) {\n\tif b == 0 {\n\t\treturn 0, fmt.Errorf(\"divide %d by zero\", a)\n\t}\n\treturn a / b, nil\n}\n\nfunc sum(nums ...int) (total int) {\n\tfor _, n := range nums {\n\t\ttotal += n\n\t}\n\treturn // the named result is returned as-is\n}\n\nfunc main() {\n\tq, err := divide(17, 5)\n\tfmt.Println(q, err, sum(1, 2, 3, 4))\n}"
+    },
+    {
+     "language": "go",
+     "code": "package main\n\nimport \"fmt\"\n\nfunc counter() func() int {\n\tn := 0\n\treturn func() int {\n\t\tn++\n\t\treturn n\n\t}\n}\n\nfunc main() {\n\tnext := counter()\n\tfmt.Println(next(), next(), next()) // 1 2 3\n\n\tdefer fmt.Println(\"runs last\")\n\tfmt.Println(\"runs first\")\n}"
+    },
+    {
+     "language": "go",
+     "code": "package main\n\nimport \"fmt\"\n\nfunc apply(nums []int, fn func(int) int) []int {\n\tout := make([]int, len(nums))\n\tfor i, n := range nums {\n\t\tout[i] = fn(n)\n\t}\n\treturn out\n}\n\nfunc main() {\n\tdouble := func(n int) int { return n * 2 }\n\tfmt.Println(apply([]int{1, 2, 3}, double))\n}"
+    }
+   ]
+  },
+  {
+   "id": "structs",
+   "title": "Structs",
+   "description": "Fields with methods, plus embedding and JSON tags",
+   "snippets": [
+    {
+     "language": "go",
+     "code": "package main\n\nimport \"fmt\"\n\ntype Server struct {\n\tHost string\n\tPort int\n}\n\nfunc (s Server) Address() string { // value receiver gets a copy\n\treturn fmt.Sprintf(\"%s:%d\", s.Host, s.Port)\n}\n\nfunc (s *Server) MoveTo(port int) { // pointer receiver can mutate\n\ts.Port = port\n}\n\nfunc main() {\n\ts := Server{Host: \"127.0.0.1\", Port: 8080}\n\ts.MoveTo(9090)\n\tfmt.Println(s.Address()) // 127.0.0.1:9090\n}"
+    },
+    {
+     "language": "go",
+     "code": "package main\n\nimport (\n\t\"encoding/json\"\n\t\"fmt\"\n)\n\ntype Timestamps struct {\n\tCreated string `json:\"created\"`\n\tUpdated string `json:\"updated\"`\n}\n\ntype Article struct {\n\tID         int    `json:\"id\"`\n\tTitle      string `json:\"title\"`\n\tTimestamps        // embedded fields are promoted\n}\n\nfunc main() {\n\ta := Article{\n\t\tID:         7,\n\t\tTitle:      \"Queue depth\",\n\t\tTimestamps: Timestamps{Created: \"2026-01-04\"},\n\t}\n\tdata, _ := json.Marshal(a)\n\tfmt.Println(string(data))\n}"
+    }
+   ]
+  },
+  {
+   "id": "interfaces",
+   "title": "Interfaces",
+   "description": "Method sets satisfied implicitly, and type switches",
+   "snippets": [
+    {
+     "language": "go",
+     "code": "package main\n\nimport \"fmt\"\n\ntype Shape interface {\n\tArea() float64\n}\n\ntype Square struct{ Side float64 }\ntype Circle struct{ Radius float64 }\n\nfunc (s Square) Area() float64 { return s.Side * s.Side }\nfunc (c Circle) Area() float64 { return 3.14159 * c.Radius * c.Radius }\n\nfunc describe(s Shape) string {\n\treturn fmt.Sprintf(\"area %.2f\", s.Area())\n}\n\nfunc main() {\n\tshapes := []Shape{Square{Side: 3}, Circle{Radius: 2}}\n\tfor _, s := range shapes {\n\t\tfmt.Println(describe(s))\n\t}\n}"
+    },
+    {
+     "language": "go",
+     "code": "package main\n\nimport (\n\t\"errors\"\n\t\"fmt\"\n)\n\nfunc inspect(v any) {\n\tswitch x := v.(type) {\n\tcase int:\n\t\tfmt.Println(\"int\", x+1)\n\tcase string:\n\t\tfmt.Println(\"string\", len(x))\n\tcase error:\n\t\tfmt.Println(\"error\", x.Error())\n\tdefault:\n\t\tfmt.Printf(\"%T\\n\", x)\n\t}\n}\n\nfunc main() {\n\tinspect(41)\n\tinspect(\"go\")\n\tinspect(errors.New(\"disk full\"))\n\tinspect(3.5)\n}"
+    }
+   ]
+  },
+  {
+   "id": "errors",
+   "title": "Error Handling",
+   "description": "Sentinel errors, wrapping with %w, and inspecting the chain",
+   "snippets": [
+    {
+     "language": "go",
+     "code": "package main\n\nimport (\n\t\"errors\"\n\t\"fmt\"\n)\n\nvar ErrNotFound = errors.New(\"record not found\")\n\nfunc lookup(id int) (string, error) {\n\tif id != 42 {\n\t\treturn \"\", fmt.Errorf(\"lookup %d: %w\", id, ErrNotFound)\n\t}\n\treturn \"answer\", nil\n}\n\nfunc main() {\n\tname, err := lookup(7)\n\tif errors.Is(err, ErrNotFound) {\n\t\tfmt.Println(\"missing:\", err)\n\t\treturn\n\t}\n\tfmt.Println(name)\n}"
+    },
+    {
+     "language": "go",
+     "code": "package main\n\nimport (\n\t\"errors\"\n\t\"fmt\"\n)\n\ntype ValidationError struct {\n\tField  string\n\tReason string\n}\n\nfunc (e *ValidationError) Error() string {\n\treturn fmt.Sprintf(\"%s: %s\", e.Field, e.Reason)\n}\n\nfunc validate(age int) error {\n\tif age < 0 {\n\t\treturn fmt.Errorf(\"signup rejected: %w\", &ValidationError{\n\t\t\tField:  \"age\",\n\t\t\tReason: \"must be positive\",\n\t\t})\n\t}\n\treturn nil\n}\n\nfunc main() {\n\terr := validate(-3)\n\tvar invalid *ValidationError\n\tif errors.As(err, &invalid) {\n\t\tfmt.Println(\"bad field:\", invalid.Field)\n\t}\n}"
+    },
+    {
+     "language": "go",
+     "code": "package main\n\nimport (\n\t\"errors\"\n\t\"fmt\"\n)\n\nfunc main() {\n\tprimary := errors.New(\"primary replica down\")\n\tcache := fmt.Errorf(\"cache lookup: %w\", errors.New(\"connection refused\"))\n\tcombined := errors.Join(primary, cache)\n\n\tfmt.Println(combined)\n\tfmt.Println(errors.Is(combined, primary)) // true\n}"
+    }
+   ]
+  },
+  {
+   "id": "goroutines",
+   "title": "Goroutines",
+   "description": "Concurrent functions coordinated with WaitGroup and Mutex",
+   "snippets": [
+    {
+     "language": "go",
+     "code": "package main\n\nimport (\n\t\"fmt\"\n\t\"sync\"\n)\n\nfunc main() {\n\tvar wg sync.WaitGroup\n\tsquares := make([]int, 5)\n\n\tfor i := range squares {\n\t\twg.Add(1)\n\t\tgo func() {\n\t\t\tdefer wg.Done()\n\t\t\tsquares[i] = i * i // each goroutine owns one slot\n\t\t}()\n\t}\n\twg.Wait()\n\tfmt.Println(squares)\n}"
+    },
+    {
+     "language": "go",
+     "code": "package main\n\nimport (\n\t\"fmt\"\n\t\"sync\"\n)\n\ntype Counter struct {\n\tmu sync.Mutex\n\tn  int\n}\n\nfunc (c *Counter) Inc() {\n\tc.mu.Lock()\n\tdefer c.mu.Unlock()\n\tc.n++\n}\n\nfunc main() {\n\tvar c Counter\n\tvar wg sync.WaitGroup\n\n\tfor range 100 {\n\t\twg.Add(1)\n\t\tgo func() {\n\t\t\tdefer wg.Done()\n\t\t\tc.Inc()\n\t\t}()\n\t}\n\twg.Wait()\n\tfmt.Println(c.n) // 100\n}"
+    }
+   ]
+  },
+  {
+   "id": "channels",
+   "title": "Channels",
+   "description": "Buffered and unbuffered pipes, close, and direction types",
+   "snippets": [
+    {
+     "language": "go",
+     "code": "package main\n\nimport \"fmt\"\n\nfunc main() {\n\t// Unbuffered: the sender waits for a receiver\n\tmsgs := make(chan string)\n\tgo func() {\n\t\tmsgs <- \"ping\"\n\t\tmsgs <- \"pong\"\n\t\tclose(msgs)\n\t}()\n\tfor m := range msgs {\n\t\tfmt.Println(m)\n\t}\n\n\t// Buffered: two sends fit without a receiver\n\tjobs := make(chan int, 2)\n\tjobs <- 10\n\tjobs <- 20\n\tclose(jobs)\n\tfmt.Println(<-jobs, <-jobs)\n}"
+    },
+    {
+     "language": "go",
+     "code": "package main\n\nimport (\n\t\"fmt\"\n\t\"sync\"\n)\n\nfunc worker(id int, jobs <-chan int, results chan<- int, wg *sync.WaitGroup) {\n\tdefer wg.Done()\n\tfor job := range jobs {\n\t\tresults <- job * 2\n\t}\n\tfmt.Println(\"worker\", id, \"done\")\n}\n\nfunc main() {\n\tjobs := make(chan int)\n\tresults := make(chan int, 5)\n\tvar wg sync.WaitGroup\n\n\tfor w := 1; w <= 3; w++ {\n\t\twg.Add(1)\n\t\tgo worker(w, jobs, results, &wg)\n\t}\n\tfor j := 1; j <= 5; j++ {\n\t\tjobs <- j\n\t}\n\tclose(jobs)\n\n\tgo func() {\n\t\twg.Wait()\n\t\tclose(results)\n\t}()\n\n\tfor r := range results {\n\t\tfmt.Println(\"result\", r)\n\t}\n}"
+    }
+   ]
+  },
+  {
+   "id": "select",
+   "title": "Select",
+   "description": "Choose among ready channel operations, with timeouts and defaults",
+   "snippets": [
+    {
+     "language": "go",
+     "code": "package main\n\nimport (\n\t\"fmt\"\n\t\"time\"\n)\n\nfunc main() {\n\tfast := make(chan string)\n\tslow := make(chan string)\n\n\tgo func() {\n\t\ttime.Sleep(20 * time.Millisecond)\n\t\tfast <- \"fast\"\n\t}()\n\tgo func() {\n\t\ttime.Sleep(150 * time.Millisecond)\n\t\tslow <- \"slow\"\n\t}()\n\n\tfor range 2 {\n\t\tselect {\n\t\tcase msg := <-fast:\n\t\t\tfmt.Println(msg)\n\t\tcase msg := <-slow:\n\t\t\tfmt.Println(msg)\n\t\tcase <-time.After(200 * time.Millisecond):\n\t\t\tfmt.Println(\"timeout\")\n\t\t\treturn\n\t\t}\n\t}\n}"
+    },
+    {
+     "language": "go",
+     "code": "package main\n\nimport (\n\t\"fmt\"\n\t\"time\"\n)\n\nfunc main() {\n\tqueue := make(chan int, 1)\n\n\tselect {\n\tcase queue <- 5:\n\t\tfmt.Println(\"queued\")\n\tdefault:\n\t\tfmt.Println(\"queue full, drop\")\n\t}\n\n\tticker := time.NewTicker(50 * time.Millisecond)\n\tquit := make(chan struct{})\n\tgo func() {\n\t\ttime.Sleep(120 * time.Millisecond)\n\t\tclose(quit)\n\t}()\n\n\tfor {\n\t\tselect {\n\t\tcase tick := <-ticker.C:\n\t\t\tfmt.Println(\"tick\", tick.Format(\"15:04:05.000\"))\n\t\tcase <-quit:\n\t\t\tticker.Stop()\n\t\t\tfmt.Println(\"stopped\")\n\t\t\treturn\n\t\t}\n\t}\n}"
+    }
+   ]
+  },
+  {
+   "id": "generics",
+   "title": "Generics",
+   "description": "Type parameters constrained by unions and underlying types",
+   "snippets": [
+    {
+     "language": "go",
+     "code": "package main\n\nimport \"fmt\"\n\ntype Number interface {\n\tint | int64 | float64\n}\n\nfunc Sum[T Number](values []T) T {\n\tvar total T\n\tfor _, v := range values {\n\t\ttotal += v\n\t}\n\treturn total\n}\n\nfunc main() {\n\tfmt.Println(Sum([]int{1, 2, 3}))\n\tfmt.Println(Sum([]float64{1.5, 2.25, 0.5}))\n}"
+    },
+    {
+     "language": "go",
+     "code": "package main\n\nimport \"fmt\"\n\ntype Stack[T any] struct {\n\titems []T\n}\n\nfunc (s *Stack[T]) Push(v T) {\n\ts.items = append(s.items, v)\n}\n\nfunc (s *Stack[T]) Pop() (T, bool) {\n\tvar zero T\n\tif len(s.items) == 0 {\n\t\treturn zero, false\n\t}\n\tlast := len(s.items) - 1\n\tv := s.items[last]\n\ts.items = s.items[:last]\n\treturn v, true\n}\n\nfunc main() {\n\tvar s Stack[string]\n\ts.Push(\"first\")\n\ts.Push(\"second\")\n\tv, ok := s.Pop()\n\tfmt.Println(v, ok, len(s.items))\n}"
+    },
+    {
+     "language": "go",
+     "code": "package main\n\nimport \"fmt\"\n\ntype Celsius float64\n\nfunc Average[T ~float64 | ~int](xs []T) float64 {\n\tvar sum float64\n\tfor _, x := range xs {\n\t\tsum += float64(x)\n\t}\n\treturn sum / float64(len(xs))\n}\n\nfunc main() {\n\tfmt.Println(Average([]Celsius{21.5, 23.0, 19.5}))\n}"
+    }
+   ]
+  },
+  {
+   "id": "testing",
+   "title": "Testing",
+   "description": "Table-driven tests, benchmarks, and the go test flags",
+   "snippets": [
+    {
+     "language": "go",
+     "code": "package money\n\n// Add returns the sum of two amounts in cents.\nfunc Add(a, b int64) int64 {\n\treturn a + b\n}"
+    },
+    {
+     "language": "go",
+     "code": "package money\n\nimport \"testing\"\n\nfunc TestAdd(t *testing.T) {\n\tcases := []struct {\n\t\tname string\n\t\ta, b int64\n\t\twant int64\n\t}{\n\t\t{\"positive\", 2, 3, 5},\n\t\t{\"negative\", -4, 1, -3},\n\t\t{\"zero\", 0, 0, 0},\n\t}\n\n\tfor _, tc := range cases {\n\t\tt.Run(tc.name, func(t *testing.T) {\n\t\t\tif got := Add(tc.a, tc.b); got != tc.want {\n\t\t\t\tt.Fatalf(\"Add(%d, %d) = %d, want %d\", tc.a, tc.b, got, tc.want)\n\t\t\t}\n\t\t})\n\t}\n}\n\nfunc BenchmarkAdd(b *testing.B) {\n\tfor i := 0; i < b.N; i++ {\n\t\tAdd(7, 2)\n\t}\n}"
+    },
+    {
+     "language": "bash",
+     "code": "# Run one test by name, with verbose output\ngo test -run TestAdd -v ./...\n\n# Detect data races while the tests run\ngo test -race ./...\n\n# Measure allocations as well as time\ngo test -bench . -benchmem ./...\n\n# Coverage summary for every package\ngo test -cover ./..."
+    }
+   ]
+  },
+  {
+   "id": "common-errors",
+   "title": "Common Errors",
+   "description": "Nil maps, aliased slices, shadowed variables, and typed nils",
+   "snippets": [
+    {
+     "language": "go",
+     "code": "package main\n\nimport (\n\t\"errors\"\n\t\"fmt\"\n)\n\nfunc main() {\n\t// A nil map accepts reads but panics on writes.\n\tcounts := make(map[string]int)\n\tcounts[\"retry\"]++\n\n\tvar err error\n\tif counts[\"retry\"] == 1 {\n\t\terr := errors.New(\"inner scope\") // shadows the outer err\n\t\tfmt.Println(err)\n\t}\n\tfmt.Println(err == nil, counts)\n}"
+    },
+    {
+     "language": "go",
+     "code": "package main\n\nimport \"fmt\"\n\nfunc main() {\n\tbase := []int{1, 2, 3, 4}\n\tpart := base[:2]\n\tpart = append(part, 99) // writes into base's backing array\n\tfmt.Println(base)       // [1 2 99 4]\n\n\tsafe := append([]int(nil), base[:2]...)\n\tsafe = append(safe, 100)\n\tfmt.Println(base, safe)\n}"
+    },
+    {
+     "language": "go",
+     "code": "package main\n\nimport \"fmt\"\n\ntype Problem struct {\n\tCode int\n}\n\nfunc (p *Problem) Error() string {\n\treturn fmt.Sprintf(\"problem %d\", p.Code)\n}\n\nfunc find(fail bool) error {\n\tvar p *Problem\n\tif fail {\n\t\tp = &Problem{Code: 7}\n\t}\n\treturn p\n}\n\nfunc main() {\n\terr := find(false)\n\tfmt.Println(err == nil) // false: a typed nil inside an interface\n\tif err != nil {\n\t\tfmt.Println(\"caller sees a failure\")\n\t}\n}"
+    }
+   ]
+  }
+ ]
+}

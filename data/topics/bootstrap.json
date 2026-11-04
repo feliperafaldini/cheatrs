@@ -1,0 +1,206 @@
+{
+ "slug": "bootstrap",
+ "title": "Bootstrap",
+ "label": "Bootstrap",
+ "group": "Framework",
+ "color": "#7952B3",
+ "desc": "CSS framework with a twelve-column grid, themed components and utility classes.",
+ "sections": [
+  {
+   "id": "setup",
+   "title": "Setup",
+   "description": "Load the compiled bundle from a CDN, install the package, or import the source from a bundler.",
+   "snippets": [
+    {
+     "language": "bash",
+     "code": "# Install the framework and the Sass compiler used by the source build\nnpm install bootstrap@5.3.3\nnpm install --save-dev sass\n\n# Copy the compiled files when the app serves static assets directly\nmkdir -p public/vendor\ncp node_modules/bootstrap/dist/css/bootstrap.min.css public/vendor/\ncp node_modules/bootstrap/dist/js/bootstrap.bundle.min.js public/vendor/"
+    },
+    {
+     "language": "html",
+     "code": "<!-- The bundle already contains Popper, so dropdowns, tooltips and modals work -->\n<link href=\"https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css\" rel=\"stylesheet\">\n<script src=\"https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js\" defer></script>"
+    },
+    {
+     "language": "js",
+     "code": "// ESM build registers every component and still allows tree-shaking\nimport * as bootstrap from 'bootstrap';\nimport 'bootstrap/dist/css/bootstrap.min.css';\n\n// Tooltips are opt-in: the data attribute only marks the element\ndocument.querySelectorAll('[data-bs-toggle=\"tooltip\"]')\n  .forEach((element) => new bootstrap.Tooltip(element));"
+    }
+   ]
+  },
+  {
+   "id": "grid",
+   "title": "Grid",
+   "description": "Twelve flexbox columns with breakpoint suffixes from sm to xxl.",
+   "snippets": [
+    {
+     "language": "html",
+     "code": "<!-- Sizes apply from the named breakpoint upward: sm 576px, md 768px, lg 992px, xl 1200px, xxl 1400px -->\n<div class=\"container\">\n  <div class=\"row\">\n    <div class=\"col-12 col-md-8\">Main content</div>\n    <div class=\"col-12 col-md-4\">Sidebar</div>\n  </div>\n</div>"
+    },
+    {
+     "language": "html",
+     "code": "<!-- Equal-height cards without writing a width per column -->\n<div class=\"row row-cols-1 row-cols-md-2 row-cols-xl-3 g-4\">\n  <div class=\"col\"><div class=\"border rounded p-3 h-100\">One</div></div>\n  <div class=\"col\"><div class=\"border rounded p-3 h-100\">Two</div></div>\n  <div class=\"col\"><div class=\"border rounded p-3 h-100\">Three</div></div>\n</div>"
+    },
+    {
+     "language": "html",
+     "code": "<!-- Auto columns, gutters and offsets in the same row -->\n<div class=\"row gx-4 gy-2\">\n  <div class=\"col-auto\"><span class=\"badge text-bg-primary\">Label</span></div>\n  <div class=\"col\">Fills the remaining space</div>\n  <div class=\"col-lg-6 offset-lg-3\">Centered from 992px up</div>\n</div>"
+    }
+   ]
+  },
+  {
+   "id": "containers",
+   "title": "Containers",
+   "description": "Centered wrappers with a max-width per breakpoint, plus a fluid variant.",
+   "snippets": [
+    {
+     "language": "html",
+     "code": "<!-- Fixed container: 540px at sm, 720px at md, 960px at lg, 1140px at xl, 1320px at xxl -->\n<div class=\"container\">\n  <p>Content stays centered with automatic side margins.</p>\n</div>\n\n<!-- Fluid container: always 100% wide, edges padded to 12px -->\n<div class=\"container-fluid px-3\">\n  <p>Stretches across the whole viewport.</p>\n</div>"
+    },
+    {
+     "language": "html",
+     "code": "<!-- container-md is fluid until 768px, then locks to a 720px max-width -->\n<div class=\"container-md\">\n  <div class=\"row\">\n    <div class=\"col\">Content</div>\n  </div>\n</div>"
+    }
+   ]
+  },
+  {
+   "id": "utilities",
+   "title": "Utilities",
+   "description": "Single-purpose classes for spacing, display, flex, text and borders.",
+   "snippets": [
+    {
+     "language": "html",
+     "code": "<!-- Spacing scale: 0, 1 = .25rem, 2 = .5rem, 3 = 1rem, 4 = 1.5rem, 5 = 3rem -->\n<section class=\"p-3 p-lg-5 mb-4 bg-body-tertiary rounded-3\">\n  <h2 class=\"h4 mb-2\">Release notes</h2>\n  <p class=\"text-body-secondary mb-0\">Shipped on 4 November 2026.</p>\n</section>"
+    },
+    {
+     "language": "html",
+     "code": "<!-- Flex and visibility helpers -->\n<div class=\"d-flex justify-content-between align-items-center gap-3\">\n  <span class=\"text-uppercase fw-semibold small\">Total</span>\n  <span class=\"fs-4 fw-bold\">R$ 249,90</span>\n</div>\n\n<div class=\"d-none d-md-block\">Visible from 768px up</div>\n<div class=\"d-block d-md-none\">Visible below 768px</div>"
+    },
+    {
+     "language": "html",
+     "code": "<!-- Accent border, truncation and a fixed aspect box -->\n<div class=\"border-start border-4 border-primary ps-3 text-truncate\" style=\"max-width: 18rem;\">\n  A long line that ends with an ellipsis when it overflows the box.\n</div>\n\n<div class=\"ratio ratio-16x9 bg-body-secondary d-flex align-items-center justify-content-center\">\n  Video placeholder\n</div>"
+    }
+   ]
+  },
+  {
+   "id": "buttons",
+   "title": "Buttons",
+   "description": "Solid, outline and link buttons with sizes, disabled states and toggle groups.",
+   "snippets": [
+    {
+     "language": "html",
+     "code": "<button type=\"button\" class=\"btn btn-primary\">Save</button>\n<button type=\"button\" class=\"btn btn-outline-secondary btn-sm\">Cancel</button>\n<button type=\"button\" class=\"btn btn-danger\" disabled>Delete</button>\n<a class=\"btn btn-link\" href=\"/docs\">Read the docs</a>"
+    },
+    {
+     "language": "html",
+     "code": "<!-- Pressed state is handled by the button plugin -->\n<button type=\"button\" class=\"btn btn-primary\" data-bs-toggle=\"button\" aria-pressed=\"false\">Pin topic</button>\n\n<!-- Radio group styled as a segmented control -->\n<div class=\"btn-group\" role=\"group\" aria-label=\"View mode\">\n  <input type=\"radio\" class=\"btn-check\" name=\"view\" id=\"view-list\" autocomplete=\"off\" checked>\n  <label class=\"btn btn-outline-primary\" for=\"view-list\">List</label>\n  <input type=\"radio\" class=\"btn-check\" name=\"view\" id=\"view-grid\" autocomplete=\"off\">\n  <label class=\"btn btn-outline-primary\" for=\"view-grid\">Grid</label>\n</div>"
+    }
+   ]
+  },
+  {
+   "id": "forms",
+   "title": "Forms",
+   "description": "Labels, controls, selects and validation feedback wired together.",
+   "snippets": [
+    {
+     "language": "html",
+     "code": "<form class=\"row g-3\" novalidate>\n  <div class=\"col-md-6\">\n    <label for=\"email\" class=\"form-label\">Email</label>\n    <input type=\"email\" class=\"form-control\" id=\"email\" required>\n    <div class=\"invalid-feedback\">Enter a valid email address.</div>\n  </div>\n  <div class=\"col-md-4\">\n    <label for=\"plan\" class=\"form-label\">Plan</label>\n    <select class=\"form-select\" id=\"plan\">\n      <option selected>Starter</option>\n      <option>Pro</option>\n      <option>Team</option>\n    </select>\n  </div>\n  <div class=\"col-md-2 d-flex align-items-end\">\n    <button class=\"btn btn-primary w-100\" type=\"submit\">Create</button>\n  </div>\n</form>"
+    },
+    {
+     "language": "html",
+     "code": "<div class=\"input-group mb-3\">\n  <span class=\"input-group-text\">@</span>\n  <input type=\"text\" class=\"form-control\" placeholder=\"username\" aria-label=\"Username\">\n</div>\n\n<div class=\"form-floating mb-3\">\n  <input type=\"password\" class=\"form-control\" id=\"password\" placeholder=\"Password\">\n  <label for=\"password\">Password</label>\n</div>\n\n<div class=\"form-check form-switch\">\n  <input class=\"form-check-input\" type=\"checkbox\" role=\"switch\" id=\"release-notes\" checked>\n  <label class=\"form-check-label\" for=\"release-notes\">Send me release notes</label>\n</div>"
+    },
+    {
+     "language": "js",
+     "code": "// Bootstrap styles validity through the was-validated class on the form\ndocument.querySelectorAll('form').forEach((form) => {\n  form.addEventListener('submit', (event) => {\n    if (!form.checkValidity()) {\n      event.preventDefault();\n      event.stopPropagation();\n    }\n    form.classList.add('was-validated');\n  });\n});"
+    }
+   ]
+  },
+  {
+   "id": "cards",
+   "title": "Cards",
+   "description": "Content boxes assembled from image, header, body and footer parts.",
+   "snippets": [
+    {
+     "language": "html",
+     "code": "<div class=\"card\" style=\"width: 18rem;\">\n  <img src=\"/img/refactoring-cover.jpg\" class=\"card-img-top\" alt=\"Book cover\">\n  <div class=\"card-body\">\n    <h5 class=\"card-title\">Refactoring</h5>\n    <p class=\"card-text\">Improving the design of existing code, second edition.</p>\n    <a href=\"/books/refactoring\" class=\"btn btn-primary\">Details</a>\n  </div>\n  <div class=\"card-footer text-body-secondary\">Updated in 2018</div>\n</div>"
+    },
+    {
+     "language": "html",
+     "code": "<!-- h-100 keeps every card in the row the same height -->\n<div class=\"row row-cols-1 row-cols-md-2 g-4\">\n  <div class=\"col\">\n    <div class=\"card h-100\">\n      <div class=\"card-header\">Backend</div>\n      <div class=\"card-body\">\n        <h5 class=\"card-title\">Rust service</h5>\n        <p class=\"card-text\">Async HTTP API with Tokio and SQLx.</p>\n      </div>\n    </div>\n  </div>\n  <div class=\"col\">\n    <div class=\"card h-100\">\n      <div class=\"card-header\">Frontend</div>\n      <div class=\"card-body\">\n        <h5 class=\"card-title\">Terminal client</h5>\n        <p class=\"card-text\">Keyboard-first browsing built with Ratatui.</p>\n      </div>\n    </div>\n  </div>\n</div>"
+    }
+   ]
+  },
+  {
+   "id": "navbar",
+   "title": "Navbar",
+   "description": "Responsive header that collapses into a toggler below the lg breakpoint.",
+   "snippets": [
+    {
+     "language": "html",
+     "code": "<nav class=\"navbar navbar-expand-lg bg-dark\" data-bs-theme=\"dark\">\n  <div class=\"container-fluid\">\n    <a class=\"navbar-brand\" href=\"/\">cheatrs</a>\n    <button class=\"navbar-toggler\" type=\"button\" data-bs-toggle=\"collapse\"\n            data-bs-target=\"#mainNav\" aria-controls=\"mainNav\"\n            aria-expanded=\"false\" aria-label=\"Toggle navigation\">\n      <span class=\"navbar-toggler-icon\"></span>\n    </button>\n    <div class=\"collapse navbar-collapse\" id=\"mainNav\">\n      <ul class=\"navbar-nav me-auto mb-2 mb-lg-0\">\n        <li class=\"nav-item\">\n          <a class=\"nav-link active\" aria-current=\"page\" href=\"/\">Home</a>\n        </li>\n        <li class=\"nav-item\">\n          <a class=\"nav-link\" href=\"/topics\">Topics</a>\n        </li>\n        <li class=\"nav-item dropdown\">\n          <a class=\"nav-link dropdown-toggle\" href=\"#\" role=\"button\"\n             data-bs-toggle=\"dropdown\" aria-expanded=\"false\">More</a>\n          <ul class=\"dropdown-menu\">\n            <li><a class=\"dropdown-item\" href=\"/about\">About</a></li>\n            <li><hr class=\"dropdown-divider\"></li>\n            <li><a class=\"dropdown-item\" href=\"/changelog\">Changelog</a></li>\n          </ul>\n        </li>\n      </ul>\n      <form class=\"d-flex\" role=\"search\">\n        <input class=\"form-control me-2\" type=\"search\" placeholder=\"Search topics\" aria-label=\"Search\">\n        <button class=\"btn btn-outline-light\" type=\"submit\">Search</button>\n      </form>\n    </div>\n  </div>\n</nav>"
+    }
+   ]
+  },
+  {
+   "id": "modals",
+   "title": "Modals",
+   "description": "Dialog markup opened by data attributes or instantiated from JavaScript.",
+   "snippets": [
+    {
+     "language": "html",
+     "code": "<button type=\"button\" class=\"btn btn-danger\" data-bs-toggle=\"modal\" data-bs-target=\"#confirmDelete\">\n  Delete topic\n</button>\n\n<div class=\"modal fade\" id=\"confirmDelete\" tabindex=\"-1\" aria-labelledby=\"confirmDeleteLabel\" aria-hidden=\"true\">\n  <div class=\"modal-dialog modal-dialog-centered\">\n    <div class=\"modal-content\">\n      <div class=\"modal-header\">\n        <h1 class=\"modal-title fs-5\" id=\"confirmDeleteLabel\">Delete this topic?</h1>\n        <button type=\"button\" class=\"btn-close\" data-bs-dismiss=\"modal\" aria-label=\"Close\"></button>\n      </div>\n      <div class=\"modal-body\">The file is removed from disk and cannot be restored.</div>\n      <div class=\"modal-footer\">\n        <button type=\"button\" class=\"btn btn-secondary\" data-bs-dismiss=\"modal\">Cancel</button>\n        <button type=\"button\" class=\"btn btn-danger\" data-bs-dismiss=\"modal\">Delete</button>\n      </div>\n    </div>\n  </div>\n</div>"
+    },
+    {
+     "language": "js",
+     "code": "// The constructor accepts a selector or an element in Bootstrap 5.2 and later\nconst dialog = new bootstrap.Modal('#confirmDelete', {\n  backdrop: 'static',\n  keyboard: false,\n});\n\ndialog.show();\n\ndocument.querySelector('#confirmDelete').addEventListener('hidden.bs.modal', () => {\n  console.log('dialog closed');\n});"
+    }
+   ]
+  },
+  {
+   "id": "tables",
+   "title": "Tables",
+   "description": "Opt-in table styling with striping, hover rows and a scroll wrapper.",
+   "snippets": [
+    {
+     "language": "html",
+     "code": "<div class=\"table-responsive\">\n  <table class=\"table table-striped table-hover align-middle\">\n    <thead class=\"table-dark\">\n      <tr>\n        <th scope=\"col\">#</th>\n        <th scope=\"col\">Topic</th>\n        <th scope=\"col\" class=\"text-end\">Snippets</th>\n      </tr>\n    </thead>\n    <tbody>\n      <tr><th scope=\"row\">1</th><td>Bootstrap</td><td class=\"text-end\">24</td></tr>\n      <tr><th scope=\"row\">2</th><td>Rust</td><td class=\"text-end\">31</td></tr>\n    </tbody>\n  </table>\n</div>"
+    },
+    {
+     "language": "html",
+     "code": "<!-- Contextual row colors plus a compact, borderless variant -->\n<table class=\"table table-sm table-borderless\">\n  <caption>Indexed on 4 November 2026.</caption>\n  <tbody>\n    <tr class=\"table-success\"><td>index</td><td>ready</td></tr>\n    <tr class=\"table-warning\"><td>search</td><td>rebuilding</td></tr>\n  </tbody>\n</table>"
+    }
+   ]
+  },
+  {
+   "id": "alerts",
+   "title": "Alerts and Badges",
+   "description": "Dismissible inline messages and compact count badges.",
+   "snippets": [
+    {
+     "language": "html",
+     "code": "<div class=\"alert alert-success alert-dismissible fade show\" role=\"alert\">\n  <strong>Saved.</strong> The topic was written to data/topics.\n  <button type=\"button\" class=\"btn-close\" data-bs-dismiss=\"alert\" aria-label=\"Close\"></button>\n</div>\n\n<div class=\"alert alert-warning mb-0\" role=\"alert\">\n  Your session expires in 5 minutes.\n</div>"
+    },
+    {
+     "language": "html",
+     "code": "<h1>Inbox <span class=\"badge text-bg-secondary\">4</span></h1>\n<a href=\"/issues\" class=\"text-decoration-none\">\n  Open issues <span class=\"badge rounded-pill text-bg-danger\">12</span>\n</a>\n\n<button type=\"button\" class=\"btn btn-primary position-relative\">\n  Notifications\n  <span class=\"position-absolute top-0 start-100 translate-middle badge rounded-pill text-bg-danger\">9</span>\n</button>"
+    }
+   ]
+  },
+  {
+   "id": "customize",
+   "title": "Customization",
+   "description": "Rebuild the theme with Sass variables or override CSS variables at runtime.",
+   "snippets": [
+    {
+     "language": "scss",
+     "code": "// src/scss/app.scss: the with() clause sets Bootstrap defaults before they compile\n@use \"bootstrap/scss/bootstrap\" with (\n  $primary: #6f42c1,\n  $border-radius: 0.5rem,\n  $enable-shadows: true\n);\n\n// Project rules follow the framework import\n.navbar-brand {\n  letter-spacing: 0.02em;\n}"
+    },
+    {
+     "language": "css",
+     "code": "/* Runtime theming: these variables inherit down the whole tree */\n:root {\n  --bs-body-font-family: \"Inter\", system-ui, sans-serif;\n  --bs-body-bg: #f8f9fa;\n  --bs-body-color: #212529;\n  --bs-border-radius: 0.5rem;\n  --bs-link-color: #6f42c1;\n  --bs-link-hover-color: #59359a;\n}\n\n/* Buttons bake their colors into component variables, so target them directly */\n.btn-primary {\n  --bs-btn-bg: #6f42c1;\n  --bs-btn-border-color: #6f42c1;\n  --bs-btn-hover-bg: #59359a;\n  --bs-btn-hover-border-color: #59359a;\n  --bs-btn-active-bg: #4e2f88;\n  --bs-btn-active-border-color: #4e2f88;\n}"
+    },
+    {
+     "language": "js",
+     "code": "// Bootstrap reads data-bs-theme on <html> and recolors every component\nconst root = document.documentElement;\nconst prefersDark = matchMedia('(prefers-color-scheme: dark)').matches;\nroot.setAttribute('data-bs-theme', localStorage.getItem('theme') ?? (prefersDark ? 'dark' : 'light'));\n\ndocument.querySelector('#theme-toggle').addEventListener('click', () => {\n  const next = root.getAttribute('data-bs-theme') === 'dark' ? 'light' : 'dark';\n  root.setAttribute('data-bs-theme', next);\n  localStorage.setItem('theme', next);\n});"
+    }
+   ]
+  }
+ ]
+}

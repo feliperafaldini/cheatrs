@@ -1,0 +1,196 @@
+{
+ "slug": "pandas",
+ "title": "Pandas",
+ "label": "Pandas",
+ "group": "Library",
+ "color": "#150458",
+ "desc": "Python library for labeled tabular data and time series analysis.",
+ "sections": [
+  {
+   "id": "setup",
+   "title": "Setup",
+   "description": "Install pandas and import it under the usual alias:",
+   "snippets": [
+    {
+     "language": "bash",
+     "code": "# From PyPI\npip install pandas\n\n# With conda\nconda install -c conda-forge pandas"
+    },
+    {
+     "language": "python",
+     "code": "import pandas as pd\nimport numpy as np\n\nprint(pd.__version__)"
+    }
+   ]
+  },
+  {
+   "id": "series",
+   "title": "Series",
+   "description": "Create and inspect one-dimensional labeled arrays:",
+   "snippets": [
+    {
+     "language": "python",
+     "code": "s = pd.Series([10, 20, 30], index=[\"a\", \"b\", \"c\"], name=\"score\")\n\ns[\"b\"]        # 20 by label\ns.iloc[0]      # 10 by position\ns.values       # array([10, 20, 30])\ns.index        # Index(['a', 'b', 'c'], dtype='object')\ns.mean()       # 20.0\ns + 5          # element-wise addition"
+    },
+    {
+     "language": "python",
+     "code": "s = pd.Series({\"a\": 10, \"b\": 20, \"c\": 30})\n\ns > 15                  # boolean mask\ns[s > 15]               # labels b and c\ns.map({10: \"low\", 20: \"mid\", 30: \"high\"})\ns.value_counts()\ns.sort_values(ascending=False)"
+    }
+   ]
+  },
+  {
+   "id": "dataframe",
+   "title": "DataFrame",
+   "description": "Build a table from columns and inspect its structure:",
+   "snippets": [
+    {
+     "language": "python",
+     "code": "df = pd.DataFrame({\n    \"name\": [\"Ana\", \"Bob\", \"Cid\"],\n    \"age\": [31, 24, 45],\n    \"city\": [\"Recife\", \"Lisboa\", \"Recife\"],\n})\n\ndf.head(2)\ndf.shape            # (3, 3)\ndf.columns.tolist() # ['name', 'age', 'city']\ndf.dtypes\ndf.info()\ndf.describe()"
+    },
+    {
+     "language": "python",
+     "code": "df[\"active\"] = True\ndf[\"age_next\"] = df[\"age\"] + 1\n\nrenamed = df.rename(columns={\"city\": \"town\"})\ndropped = df.drop(columns=[\"active\"])\nindexed = df.set_index(\"name\")\nflat = indexed.reset_index()"
+    }
+   ]
+  },
+  {
+   "id": "reading",
+   "title": "Reading Data",
+   "description": "Load CSV files with common parsing options:",
+   "snippets": [
+    {
+     "language": "python",
+     "code": "df = pd.read_csv(\"sales.csv\")\n\ndf = pd.read_csv(\n    \"sales.csv\",\n    sep=\";\",\n    header=0,\n    index_col=\"id\",\n    dtype={\"zip\": str},\n    parse_dates=[\"order_date\"],\n)\n\n# Only two columns and the first 500 rows\ndf = pd.read_csv(\"sales.csv\", usecols=[\"id\", \"total\"], nrows=500)\n\n# Treat these tokens as missing values\ndf = pd.read_csv(\"sales.csv\", na_values=[\"NA\", \"-\", \"\"])"
+    },
+    {
+     "language": "python",
+     "code": "df = pd.read_excel(\"report.xlsx\", sheet_name=\"Q1\")\ndf = pd.read_json(\"events.json\", lines=True)\ndf = pd.read_parquet(\"orders.parquet\", columns=[\"id\", \"total\"])\ndf = pd.read_sql(\"SELECT id, total FROM orders\", con=engine)"
+    }
+   ]
+  },
+  {
+   "id": "selecting",
+   "title": "Selecting",
+   "description": "Pick columns, rows and single cells by label or position:",
+   "snippets": [
+    {
+     "language": "python",
+     "code": "df = pd.DataFrame(\n    {\"name\": [\"Ana\", \"Bob\", \"Cid\"], \"age\": [31, 24, 45], \"city\": [\"Recife\", \"Lisboa\", \"Recife\"]},\n    index=[\"a\", \"b\", \"c\"],\n)\n\ndf[\"age\"]                # one column as Series\ndf[[\"name\", \"city\"]]     # two columns as DataFrame\ndf.loc[\"b\", \"age\"]       # 24 by label\ndf.loc[\"a\":\"b\", \"name\"]  # label slice, end included\ndf.iloc[0, 1]            # 31 by position\ndf.iloc[0:2, 0:2]        # first two rows and columns\ndf.at[\"c\", \"city\"]       # fast scalar by label\ndf.iat[2, 2]             # fast scalar by position"
+    }
+   ]
+  },
+  {
+   "id": "filtering",
+   "title": "Filtering",
+   "description": "Keep rows that satisfy boolean conditions:",
+   "snippets": [
+    {
+     "language": "python",
+     "code": "mask = (df[\"age\"] >= 30) & (df[\"city\"] == \"Recife\")\ndf[mask]\n\ndf[df[\"city\"].isin([\"Recife\", \"Lisboa\"])]\ndf[df[\"age\"].between(25, 40)]\ndf[df[\"name\"].str.startswith(\"A\")]\ndf[~df[\"city\"].eq(\"Lisboa\")]   # negation\n\nlimit = 30\ndf.query(\"age > @limit and city == 'Recife'\")"
+    }
+   ]
+  },
+  {
+   "id": "sorting",
+   "title": "Sorting",
+   "description": "Order rows by values, index or magnitude:",
+   "snippets": [
+    {
+     "language": "python",
+     "code": "df.sort_values(\"age\")\ndf.sort_values([\"city\", \"age\"], ascending=[True, False])\ndf.sort_values(\"age\", ascending=False, na_position=\"first\")\ndf.sort_index()\ndf.nlargest(2, \"age\")"
+    }
+   ]
+  },
+  {
+   "id": "grouping",
+   "title": "Grouping",
+   "description": "Split rows into groups and aggregate each one:",
+   "snippets": [
+    {
+     "language": "python",
+     "code": "df.groupby(\"city\")[\"age\"].mean()\ndf.groupby(\"city\").size()\n\ndf.groupby(\"city\").agg(\n    people=(\"name\", \"count\"),\n    total_age=(\"age\", \"sum\"),\n    oldest=(\"age\", \"max\"),\n)\n\n# Broadcast the group total back to every row\ndf[\"city_total\"] = df.groupby(\"city\")[\"age\"].transform(\"sum\")"
+    },
+    {
+     "language": "python",
+     "code": "df.groupby([\"city\", \"name\"])[\"age\"].sum()\ndf.groupby(\"city\")[\"age\"].agg([\"min\", \"mean\", \"max\"]).round(1)"
+    }
+   ]
+  },
+  {
+   "id": "merging",
+   "title": "Merging and Joining",
+   "description": "Combine tables by key or stack them vertically:",
+   "snippets": [
+    {
+     "language": "python",
+     "code": "users = pd.DataFrame({\"id\": [1, 2, 3], \"name\": [\"Ana\", \"Bob\", \"Cid\"]})\norders = pd.DataFrame({\"user_id\": [1, 1, 3], \"total\": [20.0, 35.5, 12.0]})\n\npd.merge(orders, users, left_on=\"user_id\", right_on=\"id\", how=\"left\")\npd.merge(orders, users, left_on=\"user_id\", right_on=\"id\", how=\"inner\", suffixes=(\"_order\", \"_user\"))\n\npd.concat([users, users], ignore_index=True)\n\nusers.set_index(\"id\").join(orders.set_index(\"user_id\"), how=\"left\")"
+    }
+   ]
+  },
+  {
+   "id": "pivot",
+   "title": "Pivot and Reshape",
+   "description": "Move between long and wide layouts:",
+   "snippets": [
+    {
+     "language": "python",
+     "code": "df.pivot_table(index=\"city\", columns=\"name\", values=\"age\", aggfunc=\"mean\")\ndf.pivot_table(index=\"city\", values=\"age\", aggfunc=[\"mean\", \"max\"], fill_value=0)\n\nwide = df.pivot(index=\"name\", columns=\"city\", values=\"age\")\nlong = wide.reset_index().melt(id_vars=\"name\", var_name=\"city\", value_name=\"age\")\n\nstacked = wide.stack()   # Series with a MultiIndex\nstacked.unstack()        # back to a DataFrame"
+    }
+   ]
+  },
+  {
+   "id": "missing",
+   "title": "Missing Data",
+   "description": "Detect, drop and fill absent values:",
+   "snippets": [
+    {
+     "language": "python",
+     "code": "df.isna().sum()                  # missing count per column\ndf.dropna()                      # drop rows with any missing value\ndf.dropna(subset=[\"name\"])       # require only the name column\ndf.dropna(axis=1, how=\"all\")     # drop columns that are entirely empty"
+    },
+    {
+     "language": "python",
+     "code": "df.fillna(0)\ndf.fillna({\"age\": df[\"age\"].mean(), \"city\": \"unknown\"})\ndf[\"age\"].ffill()                # carry the last valid value forward\ndf[\"age\"].interpolate()          # linear interpolation"
+    }
+   ]
+  },
+  {
+   "id": "dates",
+   "title": "Dates and Time Series",
+   "description": "Parse timestamps and resample a time index:",
+   "snippets": [
+    {
+     "language": "python",
+     "code": "df[\"order_date\"] = pd.to_datetime(df[\"order_date\"], format=\"%Y-%m-%d\")\n\npd.date_range(\"2024-01-01\", periods=4, freq=\"W\")\n\ndf[\"year\"] = df[\"order_date\"].dt.year\ndf[\"month\"] = df[\"order_date\"].dt.month_name()\ndf[\"weekday\"] = df[\"order_date\"].dt.day_name()"
+    },
+    {
+     "language": "python",
+     "code": "ts = df.set_index(\"order_date\").sort_index()\n\nts.resample(\"W\")[\"total\"].sum()\nts[\"total\"].rolling(\"7D\").mean()\nts.loc[\"2024-01\"]\n\ndf[\"ts\"] = pd.to_datetime(df[\"ts\"], utc=True)\ndf[\"ts\"].dt.tz_convert(\"America/Sao_Paulo\")"
+    }
+   ]
+  },
+  {
+   "id": "apply",
+   "title": "Apply and Map",
+   "description": "Transform values with functions and mappings:",
+   "snippets": [
+    {
+     "language": "python",
+     "code": "df[\"name\"].map(str.upper)\ndf[\"city\"].map({\"Recife\": \"BR\", \"Lisboa\": \"PT\"})\ndf[\"age\"].apply(lambda x: \"senior\" if x >= 40 else \"junior\")\n\n# Row-wise function; axis=1 passes each row as a Series\ndf.apply(lambda row: row[\"age\"] * 2, axis=1)\n\ndf.assign(age_next=df[\"age\"] + 1)\ndf[[\"age\"]].map(lambda x: x + 1)   # element-wise on a DataFrame"
+    }
+   ]
+  },
+  {
+   "id": "output",
+   "title": "Writing Data",
+   "description": "Save a DataFrame to disk or a database:",
+   "snippets": [
+    {
+     "language": "python",
+     "code": "df.to_csv(\"clean.csv\", index=False)\ndf.to_csv(\"clean.csv\", sep=\";\", columns=[\"name\", \"age\"], na_rep=\"\")\ndf.to_excel(\"report.xlsx\", sheet_name=\"people\", index=False)\ndf.to_parquet(\"people.parquet\", engine=\"pyarrow\", compression=\"snappy\")\ndf.to_json(\"people.json\", orient=\"records\", indent=2)"
+    },
+    {
+     "language": "python",
+     "code": "df.to_sql(\"people\", con=engine, if_exists=\"replace\", index=False)"
+    }
+   ]
+  }
+ ]
+}

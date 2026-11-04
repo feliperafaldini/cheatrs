@@ -1,0 +1,228 @@
+{
+ "slug": "flask",
+ "title": "Flask",
+ "label": "Flask",
+ "group": "Framework",
+ "color": "#000000",
+ "desc": "A lightweight Python web framework built on WSGI, with routing, Jinja templates and a small set of composable extensions.",
+ "sections": [
+  {
+   "id": "setup",
+   "title": "Setup",
+   "description": "Install Flask in a virtual environment and run the development server.",
+   "snippets": [
+    {
+     "language": "bash",
+     "code": "# Create an isolated environment for the project\npython3 -m venv .venv\nsource .venv/bin/activate\npip install \"flask>=3.1,<4\"\n\n# Start the reloader and debugger on port 5000\nflask --app app run --debug --port 5000\n\n# Print the URL map without starting a server\nflask --app app routes"
+    }
+   ]
+  },
+  {
+   "id": "app",
+   "title": "Application",
+   "description": "Create the application object directly or through a factory.",
+   "snippets": [
+    {
+     "language": "python",
+     "code": "from flask import Flask\n\napp = Flask(__name__)\n# Development value only; load the real key from the environment.\napp.config[\"SECRET_KEY\"] = \"dev-only-not-for-production\"\n\n@app.get(\"/\")\ndef index():\n    return \"Hello from Flask\"\n\nif __name__ == \"__main__\":\n    # debug=True enables the reloader and the interactive debugger\n    app.run(host=\"127.0.0.1\", port=5000, debug=True)"
+    },
+    {
+     "language": "python",
+     "code": "import os\n\nfrom flask import Flask\n\ndef create_app(test_config=None):\n    app = Flask(__name__, instance_relative_config=True)\n    os.makedirs(app.instance_path, exist_ok=True)\n    app.config.from_mapping(\n        SECRET_KEY=os.environ.get(\"SECRET_KEY\", \"dev-only\"),\n        DATABASE=os.path.join(app.instance_path, \"app.sqlite\"),\n    )\n\n    # FLASK_SECRET_KEY, FLASK_DATABASE, ... override the defaults\n    app.config.from_prefixed_env()\n\n    if test_config is not None:\n        app.config.update(test_config)\n\n    return app"
+    }
+   ]
+  },
+  {
+   "id": "routes",
+   "title": "Routes",
+   "description": "Map URLs to Python functions with converters and HTTP methods.",
+   "snippets": [
+    {
+     "language": "python",
+     "code": "from flask import Flask, url_for\n\napp = Flask(__name__)\n\n@app.get(\"/\")\ndef home():\n    return \"Home\"\n\n@app.post(\"/articles\")\ndef create_article():\n    return {\"created\": True}, 201\n\n@app.route(\"/articles/<int:article_id>\", methods=[\"GET\", \"DELETE\"])\ndef article(article_id: int):\n    if article_id == 0:\n        return {\"error\": \"unknown article\"}, 404\n    return {\"id\": article_id, \"url\": url_for(\"article\", article_id=article_id)}"
+    },
+    {
+     "language": "python",
+     "code": "@app.get(\"/files/<path:file_path>\")\ndef file_info(file_path: str):\n    return {\"path\": file_path, \"segments\": file_path.count(\"/\") + 1}\n\n# One function can answer two URL shapes when the argument has a default\n@app.get(\"/page\")\n@app.get(\"/page/<int:number>\")\ndef page(number: int = 1):\n    return {\"page\": number, \"per_page\": 20}"
+    }
+   ]
+  },
+  {
+   "id": "templates",
+   "title": "Templates",
+   "description": "Render Jinja templates and reuse a common layout.",
+   "snippets": [
+    {
+     "language": "python",
+     "code": "from flask import Flask, render_template\n\napp = Flask(__name__)\n\n@app.get(\"/\")\ndef index():\n    posts = [\n        {\"title\": \"Writing a small WSGI app\", \"body\": \"Start with a callable and grow from there.\"},\n        {\"title\": \"Reading request data\", \"body\": \"Query strings, forms and JSON all live on request.\"},\n    ]\n    return render_template(\"index.html\", posts=posts)"
+    },
+    {
+     "language": "html",
+     "code": "<!doctype html>\n<html lang=\"en\">\n<head>\n  <meta charset=\"utf-8\">\n  <meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">\n  <title>{% block title %}Field Notes{% endblock %}</title>\n  <link rel=\"stylesheet\" href=\"{{ url_for('static', filename='css/site.css') }}\">\n</head>\n<body>\n  <header><a href=\"{{ url_for('index') }}\">Field Notes</a></header>\n  <main>{% block content %}{% endblock %}</main>\n  <footer>&copy; 2026 Field Notes</footer>\n</body>\n</html>"
+    },
+    {
+     "language": "html",
+     "code": "{% extends \"base.html\" %}\n\n{% block title %}Recent posts{% endblock %}\n\n{% block content %}\n  <h1>Recent posts</h1>\n  {% for post in posts %}\n    <article>\n      <h2>{{ post.title }}</h2>\n      <p>{{ post.body|truncate(80, true) }}</p>\n    </article>\n  {% else %}\n    <p>Nothing published yet.</p>\n  {% endfor %}\n{% endblock %}"
+    }
+   ]
+  },
+  {
+   "id": "static",
+   "title": "Static Files",
+   "description": "Serve CSS, JavaScript and uploads from disk.",
+   "snippets": [
+    {
+     "language": "python",
+     "code": "from flask import Flask, url_for\n\napp = Flask(__name__)  # ./static is published at /static\n\n@app.get(\"/\")\ndef index():\n    css = url_for(\"static\", filename=\"css/site.css\")\n    return f'<link rel=\"stylesheet\" href=\"{css}\">'"
+    },
+    {
+     "language": "python",
+     "code": "app = Flask(\n    __name__,\n    static_folder=\"assets\",    # directory on disk\n    static_url_path=\"/files\",  # public prefix: /files/logo.svg\n)\n\n@app.get(\"/brand\")\ndef brand():\n    return {\"logo\": url_for(\"static\", filename=\"logo.svg\")}"
+    },
+    {
+     "language": "python",
+     "code": "from pathlib import Path\n\nfrom flask import send_from_directory\n\napp.config[\"UPLOAD_FOLDER\"] = Path(app.root_path) / \"uploads\"\n\n@app.get(\"/uploads/<path:name>\")\ndef download(name: str):\n    # send_from_directory refuses paths that escape the folder\n    return send_from_directory(app.config[\"UPLOAD_FOLDER\"], name, as_attachment=True)"
+    }
+   ]
+  },
+  {
+   "id": "request",
+   "title": "Request",
+   "description": "Read query strings, JSON bodies, forms and uploaded files.",
+   "snippets": [
+    {
+     "language": "python",
+     "code": "from flask import Flask, request\n\napp = Flask(__name__)\n\n@app.post(\"/search\")\ndef search():\n    term = request.args.get(\"q\", \"\")\n    page = request.args.get(\"page\", 1, type=int)\n    filters = request.get_json(silent=True) or {}\n    agent = request.headers.get(\"User-Agent\", \"unknown\")\n    return {\n        \"term\": term,\n        \"page\": page,\n        \"tags\": filters.get(\"tags\", []),\n        \"agent\": agent,\n        \"method\": request.method,\n    }"
+    },
+    {
+     "language": "python",
+     "code": "from pathlib import Path\n\nfrom flask import Flask, request\nfrom werkzeug.utils import secure_filename\n\napp = Flask(__name__)\napp.config[\"UPLOAD_FOLDER\"] = Path(\"uploads\")\napp.config[\"UPLOAD_FOLDER\"].mkdir(exist_ok=True)\n\n@app.post(\"/upload\")\ndef upload():\n    title = request.form[\"title\"]  # a missing field raises 400\n    note = request.form.get(\"note\", \"\")\n    file = request.files.get(\"attachment\")\n    if file is None or file.filename == \"\":\n        return {\"error\": \"attachment is required\"}, 400\n    target = app.config[\"UPLOAD_FOLDER\"] / secure_filename(file.filename)\n    file.save(target)\n    return {\"title\": title, \"note\": note, \"saved_as\": target.name}, 201"
+    }
+   ]
+  },
+  {
+   "id": "responses",
+   "title": "Responses",
+   "description": "Return text, JSON, files and redirects with the right status.",
+   "snippets": [
+    {
+     "language": "python",
+     "code": "from flask import Flask, abort, jsonify, redirect, url_for\n\napp = Flask(__name__)\n\n@app.get(\"/plain\")\ndef plain():\n    return \"OK\"  # 200 with text/html\n\n@app.get(\"/items\")\ndef items():\n    response = jsonify(items=[1, 2, 3], total=3)\n    response.headers[\"Cache-Control\"] = \"no-store\"\n    return response\n\n@app.post(\"/items\")\ndef create_item():\n    return {\"id\": 42}, 201, {\"Location\": \"/items/42\"}\n\n@app.get(\"/legacy\")\ndef legacy():\n    return redirect(url_for(\"plain\"), code=308)\n\n@app.get(\"/items/0\")\ndef missing_item():\n    abort(404, description=\"Item 0 does not exist\")"
+    },
+    {
+     "language": "python",
+     "code": "from flask import Flask, Response\n\napp = Flask(__name__)\n\n@app.get(\"/report.csv\")\ndef report():\n    body = \"id,name\\n1,Ada\\n2,Grace\\n\"\n    return Response(\n        body,\n        mimetype=\"text/csv\",\n        headers={\"Content-Disposition\": \"attachment; filename=report.csv\"},\n    )"
+    }
+   ]
+  },
+  {
+   "id": "blueprints",
+   "title": "Blueprints",
+   "description": "Split a large application into mountable modules.",
+   "snippets": [
+    {
+     "language": "python",
+     "code": "# views/articles.py\nfrom flask import Blueprint, render_template\n\narticles = Blueprint(\"articles\", __name__, url_prefix=\"/articles\")\n\n@articles.get(\"/\")\ndef index():\n    return render_template(\"articles/index.html\", articles=[])\n\n@articles.get(\"/<int:article_id>\")\ndef detail(article_id: int):\n    return render_template(\"articles/detail.html\", article_id=article_id)"
+    },
+    {
+     "language": "python",
+     "code": "# app.py\nfrom flask import Flask\n\nfrom views.articles import articles\n\ndef create_app():\n    app = Flask(__name__)\n    app.register_blueprint(articles)\n    # url_for(\"articles.detail\", article_id=7) builds /articles/7\n    return app"
+    }
+   ]
+  },
+  {
+   "id": "forms",
+   "title": "Forms",
+   "description": "Validate and render forms with Flask-WTF.",
+   "snippets": [
+    {
+     "language": "bash",
+     "code": "# Flask-WTF handles CSRF; email-validator powers the Email check\npip install \"flask-wtf>=1.2\" \"email-validator>=2.0\""
+    },
+    {
+     "language": "python",
+     "code": "from flask import Flask, redirect, render_template, url_for\nfrom flask_wtf import FlaskForm\nfrom wtforms import StringField, SubmitField, TextAreaField\nfrom wtforms.validators import DataRequired, Email, Length\n\napp = Flask(__name__)\napp.config[\"SECRET_KEY\"] = \"dev-only-change-me\"\n\nclass ContactForm(FlaskForm):\n    name = StringField(\"Name\", validators=[DataRequired(), Length(max=80)])\n    email = StringField(\"Email\", validators=[DataRequired(), Email()])\n    message = TextAreaField(\"Message\", validators=[DataRequired(), Length(max=2000)])\n    submit = SubmitField(\"Send\")\n\n@app.route(\"/contact\", methods=[\"GET\", \"POST\"])\ndef contact():\n    form = ContactForm()\n    if form.validate_on_submit():\n        # Send or store form.data here\n        return redirect(url_for(\"contact\"))\n    return render_template(\"contact.html\", form=form)"
+    },
+    {
+     "language": "html",
+     "code": "<form method=\"post\" novalidate>\n  {{ form.hidden_tag() }}\n\n  <p>\n    {{ form.name.label }}<br>\n    {{ form.name(size=40) }}\n    {% for error in form.name.errors %}<span class=\"error\">{{ error }}</span>{% endfor %}\n  </p>\n\n  <p>\n    {{ form.email.label }}<br>\n    {{ form.email(size=40) }}\n    {% for error in form.email.errors %}<span class=\"error\">{{ error }}</span>{% endfor %}\n  </p>\n\n  <p>{{ form.message(rows=6, cols=50) }}</p>\n  <p>{{ form.submit() }}</p>\n</form>"
+    }
+   ]
+  },
+  {
+   "id": "database",
+   "title": "Database",
+   "description": "Store models with Flask-SQLAlchemy and query them with SQLAlchemy 2.",
+   "snippets": [
+    {
+     "language": "python",
+     "code": "from flask import Flask\nfrom flask_sqlalchemy import SQLAlchemy\nfrom sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column\n\nclass Base(DeclarativeBase):\n    pass\n\ndb = SQLAlchemy(model_class=Base)\n\napp = Flask(__name__)\napp.config[\"SQLALCHEMY_DATABASE_URI\"] = \"sqlite:///library.db\"\ndb.init_app(app)\n\nclass Book(db.Model):\n    id: Mapped[int] = mapped_column(primary_key=True)\n    title: Mapped[str] = mapped_column(db.String(120), nullable=False)\n    year: Mapped[int | None]\n\nwith app.app_context():\n    db.create_all()  # switch to migrations once the schema changes"
+    },
+    {
+     "language": "python",
+     "code": "from sqlalchemy import select\n\n@app.get(\"/books\")\ndef list_books():\n    stmt = select(Book).where(Book.year >= 2000).order_by(Book.title)\n    books = db.session.execute(stmt).scalars().all()\n    return {\"count\": len(books), \"books\": [{\"id\": b.id, \"title\": b.title} for b in books]}\n\n@app.post(\"/books\")\ndef add_book():\n    book = Book(title=\"Designing Data-Intensive Applications\", year=2017)\n    db.session.add(book)\n    db.session.commit()\n    return {\"id\": book.id}, 201"
+    }
+   ]
+  },
+  {
+   "id": "sessions",
+   "title": "Sessions",
+   "description": "Keep small per-user state in a signed cookie.",
+   "snippets": [
+    {
+     "language": "python",
+     "code": "from flask import Flask, session\n\napp = Flask(__name__)\napp.config[\"SECRET_KEY\"] = \"dev-only-change-me\"\n\n@app.post(\"/cart/add\")\ndef add_to_cart():\n    cart = session.get(\"cart\", [])\n    cart.append(\"coffee beans\")\n    session[\"cart\"] = cart  # assignment marks the session as modified\n    return {\"items\": len(cart)}"
+    },
+    {
+     "language": "python",
+     "code": "from datetime import timedelta\n\nfrom flask import Flask, session\n\napp = Flask(__name__)\napp.config.update(\n    SECRET_KEY=\"dev-only-change-me\",\n    PERMANENT_SESSION_LIFETIME=timedelta(days=14),\n    SESSION_COOKIE_HTTPONLY=True,\n    SESSION_COOKIE_SAMESITE=\"Lax\",\n)\n\n@app.post(\"/sign-in\")\ndef sign_in():\n    session.permanent = True  # keep the cookie for 14 days\n    session[\"account_id\"] = 7\n    return {\"signed_in\": True}\n\n@app.post(\"/sign-out\")\ndef sign_out():\n    session.clear()\n    return {\"signed_in\": False}"
+    }
+   ]
+  },
+  {
+   "id": "auth",
+   "title": "Authentication",
+   "description": "Hash passwords, sign users in and protect views.",
+   "snippets": [
+    {
+     "language": "python",
+     "code": "from functools import wraps\n\nfrom flask import Flask, g, redirect, request, session, url_for\nfrom werkzeug.security import check_password_hash, generate_password_hash\n\napp = Flask(__name__)\napp.config[\"SECRET_KEY\"] = \"dev-only-change-me\"\n\n# Demo store; production reads password hashes from the database.\nUSERS = {\"ada@example.com\": generate_password_hash(\"correct-horse-battery\")}\n\ndef login_required(view):\n    @wraps(view)\n    def wrapped(*args, **kwargs):\n        if getattr(g, \"user\", None) is None:\n            return redirect(url_for(\"login\", next=request.path))\n        return view(*args, **kwargs)\n    return wrapped\n\n@app.before_request\ndef load_user():\n    email = session.get(\"user_email\")\n    g.user = {\"email\": email} if email else None\n\n@app.post(\"/login\")\ndef login():\n    email = request.form.get(\"email\", \"\")\n    password = request.form.get(\"password\", \"\")\n    stored = USERS.get(email)\n    if stored is None or not check_password_hash(stored, password):\n        return {\"error\": \"invalid credentials\"}, 401\n    session.clear()  # drop any state from before the login\n    session[\"user_email\"] = email\n    return {\"signed_in\": True}\n\n@app.post(\"/logout\")\ndef logout():\n    session.clear()\n    return {\"signed_in\": False}\n\n@app.get(\"/dashboard\")\n@login_required\ndef dashboard():\n    return {\"user\": g.user[\"email\"]}"
+    }
+   ]
+  },
+  {
+   "id": "testing",
+   "title": "Testing",
+   "description": "Drive the app through the test client with pytest fixtures.",
+   "snippets": [
+    {
+     "language": "python",
+     "code": "# tests/conftest.py\nimport pytest\n\nfrom app import create_app, db\n\n@pytest.fixture()\ndef app():\n    application = create_app(\n        {\n            \"TESTING\": True,\n            \"SQLALCHEMY_DATABASE_URI\": \"sqlite:///:memory:\",\n            \"WTF_CSRF_ENABLED\": False,\n        }\n    )\n    with application.app_context():\n        db.create_all()\n        yield application\n        db.session.remove()\n        db.drop_all()\n\n@pytest.fixture()\ndef client(app):\n    return app.test_client()"
+    },
+    {
+     "language": "python",
+     "code": "# tests/test_api.py\ndef test_home_page(client):\n    response = client.get(\"/\")\n    assert response.status_code == 200\n\ndef test_create_article(client):\n    response = client.post(\"/articles\", json={\"title\": \"A short note\"})\n    assert response.status_code == 201\n    assert response.get_json() == {\"created\": True}\n\ndef test_dashboard_redirects_anonymous_user(client):\n    response = client.get(\"/dashboard\")\n    assert response.status_code == 302\n    assert response.headers[\"Location\"].startswith(\"/login\")\n\ndef test_seeded_session_reaches_dashboard(client):\n    with client.session_transaction() as session:\n        session[\"user_email\"] = \"ada@example.com\"\n    response = client.get(\"/dashboard\")\n    assert response.status_code == 200"
+    }
+   ]
+  },
+  {
+   "id": "deployment",
+   "title": "Deployment",
+   "description": "Run the app under Gunicorn, preferably inside a container.",
+   "snippets": [
+    {
+     "language": "python",
+     "code": "# wsgi.py\nfrom app import create_app\n\napplication = create_app()"
+    },
+    {
+     "language": "bash",
+     "code": "# Production server in the same environment as the application\npip install \"gunicorn>=23.0\"\n\n# Four workers behind a reverse proxy on the same host\ngunicorn --workers 4 --bind 127.0.0.1:8000 --access-logfile - wsgi:application\n\n# Reload the workers after deploying new code (the oldest match is the master)\nkill -HUP \"$(pgrep -o -f 'gunicorn.*wsgi:application')\""
+    },
+    {
+     "language": "dockerfile",
+     "code": "FROM python:3.13-slim\n\nENV PYTHONDONTWRITEBYTECODE=1 \\\n    PYTHONUNBUFFERED=1\n\nWORKDIR /srv\nCOPY requirements.txt .\nRUN pip install --no-cache-dir -r requirements.txt\n\nCOPY . .\nRUN useradd --create-home app && chown -R app:app /srv\nUSER app\n\nEXPOSE 8000\nCMD [\"gunicorn\", \"--workers\", \"4\", \"--bind\", \"0.0.0.0:8000\", \"wsgi:application\"]"
+    }
+   ]
+  }
+ ]
+}

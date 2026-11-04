@@ -1,0 +1,157 @@
+{
+ "slug": "windows-commands",
+ "title": "Windows Commands",
+ "label": "Windows Commands",
+ "group": "Tool",
+ "color": "#0078D4",
+ "desc": "Walk the Windows command line from files and processes to services, registry and PowerShell.",
+ "sections": [
+  {
+   "id": "files",
+   "title": "Files and Directories",
+   "description": "Create, inspect, copy and remove files and folders with cmd and PowerShell.",
+   "snippets": [
+    {
+     "language": "bat",
+     "code": "REM List every entry, including hidden and system files\ndir /a\nREM Bare full paths of matching files, walking subfolders\ndir /s /b *.log\n\nREM Change directory, switching drive when needed\ncd C:\\Users\\ana\\Projects\ncd /d D:\\work\n\nREM Point a temporary drive letter at a UNC share, then drop it\npushd \\\\fileserver\\projects\npopd"
+    },
+    {
+     "language": "bat",
+     "code": "mkdir C:\\backup\\2026\ncopy /y report.docx D:\\shared\\report.docx\n\nREM /e includes empty folders, /i treats the target as a folder, /h keeps hidden files\nxcopy C:\\photos D:\\backup\\photos /e /i /h\n\nREM /mir makes the destination an exact copy, deleting extras, with two retries\nrobocopy C:\\data D:\\backup /mir /r:2 /w:2\n\nmove /y draft.txt final.txt\ndel /q *.tmp\nrmdir /s /q C:\\backup\\old"
+    },
+    {
+     "language": "powershell",
+     "code": "# Create a folder and ignore \"already exists\"\nNew-Item -ItemType Directory -Path C:\\logs\\2026 -Force\n\n# Files over 100 MB anywhere under C:\\logs\nGet-ChildItem C:\\logs -Recurse -File | Where-Object Length -gt 100MB\n\nCopy-Item .\\config.json D:\\apps\\config.json -Force\nMove-Item .\\old C:\\archive\\old\nRemove-Item C:\\temp\\* -Recurse -Force\n\n# Size and modification time for one file\nGet-Item .\\report.docx | Select-Object Name, Length, LastWriteTime"
+    }
+   ]
+  },
+  {
+   "id": "viewing",
+   "title": "Viewing Files",
+   "description": "Read a file, page through it and pull out matching lines.",
+   "snippets": [
+    {
+     "language": "bat",
+     "code": "REM Print the whole file to the console\ntype C:\\Windows\\win.ini\n\nREM Page through a long file: Space next page, Q quit\nmore /e C:\\logs\\setup.log\n\nREM Numbered, case-insensitive matches\nfind /n /i \"error\" C:\\logs\\app.log\n\nREM Search every .config below the current folder\nfindstr /s /i /n \"timeout\" *.config"
+    },
+    {
+     "language": "powershell",
+     "code": "# First and last lines of a file\nGet-Content .\\setup.log -Head 20\nGet-Content .\\setup.log -Tail 20\n\n# Follow a growing log until Ctrl+C\nGet-Content .\\setup.log -Tail 50 -Wait\n\n# Keep only matching lines\nGet-Content .\\setup.log | Select-String -Pattern 'error' -CaseSensitive\n\n# Compare two files line by line\nCompare-Object (Get-Content .\\before.txt) (Get-Content .\\after.txt)"
+    }
+   ]
+  },
+  {
+   "id": "text",
+   "title": "Text Processing",
+   "description": "Filter, sort, count and rewrite text without leaving the shell.",
+   "snippets": [
+    {
+     "language": "bat",
+     "code": "REM Sort lines and write the result\nsort C:\\logs\\names.txt > C:\\logs\\names-sorted.txt\n\nREM Count lines: an empty search string matches every line\nfind /v /c \"\" C:\\logs\\app.log\n\nREM Lines that begin with ERROR\nfindstr /r /c:\"^ERROR\" C:\\logs\\app.log\n\nREM Second comma-separated field of each line, typed at the prompt\nfor /f \"tokens=2 delims=,\" %A in (users.csv) do @echo %A"
+    },
+    {
+     "language": "powershell",
+     "code": "# Replace text and write the file back\n(Get-Content .\\hosts) -replace 'old.example.com', 'new.example.com' | Set-Content .\\hosts\n\n# Count server errors in a log\nGet-Content .\\access.log | Where-Object { $_ -match ' 500 ' } | Measure-Object\n\n# Deduplicate and sort a list\nGet-Content .\\names.txt | Sort-Object -Unique | Set-Content .\\names-sorted.txt\n\n# Split, keep, reshape and export rows\nImport-Csv .\\users.csv |\n  Where-Object Department -eq 'Ops' |\n  Select-Object Name, Email |\n  Export-Csv .\\ops.csv -NoTypeInformation"
+    }
+   ]
+  },
+  {
+   "id": "processes",
+   "title": "Processes",
+   "description": "List what is running, inspect command lines and end a process.",
+   "snippets": [
+    {
+     "language": "bat",
+     "code": "REM Everything running, with session and memory columns\ntasklist\n\nREM Filter by image name or PID\ntasklist /fi \"imagename eq chrome.exe\"\ntasklist /svc /fi \"pid eq 4120\"\n\nREM Ask before closing, then force the whole process tree\ntaskkill /im notepad.exe\ntaskkill /pid 4120 /f /t"
+    },
+    {
+     "language": "powershell",
+     "code": "# Top processes by CPU time\nGet-Process | Sort-Object CPU -Descending | Select-Object -First 10 Name, Id, CPU\n\n# Where a process lives and when it started\nGet-Process -Name node | Select-Object Id, Path, StartTime\n\n# Full command line, which Get-Process does not expose\nGet-CimInstance Win32_Process -Filter \"Name = 'node.exe'\" |\n  Select-Object ProcessId, CommandLine\n\nStop-Process -Id 4120 -Force\nWait-Process -Id 4120 -Timeout 30\nStart-Process notepad -ArgumentList C:\\logs\\app.log"
+    }
+   ]
+  },
+  {
+   "id": "system-info",
+   "title": "System Information",
+   "description": "Collect OS, hardware, disk and account details from one machine.",
+   "snippets": [
+    {
+     "language": "bat",
+     "code": "REM Full report: OS build, RAM, domain and hotfixes\nsysteminfo\n\nREM Just the interesting lines\nsysteminfo | findstr /c:\"OS Name\" /c:\"OS Version\" /c:\"System Boot Time\"\n\nREM Machine name and the account you are using\nhostname\nwhoami"
+    },
+    {
+     "language": "powershell",
+     "code": "# OS edition, build and last boot\nGet-CimInstance Win32_OperatingSystem |\n  Select-Object Caption, Version, BuildNumber, LastBootUpTime\n\n# CPU and physical memory\nGet-CimInstance Win32_Processor | Select-Object Name, NumberOfCores, NumberOfLogicalProcessors\nGet-CimInstance Win32_ComputerSystem | Select-Object Manufacturer, Model, TotalPhysicalMemory\n\n# Fixed disks with free space in GB\nGet-CimInstance Win32_LogicalDisk -Filter \"DriveType = 3\" |\n  Select-Object DeviceID, @{ Name = 'FreeGB'; Expression = { [math]::Round($_.FreeSpace / 1GB, 1) } }"
+    }
+   ]
+  },
+  {
+   "id": "network",
+   "title": "Network",
+   "description": "Check addressing, test connectivity and list listening ports.",
+   "snippets": [
+    {
+     "language": "bat",
+     "code": "REM Addresses per adapter, then the full picture with DNS and MAC\nipconfig\nipconfig /all\n\nREM Drop the resolver cache after changing DNS records\nipconfig /flushdns\n\nREM Reachability and the path taken\nping -n 4 1.1.1.1\ntracert learn.microsoft.com\nnslookup github.com 1.1.1.1"
+    },
+    {
+     "language": "bat",
+     "code": "REM Which process owns a listening port\nnetstat -ano | findstr :443\n\nREM Routing table\nroute print\n\nREM Persistent drive letter to a share\nnet use Z: \\\\fileserver\\projects /persistent:yes\nnet use Z: /delete"
+    },
+    {
+     "language": "powershell",
+     "code": "# Port check with a clear boolean result\nTest-NetConnection -ComputerName github.com -Port 443\n\n# DNS answers\nResolve-DnsName github.com -Type A\n\n# Interface addressing without parsing text\nGet-NetIPConfiguration | Select-Object InterfaceAlias, IPv4Address, IPv4DefaultGateway\n\n# Listening TCP ports, lowest first\nGet-NetTCPConnection -State Listen | Sort-Object LocalPort | Select-Object LocalAddress, LocalPort, OwningProcess"
+    }
+   ]
+  },
+  {
+   "id": "services",
+   "title": "Services",
+   "description": "Inspect, start, stop and change the startup type of Windows services.",
+   "snippets": [
+    {
+     "language": "bat",
+     "code": "REM List running services\nnet start\n\nREM Service state, startup type and binary path\nsc query Spooler\nsc qc Spooler\n\nREM Change startup type; the space after start= is required\nsc config Spooler start= auto\nsc stop Spooler\nsc start Spooler\n\nREM net uses the display name, sc uses the short service name\nnet stop \"Print Spooler\"\nnet start \"Print Spooler\""
+    },
+    {
+     "language": "powershell",
+     "code": "# Running services\nGet-Service | Where-Object Status -eq 'Running'\n\n# One service in detail\nGet-Service -Name Spooler | Select-Object Name, DisplayName, Status, StartType\n\n# Change startup type and restart\nSet-Service -Name Spooler -StartupType Manual\nRestart-Service -Name Spooler -Force\n\n# Find services by wildcard\nGet-Service -Name 'Win*' | Format-Table -AutoSize"
+    }
+   ]
+  },
+  {
+   "id": "registry",
+   "title": "Registry",
+   "description": "Read, write and back up configuration stored in the registry.",
+   "snippets": [
+    {
+     "language": "bat",
+     "code": "REM Read a value\nreg query \"HKLM\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\" /v ProductName\n\nREM Values that launch at sign-in\nreg query HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Run\n\nREM Create or overwrite a string value\nreg add HKCU\\Software\\Acme /v Editor /t REG_SZ /d \"C:\\Tools\\editor.exe\" /f\n\nREM Remove one value, then the whole key\nreg delete HKCU\\Software\\Acme /v Editor /f\nreg delete HKCU\\Software\\Acme /f\n\nREM Back up and restore a key as a .reg file\nreg export HKCU\\Software\\Acme C:\\backup\\acme.reg\nreg import C:\\backup\\acme.reg"
+    },
+    {
+     "language": "powershell",
+     "code": "# Read one value\nGet-ItemProperty -Path 'HKLM:\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion' -Name ProductName\n\n# Create a key, then a value inside it\nNew-Item -Path HKCU:\\Software\\Acme -Force\nSet-ItemProperty -Path HKCU:\\Software\\Acme -Name Editor -Value 'C:\\Tools\\editor.exe'\n\n# Show everything under a key\nGet-ChildItem HKCU:\\Software\\Acme\nGet-ItemProperty HKCU:\\Software\\Acme\n\n# Installed programs with their versions\nGet-ItemProperty 'HKLM:\\Software\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\*' |\n  Select-Object DisplayName, DisplayVersion |\n  Sort-Object DisplayName"
+    }
+   ]
+  },
+  {
+   "id": "powershell",
+   "title": "PowerShell",
+   "description": "Core cmdlets and habits for exploring and scripting with objects.",
+   "snippets": [
+    {
+     "language": "powershell",
+     "code": "# Version and edition\n$PSVersionTable\n\n# Find commands and read examples without leaving the shell\nGet-Command *-Service\nGet-Help Get-ChildItem -Examples\n\n# Inspect what an object actually contains\nGet-Process -Id $PID | Get-Member"
+    },
+    {
+     "language": "powershell",
+     "code": "# Objects flow through the pipeline, so property names matter\nGet-ChildItem C:\\logs -Filter *.log |\n  Where-Object LastWriteTime -lt (Get-Date).AddDays(-7) |\n  Measure-Object -Property Length -Sum\n\nGet-Process |\n  Sort-Object WorkingSet64 -Descending |\n  Select-Object -First 5 Name, WorkingSet64\n\n# Persist results as data\nGet-Service | Export-Csv C:\\temp\\services.csv -NoTypeInformation"
+    },
+    {
+     "language": "powershell",
+     "code": "# Run once on a remote machine, or reuse a session for several calls\nInvoke-Command -ComputerName web01 -ScriptBlock { Get-Service Spooler }\n$session = New-PSSession -ComputerName web01 -Credential (Get-Credential)\nInvoke-Command -Session $session -ScriptBlock { Get-WinEvent -LogName System -MaxEvents 5 }\nRemove-PSSession $session\n\n# Fail loudly instead of continuing after an error\n$ErrorActionPreference = 'Stop'\ntry {\n  Copy-Item .\\a.txt D:\\b.txt -ErrorAction Stop\n} catch {\n  Write-Error $_.Exception.Message\n}"
+    }
+   ]
+  }
+ ]
+}

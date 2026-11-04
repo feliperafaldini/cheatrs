@@ -1,0 +1,231 @@
+{
+ "slug": "django",
+ "title": "Django",
+ "label": "Django",
+ "group": "Framework",
+ "color": "#092E20",
+ "desc": "A batteries-included Python framework for building secure, database-backed web applications.",
+ "sections": [
+  {
+   "id": "setup",
+   "title": "Setup",
+   "description": "Create an environment, start a project and launch the development server:",
+   "snippets": [
+    {
+     "language": "bash",
+     "code": "# Create and activate a virtual environment\npython3 -m venv .venv\nsource .venv/bin/activate\n\n# Install Django\npip install \"django>=5.1,<5.3\"\n\n# Start a project in the current directory\ndjango-admin startproject config .\n\n# Create an application\npython manage.py startapp blog\n\n# Create the SQLite tables and run the development server\npython manage.py migrate\npython manage.py runserver 8000"
+    }
+   ]
+  },
+  {
+   "id": "structure",
+   "title": "Project Structure",
+   "description": "Layout produced by startproject plus one application:",
+   "snippets": [
+    {
+     "language": "text",
+     "code": "mysite/\n  manage.py\n  config/\n    __init__.py\n    settings.py        # Global configuration\n    urls.py            # Root URL declarations\n    asgi.py\n    wsgi.py\n  blog/                # Application created with startapp\n    migrations/\n    admin.py\n    apps.py\n    models.py\n    tests.py\n    views.py\n    urls.py            # App routes, included by config/urls.py\n  templates/\n    base.html\n    blog/\n      article_list.html\n  static/\n    css/\n      site.css\n  requirements.txt"
+    }
+   ]
+  },
+  {
+   "id": "models",
+   "title": "Models",
+   "description": "Map database tables to Python classes with fields and metadata:",
+   "snippets": [
+    {
+     "language": "python",
+     "code": "from django.db import models\n\n\nclass Category(models.Model):\n    name = models.CharField(max_length=80, unique=True)\n    slug = models.SlugField(max_length=80, unique=True)\n\n    class Meta:\n        verbose_name_plural = \"categories\"\n        ordering = [\"name\"]\n\n    def __str__(self):\n        return self.name\n\n\nclass Tag(models.Model):\n    name = models.CharField(max_length=40, unique=True)\n    slug = models.SlugField(max_length=40, unique=True)\n\n    def __str__(self):\n        return self.name\n\n\nclass Article(models.Model):\n    class Status(models.TextChoices):\n        DRAFT = \"draft\", \"Draft\"\n        PUBLISHED = \"published\", \"Published\"\n\n    title = models.CharField(max_length=200)\n    slug = models.SlugField(max_length=200, unique=True)\n    body = models.TextField()\n    status = models.CharField(max_length=10, choices=Status.choices, default=Status.DRAFT)\n    category = models.ForeignKey(Category, on_delete=models.CASCADE, related_name=\"articles\")\n    tags = models.ManyToManyField(Tag, related_name=\"articles\", blank=True)\n    views = models.PositiveIntegerField(default=0)\n    published_at = models.DateTimeField(null=True, blank=True)\n    created_at = models.DateTimeField(auto_now_add=True)\n    updated_at = models.DateTimeField(auto_now=True)\n\n    class Meta:\n        ordering = [\"-published_at\", \"-created_at\"]\n        indexes = [models.Index(fields=[\"status\", \"published_at\"])]\n\n    def __str__(self):\n        return self.title"
+    },
+    {
+     "language": "python",
+     "code": "# Relationships: one-to-one, many-to-one and many-to-many\nclass Profile(models.Model):\n    user = models.OneToOneField(\"auth.User\", on_delete=models.CASCADE, related_name=\"profile\")\n    bio = models.TextField(blank=True)\n\n\nclass Author(models.Model):\n    name = models.CharField(max_length=120)\n\n\nclass Book(models.Model):\n    title = models.CharField(max_length=200)\n    author = models.ForeignKey(Author, on_delete=models.PROTECT, related_name=\"books\")\n    co_authors = models.ManyToManyField(Author, related_name=\"co_authored_books\", blank=True)\n\n    class Meta:\n        constraints = [\n            models.UniqueConstraint(fields=[\"title\", \"author\"], name=\"unique_book_per_author\")\n        ]"
+    }
+   ]
+  },
+  {
+   "id": "migrations",
+   "title": "Migrations",
+   "description": "Generate, inspect and apply schema changes:",
+   "snippets": [
+    {
+     "language": "bash",
+     "code": "# Create migration files from model changes\npython manage.py makemigrations blog\n\n# Show the SQL a migration will run\npython manage.py sqlmigrate blog 0001\n\n# Apply pending migrations\npython manage.py migrate\n\n# List applied and pending migrations for one app\npython manage.py showmigrations blog\n\n# Create an empty migration for manual operations\npython manage.py makemigrations blog --empty --name add_indexes\n\n# Roll back to a previous migration\npython manage.py migrate blog 0002\n\n# Collapse several migrations into one file\npython manage.py squashmigrations blog 0001 0004"
+    },
+    {
+     "language": "python",
+     "code": "from django.db import migrations\n\n\ndef set_default_status(apps, schema_editor):\n    Article = apps.get_model(\"blog\", \"Article\")\n    Article.objects.filter(status=\"\").update(status=\"draft\")\n\n\ndef restore_empty_status(apps, schema_editor):\n    Article = apps.get_model(\"blog\", \"Article\")\n    Article.objects.filter(status=\"draft\").update(status=\"\")\n\n\nclass Migration(migrations.Migration):\n    dependencies = [(\"blog\", \"0002_article_status\")]\n\n    operations = [\n        migrations.RunPython(set_default_status, restore_empty_status),\n    ]"
+    }
+   ]
+  },
+  {
+   "id": "admin",
+   "title": "Admin",
+   "description": "Register models and tailor the built-in admin interface:",
+   "snippets": [
+    {
+     "language": "python",
+     "code": "from django.contrib import admin\n\nfrom .models import Article, Category\n\n\n@admin.register(Article)\nclass ArticleAdmin(admin.ModelAdmin):\n    list_display = (\"title\", \"status\", \"category\", \"published_at\", \"views\")\n    list_filter = (\"status\", \"category\")\n    search_fields = (\"title\", \"body\")\n    prepopulated_fields = {\"slug\": (\"title\",)}\n    date_hierarchy = \"published_at\"\n    ordering = (\"-published_at\",)\n    readonly_fields = (\"created_at\", \"updated_at\")\n\n\n@admin.register(Category)\nclass CategoryAdmin(admin.ModelAdmin):\n    list_display = (\"name\", \"slug\")\n    prepopulated_fields = {\"slug\": (\"name\",)}\n\n\nadmin.site.site_header = \"Blog administration\"\nadmin.site.site_title = \"Blog admin\""
+    }
+   ]
+  },
+  {
+   "id": "views",
+   "title": "Views",
+   "description": "Handle requests with function-based and class-based views:",
+   "snippets": [
+    {
+     "language": "python",
+     "code": "from django.http import JsonResponse\nfrom django.shortcuts import get_object_or_404, render\n\nfrom .models import Article\n\n\ndef article_list(request):\n    articles = Article.objects.filter(status=Article.Status.PUBLISHED)\n    return render(request, \"blog/article_list.html\", {\"articles\": articles})\n\n\ndef article_detail(request, slug):\n    article = get_object_or_404(Article, slug=slug, status=Article.Status.PUBLISHED)\n    return render(request, \"blog/article_detail.html\", {\"article\": article})\n\n\ndef article_count(request):\n    return JsonResponse({\"total\": Article.objects.count()})"
+    },
+    {
+     "language": "python",
+     "code": "from django.views.generic import DetailView, ListView\n\nfrom .models import Article\n\n\nclass ArticleListView(ListView):\n    model = Article\n    context_object_name = \"articles\"\n    paginate_by = 20\n\n    def get_queryset(self):\n        return super().get_queryset().filter(status=Article.Status.PUBLISHED)\n\n\nclass ArticleDetailView(DetailView):\n    model = Article\n    slug_field = \"slug\"\n    slug_url_kwarg = \"slug\""
+    }
+   ]
+  },
+  {
+   "id": "urls",
+   "title": "URLs",
+   "description": "Route paths to views and build URLs by name:",
+   "snippets": [
+    {
+     "language": "python",
+     "code": "# blog/urls.py\nfrom django.urls import path\n\nfrom . import views\n\napp_name = \"blog\"\n\nurlpatterns = [\n    path(\"\", views.article_list, name=\"list\"),\n    path(\"2024/archive/\", views.article_archive, name=\"archive\"),\n    path(\"<slug:slug>/\", views.article_detail, name=\"detail\"),\n]"
+    },
+    {
+     "language": "python",
+     "code": "# config/urls.py\nfrom django.contrib import admin\nfrom django.urls import include, path\n\nurlpatterns = [\n    path(\"admin/\", admin.site.urls),\n    path(\"blog/\", include(\"blog.urls\")),\n]"
+    },
+    {
+     "language": "python",
+     "code": "from django.urls import reverse\n\n# Namespaced URL with a keyword argument\nreverse(\"blog:detail\", kwargs={\"slug\": \"first-post\"})  # \"/blog/first-post/\"\n\n# Positional arguments work for unnamed patterns\nreverse(\"blog:archive\")  # \"/blog/2024/archive/\""
+    }
+   ]
+  },
+  {
+   "id": "templates",
+   "title": "Templates",
+   "description": "Compose HTML with inheritance, loops and URL tags:",
+   "snippets": [
+    {
+     "language": "html",
+     "code": "{% load static %}\n<!doctype html>\n<html lang=\"en\">\n<head>\n  <meta charset=\"utf-8\">\n  <title>{% block title %}Blog{% endblock %}</title>\n  <link rel=\"stylesheet\" href=\"{% static 'css/site.css' %}\">\n</head>\n<body>\n  {% block content %}{% endblock %}\n</body>\n</html>"
+    },
+    {
+     "language": "html",
+     "code": "{% extends \"base.html\" %}\n\n{% block title %}{{ article.title }}{% endblock %}\n\n{% block content %}\n  <h1>{{ article.title }}</h1>\n  <p>Published {{ article.published_at|date:\"Y-m-d\" }}</p>\n  <div>{{ article.body|linebreaks }}</div>\n\n  {% for tag in article.tags.all %}\n    <span>{{ tag.name }}</span>\n  {% empty %}\n    <span>No tags</span>\n  {% endfor %}\n\n  <a href=\"{% url 'blog:list' %}\">Back to all articles</a>\n{% endblock %}"
+    }
+   ]
+  },
+  {
+   "id": "forms",
+   "title": "Forms",
+   "description": "Validate input with forms and model forms:",
+   "snippets": [
+    {
+     "language": "python",
+     "code": "from django import forms\n\nfrom .models import Article\n\n\nclass ArticleForm(forms.ModelForm):\n    class Meta:\n        model = Article\n        fields = (\"title\", \"slug\", \"body\", \"status\", \"category\")\n        widgets = {\"body\": forms.Textarea(attrs={\"rows\": 12})}\n\n    def clean_title(self):\n        title = self.cleaned_data[\"title\"]\n        if len(title) < 10:\n            raise forms.ValidationError(\"Use at least 10 characters.\")\n        return title"
+    },
+    {
+     "language": "python",
+     "code": "from django.shortcuts import redirect, render\n\nfrom .forms import ArticleForm\n\n\ndef article_create(request):\n    if request.method == \"POST\":\n        form = ArticleForm(request.POST)\n        if form.is_valid():\n            article = form.save()\n            return redirect(\"blog:detail\", slug=article.slug)\n    else:\n        form = ArticleForm()\n    return render(request, \"blog/article_form.html\", {\"form\": form})"
+    }
+   ]
+  },
+  {
+   "id": "orm",
+   "title": "QuerySet",
+   "description": "Query the database with filters, annotations and bulk operations:",
+   "snippets": [
+    {
+     "language": "python",
+     "code": "from django.db.models import Avg, Count, F, Q, Sum\n\nfrom .models import Article, Category\n\n# Chained filters and slicing\npublished = Article.objects.filter(status=\"published\", published_at__year=2024)\nrecent = Article.objects.order_by(\"-published_at\")[:5]\n\n# OR and NOT conditions\nfeatured = Article.objects.filter(Q(status=\"published\") | Q(category__name=\"News\"))\nhidden = Article.objects.exclude(status=\"draft\")\n\n# Update with a field reference\nArticle.objects.filter(status=\"draft\").update(views=F(\"views\") + 1)\n\n# One row per category with aggregates\nstats = Category.objects.annotate(\n    article_count=Count(\"articles\"),\n    avg_views=Avg(\"articles__views\"),\n)\n\n# Fetch or create in one call\ncategory = Category.objects.get(slug=\"news\")\narticle, created = Article.objects.get_or_create(\n    slug=\"hello-world\",\n    defaults={\"title\": \"Hello World\", \"body\": \"First post\", \"category\": category},\n)"
+    },
+    {
+     "language": "python",
+     "code": "from django.db.models import Sum\n\nfrom .models import Article, Author, Book\n\n# Join related rows up front\nbooks = Book.objects.select_related(\"author\").all()\nauthors = Author.objects.prefetch_related(\"books\").all()\n\n# Insert many rows with one query\nArticle.objects.bulk_create([\n    Article(title=\"First\", slug=\"first\", body=\"Body one\"),\n    Article(title=\"Second\", slug=\"second\", body=\"Body two\"),\n])\n\n# Aggregate the whole queryset\ntotal = Article.objects.aggregate(total_views=Sum(\"views\"))"
+    }
+   ]
+  },
+  {
+   "id": "auth",
+   "title": "Authentication",
+   "description": "Log users in, restrict views and extend the user model:",
+   "snippets": [
+    {
+     "language": "python",
+     "code": "from django.contrib.auth import authenticate, login\nfrom django.contrib.auth.decorators import login_required, permission_required\nfrom django.contrib.auth.mixins import LoginRequiredMixin\nfrom django.contrib.auth.views import LoginView, LogoutView\nfrom django.http import HttpResponse\nfrom django.urls import path\nfrom django.views.generic import ListView\n\nfrom .models import Article\n\nurlpatterns = [\n    path(\"login/\", LoginView.as_view(template_name=\"registration/login.html\"), name=\"login\"),\n    path(\"logout/\", LogoutView.as_view(), name=\"logout\"),\n]\n\n\n@login_required\ndef dashboard(request):\n    return HttpResponse(\"Dashboard\")\n\n\n@permission_required(\"blog.change_article\", raise_exception=True)\ndef edit_article(request, slug):\n    return HttpResponse(f\"Editing {slug}\")\n\n\nclass DraftListView(LoginRequiredMixin, ListView):\n    model = Article\n    context_object_name = \"drafts\"\n\n    def get_queryset(self):\n        return super().get_queryset().filter(status=Article.Status.DRAFT)\n\n\ndef sign_in(request):\n    username = request.POST[\"username\"]\n    password = request.POST[\"password\"]\n    user = authenticate(request, username=username, password=password)\n    if user is not None:\n        login(request, user)"
+    },
+    {
+     "language": "python",
+     "code": "# accounts/models.py\nfrom django.contrib.auth.models import AbstractUser\nfrom django.db import models\n\n\nclass User(AbstractUser):\n    display_name = models.CharField(max_length=120, blank=True)\n\n\n# config/settings.py\nAUTH_USER_MODEL = \"accounts.User\""
+    }
+   ]
+  },
+  {
+   "id": "middleware",
+   "title": "Middleware",
+   "description": "Wrap every request and response with a callable component:",
+   "snippets": [
+    {
+     "language": "python",
+     "code": "import logging\nimport time\n\nlogger = logging.getLogger(__name__)\n\n\nclass RequestTimingMiddleware:\n    def __init__(self, get_response):\n        self.get_response = get_response\n\n    def __call__(self, request):\n        started = time.perf_counter()\n        response = self.get_response(request)\n        elapsed = time.perf_counter() - started\n        logger.info(\"%s %s took %.3f s\", request.method, request.path, elapsed)\n        response[\"X-Elapsed-Seconds\"] = f\"{elapsed:.3f}\"\n        return response"
+    },
+    {
+     "language": "python",
+     "code": "# Function-based middleware for a single concern\ndef add_cache_header(get_response):\n    def middleware(request):\n        response = get_response(request)\n        if request.path.startswith(\"/blog/\"):\n            response[\"Cache-Control\"] = \"public, max-age=300\"\n        return response\n\n    return middleware"
+    }
+   ]
+  },
+  {
+   "id": "settings",
+   "title": "Settings",
+   "description": "Configure the project with paths, database and static files:",
+   "snippets": [
+    {
+     "language": "python",
+     "code": "import os\nfrom pathlib import Path\n\nBASE_DIR = Path(__file__).resolve().parent.parent\n\nSECRET_KEY = os.environ[\"DJANGO_SECRET_KEY\"]\nDEBUG = os.environ.get(\"DJANGO_DEBUG\") == \"1\"\nALLOWED_HOSTS = [\"example.com\", \"www.example.com\"]\n\nDATABASES = {\n    \"default\": {\n        \"ENGINE\": \"django.db.backends.postgresql\",\n        \"NAME\": \"blog\",\n        \"USER\": \"blog\",\n        \"PASSWORD\": os.environ[\"POSTGRES_PASSWORD\"],\n        \"HOST\": \"127.0.0.1\",\n        \"PORT\": \"5432\",\n    }\n}\n\nSTATIC_URL = \"static/\"\nSTATIC_ROOT = BASE_DIR / \"staticfiles\"\nMEDIA_URL = \"media/\"\nMEDIA_ROOT = BASE_DIR / \"media\"\n\nLANGUAGE_CODE = \"pt-br\"\nTIME_ZONE = \"America/Sao_Paulo\"\nUSE_TZ = True"
+    },
+    {
+     "language": "python",
+     "code": "MIDDLEWARE = [\n    \"django.middleware.security.SecurityMiddleware\",\n    \"django.contrib.sessions.middleware.SessionMiddleware\",\n    \"django.middleware.common.CommonMiddleware\",\n    \"django.middleware.csrf.CsrfViewMiddleware\",\n    \"django.contrib.auth.middleware.AuthenticationMiddleware\",\n    \"django.contrib.messages.middleware.MessageMiddleware\",\n    \"blog.middleware.RequestTimingMiddleware\",\n]\n\nCACHES = {\n    \"default\": {\n        \"BACKEND\": \"django.core.cache.backends.redis.RedisCache\",\n        \"LOCATION\": \"redis://127.0.0.1:6379/1\",\n    }\n}\n\nEMAIL_BACKEND = \"django.core.mail.backends.smtp.EmailBackend\"\nDEFAULT_FROM_EMAIL = \"noreply@example.com\""
+    }
+   ]
+  },
+  {
+   "id": "testing",
+   "title": "Testing",
+   "description": "Exercise views and models with the built-in test runner:",
+   "snippets": [
+    {
+     "language": "python",
+     "code": "from django.test import TestCase\nfrom django.urls import reverse\n\nfrom .models import Article, Category\n\n\nclass ArticleViewTests(TestCase):\n    @classmethod\n    def setUpTestData(cls):\n        cls.category = Category.objects.create(name=\"News\", slug=\"news\")\n        cls.article = Article.objects.create(\n            title=\"Django testing\",\n            slug=\"django-testing\",\n            body=\"Body text\",\n            status=Article.Status.PUBLISHED,\n            category=cls.category,\n        )\n\n    def test_list_shows_published_article(self):\n        response = self.client.get(reverse(\"blog:list\"))\n        self.assertEqual(response.status_code, 200)\n        self.assertContains(response, \"Django testing\")\n\n    def test_detail_returns_404_for_draft(self):\n        self.article.status = Article.Status.DRAFT\n        self.article.save()\n        response = self.client.get(reverse(\"blog:detail\", kwargs={\"slug\": \"django-testing\"}))\n        self.assertEqual(response.status_code, 404)"
+    },
+    {
+     "language": "python",
+     "code": "from django.test import TestCase\n\nfrom .models import Article\n\n\nclass ArticleModelTests(TestCase):\n    def test_str_returns_the_title(self):\n        article = Article(title=\"Hello\")\n        self.assertEqual(str(article), \"Hello\")\n\n    def test_default_status_is_draft(self):\n        article = Article.objects.create(title=\"Draft\", slug=\"draft\", body=\"Text\")\n        self.assertEqual(article.status, Article.Status.DRAFT)"
+    }
+   ]
+  },
+  {
+   "id": "deployment",
+   "title": "Deployment",
+   "description": "Prepare static files, run production checks and serve with Gunicorn:",
+   "snippets": [
+    {
+     "language": "bash",
+     "code": "# Fail on insecure or missing production settings\npython manage.py check --deploy\n\n# Collect static files and apply migrations\npython manage.py collectstatic --noinput\npython manage.py migrate --noinput\n\n# Serve the WSGI application with three workers\ngunicorn config.wsgi:application --bind 0.0.0.0:8000 --workers 3\n\n# Restart the service managed by systemd\nsudo systemctl restart blog.service\nsudo systemctl status blog.service"
+    },
+    {
+     "language": "python",
+     "code": "# gunicorn.conf.py\nbind = \"127.0.0.1:8000\"\nworkers = 3\ntimeout = 30\naccesslog = \"-\"\nerrorlog = \"-\"\nraw_env = [\"DJANGO_SETTINGS_MODULE=config.settings.production\"]"
+    },
+    {
+     "language": "python",
+     "code": "# config/settings/production.py\nSECURE_SSL_REDIRECT = True\nSESSION_COOKIE_SECURE = True\nCSRF_COOKIE_SECURE = True\nSECURE_HSTS_SECONDS = 31536000\nSECURE_HSTS_INCLUDE_SUBDOMAINS = True\nSECURE_HSTS_PRELOAD = True\nX_FRAME_OPTIONS = \"DENY\""
+    }
+   ]
+  }
+ ]
+}

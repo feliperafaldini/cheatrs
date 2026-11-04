@@ -1,0 +1,213 @@
+{
+ "slug": "css",
+ "title": "CSS",
+ "label": "CSS",
+ "group": "Language",
+ "color": "#1572B6",
+ "desc": "The styling language of the web: cascade, layout, colour and motion in one declarative sheet.",
+ "sections": [
+  {
+   "id": "setup",
+   "title": "Setup",
+   "description": "Three ways to attach a stylesheet to an HTML document.",
+   "snippets": [
+    {
+     "language": "html",
+     "code": "<!-- External stylesheet: preferred for anything beyond a demo -->\n<link rel=\"stylesheet\" href=\"/assets/app.css\" />\n\n<!-- Internal styles: scoped to this document -->\n<style>\n  body {\n    margin: 0;\n    font-family: system-ui, sans-serif;\n  }\n</style>\n\n<!-- Inline style: highest specificity, hardest to override -->\n<p style=\"color: #b91c1c\">Payment failed</p>"
+    },
+    {
+     "language": "css",
+     "code": "/* app.css can pull in another sheet; link tags load faster */\n@import url(\"theme.css\");\n\n/* Cascade layers decide which group of rules wins */\n@layer reset, base, components, utilities;\n\n/* The first layer has the lowest priority */\n@layer reset {\n  *,\n  *::before,\n  *::after {\n    box-sizing: border-box;\n  }\n}"
+    }
+   ]
+  },
+  {
+   "id": "selectors",
+   "title": "Selectors",
+   "description": "Target elements by tag, class, attribute, state and position in the tree.",
+   "snippets": [
+    {
+     "language": "css",
+     "code": "/* Type, class and id */\np { line-height: 1.6; }\n.card { border-radius: 8px; }\n#site-header { position: sticky; top: 0; }\n\n/* Attribute and state */\na[href^=\"https://\"] { text-decoration: underline; }\ninput:focus-visible { outline: 2px solid #2563eb; }\nli:first-child { font-weight: 600; }\n\n/* Combinators: descendant, child, adjacent, general sibling */\nnav a { color: #1f2937; }\nul > li { list-style: square; }\nh2 + p { margin-top: 4px; }\nh2 ~ figure { margin-top: 12px; }\n\n/* Grouping and a universal reset */\nh1, h2, h3 { margin-block: 0 0.5em; }\n*, *::before, *::after { box-sizing: border-box; }"
+    },
+    {
+     "language": "css",
+     "code": "/* :is() matches any selector in the list */\n:is(h1, h2, h3) + p { margin-top: 8px; }\n\n/* :where() has zero specificity, handy for resets */\n:where(ul, ol) { padding-left: 1.25rem; }\n\n/* :has() styles a parent based on its children */\n.card:has(img) { padding-top: 0; }\nform:has(input:invalid) button[type=\"submit\"] { opacity: 0.5; }\n\n/* Pseudo-elements draw generated content */\n.price::before { content: \"$\"; }\n.required::after { content: \" *\"; color: #dc2626; }"
+    }
+   ]
+  },
+  {
+   "id": "box-model",
+   "title": "Box Model",
+   "description": "Every element is a content box wrapped by padding, border and margin.",
+   "snippets": [
+    {
+     "language": "css",
+     "code": "/* border-box makes width include padding and border */\n*,\n*::before,\n*::after {\n  box-sizing: border-box;\n}\n\n.box {\n  /* content size */\n  width: 320px;\n  height: 180px;\n\n  /* space inside the border */\n  padding: 16px 24px;\n\n  /* line around the padding */\n  border: 1px solid #d1d5db;\n  border-radius: 8px;\n\n  /* space outside the border */\n  margin: 24px auto;\n}"
+    },
+    {
+     "language": "css",
+     "code": ".card {\n  /* top right bottom left */\n  margin: 8px 16px 24px 32px;\n\n  /* logical properties follow the writing direction */\n  padding-block: 12px;\n  padding-inline: 20px;\n  border-inline-start: 3px solid #0ea5e9;\n}\n\n/* Neighbour spacing without margin collapsing between siblings */\n.stack > * + * {\n  margin-top: 16px;\n}\n\n/* outline does not take up space and does not shift layout */\n:focus-visible {\n  outline: 2px solid #f59e0b;\n  outline-offset: 2px;\n}"
+    }
+   ]
+  },
+  {
+   "id": "colors",
+   "title": "Colors",
+   "description": "Write colour in several spaces, then mix it or make it transparent at use time.",
+   "snippets": [
+    {
+     "language": "css",
+     "code": ":root {\n  --brand: #1572b6;              /* hex */\n  --ink: rgb(17 24 39);          /* rgb, space separated */\n  --muted: hsl(215 16% 47%);     /* hue saturation lightness */\n  --accent: oklch(62% 0.19 250); /* perceptual lightness and chroma */\n}\n\n.alert {\n  color: var(--ink);\n  background: color-mix(in oklab, var(--brand) 12%, white);\n  border-color: rgb(21 114 182 / 0.35); /* alpha as a fraction */\n}\n\n/* Named colours and the currentColor keyword */\n.link { color: #0f766e; }\n.link:visited { color: rebeccapurple; }\n.link:hover { text-decoration-color: currentColor; }"
+    }
+   ]
+  },
+  {
+   "id": "typography",
+   "title": "Typography",
+   "description": "Control the face, size, rhythm, wrapping and spacing of text.",
+   "snippets": [
+    {
+     "language": "css",
+     "code": "body {\n  font-family: system-ui, -apple-system, \"Segoe UI\", Roboto, sans-serif;\n  font-size: 16px;\n  line-height: 1.6;\n  font-weight: 400;\n  letter-spacing: 0.01em;\n}\n\nh1 {\n  font-size: clamp(2rem, 4vw, 3rem);\n  line-height: 1.15;\n  text-wrap: balance;\n}\n\np {\n  max-width: 65ch;\n  hyphens: auto;\n}"
+    },
+    {
+     "language": "css",
+     "code": "/* Web font with a fallback shown while it downloads */\n@font-face {\n  font-family: \"Inter\";\n  src: url(\"/fonts/inter.woff2\") format(\"woff2\");\n  font-weight: 100 900;\n  font-display: swap;\n}\n\n.code {\n  font-family: ui-monospace, \"SF Mono\", Menlo, monospace;\n  font-variant-numeric: tabular-nums;\n  font-feature-settings: \"liga\" 0;\n}\n\n.title {\n  text-transform: uppercase;\n  text-decoration: underline wavy #f59e0b 2px;\n  text-underline-offset: 4px;\n  text-align: center;\n}"
+    }
+   ]
+  },
+  {
+   "id": "layout",
+   "title": "Layout",
+   "description": "The display property decides how an element sits in normal flow.",
+   "snippets": [
+    {
+     "language": "css",
+     "code": "/* Block fills the line; inline sits in text; inline-block keeps box traits */\n.block  { display: block; width: 100%; }\n.inline { display: inline; }\n.chip   { display: inline-block; padding: 4px 10px; }\n\n/* Hide from layout, or remove entirely */\n.invisible { visibility: hidden; }\n.gone      { display: none; }\n\n/* Scroll a fixed height instead of overflowing the page */\n.feed {\n  height: 420px;\n  overflow-y: auto;\n  overscroll-behavior: contain;\n}\n\n/* Reserve space before a remote image loads */\n.thumb {\n  width: 100%;\n  aspect-ratio: 16 / 9;\n  object-fit: cover;\n}"
+    },
+    {
+     "language": "css",
+     "code": "/* Normal flow with a centred content column */\n.page {\n  width: min(100% - 32px, 1120px);\n  margin-inline: auto;\n}\n\n/* Two columns without flex or grid */\n.columns {\n  column-count: 2;\n  column-gap: 32px;\n}\n\n/* Floats still wrap text around figures */\n.figure {\n  float: right;\n  margin: 0 0 12px 16px;\n}\n\n.prose::after {\n  content: \"\";\n  display: block;\n  clear: both;\n}"
+    }
+   ]
+  },
+  {
+   "id": "flexbox",
+   "title": "Flexbox",
+   "description": "One axis, with distribution and alignment handled by the container.",
+   "snippets": [
+    {
+     "language": "css",
+     "code": ".toolbar {\n  display: flex;\n  flex-direction: row;\n  flex-wrap: wrap;\n  justify-content: space-between; /* main axis */\n  align-items: center;            /* cross axis */\n  gap: 12px;\n}\n\n/* Push the last item to the far end without an extra wrapper */\n.toolbar .spacer {\n  margin-left: auto;\n}"
+    },
+    {
+     "language": "css",
+     "code": ".card-row {\n  display: flex;\n  gap: 16px;\n}\n\n.card {\n  flex: 1 1 240px; /* grow shrink basis */\n  min-width: 0;    /* lets long text shrink and truncate */\n}\n\n.avatar {\n  flex: 0 0 48px;\n  align-self: flex-start;\n}\n\n/* Order changes paint order, not source or tab order */\n.card.featured {\n  order: -1;\n}"
+    }
+   ]
+  },
+  {
+   "id": "grid",
+   "title": "Grid",
+   "description": "Two axes at once, with explicit tracks, gaps and named areas.",
+   "snippets": [
+    {
+     "language": "css",
+     "code": ".gallery {\n  display: grid;\n  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));\n  gap: 20px;\n  align-items: start;\n}\n\n/* Fixed sidebar plus a fluid main column */\n.shell {\n  display: grid;\n  grid-template-columns: 240px minmax(0, 1fr);\n  min-height: 100dvh;\n}"
+    },
+    {
+     "language": "css",
+     "code": ".layout {\n  display: grid;\n  grid-template-areas:\n    \"header header\"\n    \"sidebar main\"\n    \"footer footer\";\n  grid-template-columns: 200px 1fr;\n  grid-template-rows: auto 1fr auto;\n  gap: 16px;\n}\n\n.layout > header { grid-area: header; }\n.layout > aside  { grid-area: sidebar; }\n.layout > main   { grid-area: main; }\n.layout > footer { grid-area: footer; }"
+    },
+    {
+     "language": "css",
+     "code": "/* Lines count from 1; -1 is the last line */\n.hero {\n  grid-column: 1 / -1; /* span every column */\n  grid-row: 2 / 4;\n}\n\n/* A named item can also be placed by span */\n.badge {\n  grid-column: 2 / span 2;\n  justify-self: end;\n  align-self: center;\n}\n\n/* Auto-placement skips occupied cells */\n.note {\n  grid-column: span 2;\n  grid-row: span 2;\n}"
+    }
+   ]
+  },
+  {
+   "id": "positioning",
+   "title": "Positioning",
+   "description": "Take elements out of normal flow or pin them while the page scrolls.",
+   "snippets": [
+    {
+     "language": "css",
+     "code": "/* Ancestor for absolutely positioned children */\n.card {\n  position: relative;\n}\n\n/* Removed from flow, placed against the nearest positioned ancestor */\n.badge {\n  position: absolute;\n  top: 8px;\n  right: 8px;\n  z-index: 2;\n}\n\n/* Fixed to the viewport */\n.to-top {\n  position: fixed;\n  inset: auto 24px 24px auto;\n  z-index: 10;\n}"
+    },
+    {
+     "language": "css",
+     "code": "/* Sticks inside its scrolling container, then scrolls away with it */\n.section-title {\n  position: sticky;\n  top: 0;\n  z-index: 1;\n  background: #ffffff;\n  padding-block: 8px;\n}\n\n/* inset is shorthand for top, right, bottom and left */\n.overlay {\n  position: fixed;\n  inset: 0;\n  background: rgb(15 23 42 / 0.6);\n}\n\n/* z-index applies to positioned elements and flex or grid items */\n.modal {\n  position: fixed;\n  z-index: 100;\n}"
+    }
+   ]
+  },
+  {
+   "id": "transitions",
+   "title": "Transitions and Animation",
+   "description": "Animate between states with transitions, or run a timeline with keyframes.",
+   "snippets": [
+    {
+     "language": "css",
+     "code": ".button {\n  background: #1572b6;\n  transform: translateY(0);\n  transition-property: background-color, transform, box-shadow;\n  transition-duration: 180ms;\n  transition-timing-function: cubic-bezier(0.2, 0, 0, 1);\n  transition-delay: 0ms;\n}\n\n.button:hover {\n  background: #0f5f99;\n  transform: translateY(-2px);\n  box-shadow: 0 6px 16px rgb(15 23 42 / 0.25);\n}\n\n/* Shorthand: property duration timing delay */\n.button:active {\n  transition: transform 80ms ease-out 0ms;\n}\n\n/* Transitions only run between two computed values */\n.fade { opacity: 1; transition: opacity 200ms linear; }\n.fade.is-hidden { opacity: 0; }"
+    },
+    {
+     "language": "css",
+     "code": "@keyframes pulse {\n  0%, 100% {\n    opacity: 1;\n    transform: scale(1);\n  }\n  50% {\n    opacity: 0.6;\n    transform: scale(0.96);\n  }\n}\n\n.status-dot {\n  animation: pulse 1.8s ease-in-out infinite;\n}\n\n/* Respect users who ask for less motion */\n@media (prefers-reduced-motion: reduce) {\n  .status-dot {\n    animation: none;\n  }\n  * {\n    transition-duration: 0.01ms;\n    animation-duration: 0.01ms;\n  }\n}"
+    }
+   ]
+  },
+  {
+   "id": "responsive",
+   "title": "Responsive Design",
+   "description": "Adapt one document to many viewports with fluid sizes, media queries and container queries.",
+   "snippets": [
+    {
+     "language": "html",
+     "code": "<!-- Required for media queries to match the device width -->\n<meta name=\"viewport\" content=\"width=device-width, initial-scale=1\" />"
+    },
+    {
+     "language": "css",
+     "code": "/* Mobile first: base styles, then widen */\n.grid {\n  display: grid;\n  grid-template-columns: 1fr;\n  gap: 16px;\n}\n\n@media (min-width: 640px) {\n  .grid { grid-template-columns: repeat(2, 1fr); }\n}\n\n@media (min-width: 1024px) {\n  .grid { grid-template-columns: repeat(4, 1fr); }\n}\n\n/* Coarse pointers get a larger hit area */\n@media (pointer: coarse) {\n  .button { min-height: 44px; }\n}"
+    },
+    {
+     "language": "css",
+     "code": "/* The card adapts to its own container, not the viewport */\n.card-host {\n  container-type: inline-size;\n  container-name: card;\n}\n\n@container card (min-width: 480px) {\n  .card {\n    display: grid;\n    grid-template-columns: 120px 1fr;\n  }\n}\n\n/* Fluid type without a media query */\nh2 {\n  font-size: clamp(1.5rem, 1rem + 2vw, 2.5rem);\n}"
+    }
+   ]
+  },
+  {
+   "id": "variables",
+   "title": "Custom Properties",
+   "description": "Custom properties store values, inherit down the tree and update at runtime.",
+   "snippets": [
+    {
+     "language": "css",
+     "code": ":root {\n  --color-brand: #1572b6;\n  --color-text: #111827;\n  --space-unit: 4px;\n  --radius: 10px;\n}\n\n.button {\n  background: var(--color-brand);\n  color: #ffffff;\n  padding: calc(var(--space-unit) * 3) calc(var(--space-unit) * 5);\n  border-radius: var(--radius);\n}\n\n/* Fallback used when the variable is missing */\n.muted {\n  color: var(--color-muted, #6b7280);\n}"
+    },
+    {
+     "language": "css",
+     "code": "/* Variables inherit, so a theme only overrides the values */\n.theme-dark {\n  --color-bg: #0f172a;\n  --color-fg: #e5e7eb;\n}\n\n.panel {\n  background: var(--color-bg, #ffffff);\n  color: var(--color-fg, #111827);\n}\n\n/* A variable can hold a whole value list */\n.callout {\n  --shadow: 0 10px 24px rgb(15 23 42 / 0.18);\n  box-shadow: var(--shadow);\n}\n\n/* Inline style can override one variable for one element */\n.progress {\n  --fill: 40%;\n  background: linear-gradient(90deg, #1572b6 var(--fill), #e5e7eb var(--fill));\n}"
+    }
+   ]
+  },
+  {
+   "id": "common-patterns",
+   "title": "Common Patterns",
+   "description": "Small recipes for the layout problems that come up most.",
+   "snippets": [
+    {
+     "language": "css",
+     "code": "/* Center one box in both axes */\n.center {\n  display: grid;\n  place-items: center;\n  min-height: 320px;\n}\n\n/* Center an absolutely positioned box */\n.center-absolute {\n  position: absolute;\n  inset: 0;\n  margin: auto;\n  width: 240px;\n  height: 120px;\n}"
+    },
+    {
+     "language": "css",
+     "code": "/* Single line with an ellipsis */\n.truncate {\n  overflow: hidden;\n  white-space: nowrap;\n  text-overflow: ellipsis;\n}\n\n/* Multiple lines in current browsers */\n.clamp-3 {\n  display: -webkit-box;\n  -webkit-box-orient: vertical;\n  -webkit-line-clamp: 3;\n  line-clamp: 3;\n  overflow: hidden;\n}\n\n/* Available to screen readers, invisible on screen */\n.visually-hidden {\n  position: absolute;\n  width: 1px;\n  height: 1px;\n  margin: -1px;\n  padding: 0;\n  overflow: hidden;\n  clip-path: inset(50%);\n  white-space: nowrap;\n  border: 0;\n}"
+    },
+    {
+     "language": "css",
+     "code": "/* Card whose footer stays at the bottom */\n.card {\n  display: flex;\n  flex-direction: column;\n  gap: 12px;\n  border: 1px solid #e5e7eb;\n  border-radius: 12px;\n  overflow: hidden;\n}\n\n.card img {\n  width: 100%;\n  aspect-ratio: 16 / 9;\n  object-fit: cover;\n}\n\n.card .body { padding: 16px; }\n\n.card .footer {\n  margin-top: auto;\n  padding: 12px 16px;\n  border-top: 1px solid #e5e7eb;\n}"
+    }
+   ]
+  }
+ ]
+}

@@ -1,0 +1,215 @@
+{
+ "slug": "jquery",
+ "title": "jQuery",
+ "label": "jQuery",
+ "group": "Library",
+ "color": "#0769AD",
+ "desc": "Small library for DOM traversal, events and AJAX that still runs on much of the web.",
+ "sections": [
+  {
+   "id": "setup",
+   "title": "Setup",
+   "description": "Load jQuery 3.7.1 from a CDN or a package manager and confirm it is ready.",
+   "snippets": [
+    {
+     "language": "html",
+     "code": "<!-- Place before your own scripts, at the end of <body> -->\n<script src=\"https://code.jquery.com/jquery-3.7.1.min.js\"></script>\n\n<!-- Pin the CDN copy with an integrity hash -->\n<script\n  src=\"https://code.jquery.com/jquery-3.7.1.min.js\"\n  integrity=\"sha256-/JqT3SQfawRcv/BIHPThkBvs0OEvtFFmqPF/lYI/Cxo=\"\n  crossorigin=\"anonymous\"\n></script>"
+    },
+    {
+     "language": "bash",
+     "code": "# Install as a dependency when the project is bundled\nnpm install jquery@3.7.1\n\n# Confirm what npm resolved\nnpm ls jquery"
+    },
+    {
+     "language": "javascript",
+     "code": "// Check the loaded build and run code once the DOM is parsed\nconsole.log($.fn.jquery); // \"3.7.1\"\n\n$(function () {\n  $(\"#app\").addClass(\"ready\");\n});"
+    }
+   ]
+  },
+  {
+   "id": "selectors",
+   "title": "Selectors",
+   "description": "Query the document with CSS syntax plus a few jQuery-only filters.",
+   "snippets": [
+    {
+     "language": "javascript",
+     "code": "// ID, class and tag lookups\n$(\"#sidebar\");\n$(\".card\");\n$(\"li\");\n\n// CSS combinators behave as they do in stylesheets\n$(\"nav > ul li.active\");\n$(\"h2 + p\");\n\n// Attribute selectors\n$('a[href^=\"https://\"]');\n$('input[type=\"email\"]');\n$('img[alt!=\"logo\"]');"
+    },
+    {
+     "language": "javascript",
+     "code": "// Positional filters are jQuery extensions, not CSS\n$(\"li:first\");\n$(\"li:last\");\n$(\"li:eq(2)\");   // zero-based, so the third item\n$(\"li:even\");\n$(\"li:gt(3)\");\n\n// State filters\n$(\"input:checked\");\n$(\"div:visible\");\n$(\"div:hidden\");"
+    },
+    {
+     "language": "javascript",
+     "code": "// A selector can be a string, a DOM node, or an existing set\nconst hero = document.querySelector(\"#hero\");\n$(hero).addClass(\"seen\");\n\n// The second argument scopes the search to a context\n$(\"button\", \"#toolbar\");\n\n// Cache a set and reuse it instead of querying again\nconst $rows = $(\".row\");\n$rows.filter(\".selected\").css(\"font-weight\", \"bold\");"
+    }
+   ]
+  },
+  {
+   "id": "events",
+   "title": "Events",
+   "description": "Bind, delegate, namespace and trigger events through one API.",
+   "snippets": [
+    {
+     "language": "javascript",
+     "code": "$(function () {\n  // Direct binding\n  $(\"#save\").on(\"click\", function (event) {\n    event.preventDefault();\n    console.log(\"saved\");\n  });\n\n  // Delegation also covers rows created later\n  $(\"#todo-list\").on(\"click\", \"li\", function () {\n    $(this).toggleClass(\"done\");\n  });\n});"
+    },
+    {
+     "language": "javascript",
+     "code": "// Namespaced handlers are removed together\n$(\"#panel\").on(\"mouseenter.tip\", showTip);\n$(\"#panel\").on(\"mouseleave.tip\", hideTip);\n$(\"#panel\").off(\".tip\");\n\n// Fire once, then detach\n$(\"#welcome\").one(\"click\", function () {\n  $(this).fadeOut();\n});\n\n// Custom events bubble like native ones and can carry data\n$(\"#cart\").on(\"cart:updated\", function (event, count) {\n  console.log(\"items\", count);\n});\n$(\"#cart\").trigger(\"cart:updated\", [3]);"
+    },
+    {
+     "language": "javascript",
+     "code": "// event.target is the clicked node, this is the bound element\n$(\"#menu\").on(\"click\", \"a\", function (event) {\n  if ($(event.target).is(\"span\")) return; // ignore the badge inside the link\n  event.stopPropagation();\n});"
+    }
+   ]
+  },
+  {
+   "id": "effects",
+   "title": "Effects",
+   "description": "Animate visibility and numeric CSS properties, with control over the queue.",
+   "snippets": [
+    {
+     "language": "javascript",
+     "code": "// Durations accept milliseconds or the keywords \"fast\" and \"slow\"\n$(\"#panel\").hide();\n$(\"#panel\").show(200);\n$(\"#panel\").toggle(\"fast\");\n\n// Named effects\n$(\"#notice\").fadeIn(300);\n$(\"#notice\").fadeOut(300);\n$(\"#notice\").fadeToggle(300);\n$(\"#menu\").slideDown(250);\n$(\"#menu\").slideUp(250);\n$(\"#menu\").slideToggle(250);"
+    },
+    {
+     "language": "javascript",
+     "code": "// animate() only interpolates numeric properties\n$(\"#box\").animate(\n  { left: \"+=80px\", opacity: 0.5 },\n  600,\n  \"swing\",\n  function () {\n    $(this).addClass(\"moved\");\n  }\n);\n\n// Queue control\n$(\"#box\").stop(true, true); // clear the queue and jump to the end\n$(\"#box\").finish();         // stop and complete every queued effect\n$(\"#box\").delay(200).fadeIn(200);"
+    }
+   ]
+  },
+  {
+   "id": "dom",
+   "title": "DOM Manipulation",
+   "description": "Create, insert, replace and remove nodes without string concatenation.",
+   "snippets": [
+    {
+     "language": "javascript",
+     "code": "// text() escapes, html() parses markup\nconst title = $(\"#title\").text();\n$(\"#title\").text(\"New title\");\n$(\"#summary\").html(\"<strong>Bold</strong> summary\");\n\n// Empty a container before refilling it\n$(\"#log\").empty();\n$(\"#log\").append(\"<p>first line</p>\");"
+    },
+    {
+     "language": "javascript",
+     "code": "// Build an element with attributes in one call\nconst $item = $(\"<li>\", {\n  class: \"entry\",\n  text: \"Ship it\",\n  \"data-id\": 42\n});\n$(\"#list\").append($item);\n\n// Insert relative to existing nodes\n$item.prependTo(\"#list\");\n$item.insertAfter(\"#list li:first\");\n$item.before(\"<li>before</li>\");"
+    },
+    {
+     "language": "javascript",
+     "code": "// remove() drops data and handlers, detach() keeps them for reuse\nconst $row = $(\"#row-7\").detach();\n$(\"#archive\").append($row);\n\n$(\"#row-8\").remove();\n\n// Swap an element for new markup, or wrap it in a container\n$(\"#old\").replaceWith('<div id=\"new\">fresh</div>');\n$(\"#new\").wrap('<section class=\"frame\"></section>');"
+    }
+   ]
+  },
+  {
+   "id": "classes",
+   "title": "Classes and Attributes",
+   "description": "Toggle styling hooks and read the state that belongs in properties.",
+   "snippets": [
+    {
+     "language": "javascript",
+     "code": "$(\"#tab\").addClass(\"active\");\n$(\"#tab\").removeClass(\"active\");\n$(\"#tab\").toggleClass(\"active\");\n\n// The second argument forces the result\n$(\"#tab\").toggleClass(\"active\", isOpen);\n$(\"#tab\").addClass(\"a b c\");\n\n// Test before acting\nif ($(\"#tab\").hasClass(\"active\")) {\n  console.log(\"selected\");\n}"
+    },
+    {
+     "language": "javascript",
+     "code": "// attr() handles HTML attributes\nconst href = $(\"#link\").attr(\"href\");\n$(\"#link\").attr(\"target\", \"_blank\");\n$(\"#link\").removeAttr(\"target\");\n\n// prop() handles live state such as checked and disabled\n$(\"#agree\").prop(\"checked\", true);\n$(\"#agree\").prop(\"disabled\", false);"
+    },
+    {
+     "language": "javascript",
+     "code": "// data() converts data-* values to numbers, booleans and objects\nconst id = $(\"#card\").data(\"userId\"); // <div id=\"card\" data-user-id=\"17\">\n$(\"#card\").data(\"state\", \"open\");     // kept in memory only\n$(\"#card\").attr(\"data-state\", \"open\"); // visible in the DOM"
+    }
+   ]
+  },
+  {
+   "id": "ajax",
+   "title": "AJAX",
+   "description": "Talk to an HTTP API with promises, JSON parsing and parallel requests.",
+   "snippets": [
+    {
+     "language": "javascript",
+     "code": "$.ajax({\n  url: \"/api/issues\",\n  method: \"GET\",\n  data: { state: \"open\", page: 2 },\n  dataType: \"json\"\n})\n  .done(function (issues) {\n    console.log(issues.length, \"issues\");\n  })\n  .fail(function (xhr, status, error) {\n    console.error(status, error, xhr.status);\n  })\n  .always(function () {\n    $(\"#spinner\").hide();\n  });"
+    },
+    {
+     "language": "javascript",
+     "code": "// POST JSON: set the content type and stringify the body\n$.ajax({\n  url: \"/api/issues\",\n  method: \"POST\",\n  contentType: \"application/json\",\n  data: JSON.stringify({ title: \"Login fails\", priority: \"high\" })\n}).done(function (created) {\n  $(\"#list\").append($(\"<li>\").text(created.title));\n});\n\n// Shorthand for GET plus JSON parsing\n$.getJSON(\"/api/users/7\", function (user) {\n  $(\"#name\").text(user.name);\n});"
+    },
+    {
+     "language": "javascript",
+     "code": "// Wait for two requests to finish\n$.when($.getJSON(\"/api/user\"), $.getJSON(\"/api/team\")).done(\n  function (userRes, teamRes) {\n    console.log(userRes[0].name, teamRes[0].length);\n  }\n);\n\n// Per-request timeout and headers\n$.ajax({\n  url: \"/api/health\",\n  timeout: 5000,\n  headers: { \"X-Client\": \"cheatrs\" }\n});"
+    }
+   ]
+  },
+  {
+   "id": "traversal",
+   "title": "Traversal",
+   "description": "Walk up, down and sideways from a set, then narrow it in place.",
+   "snippets": [
+    {
+     "language": "javascript",
+     "code": "const $card = $(\".card.selected\");\n\n$card.find(\".title\");       // all descendants\n$card.children(\"a\");        // direct children only\n$card.parent();             // immediate parent\n$card.closest(\".card\");     // nearest matching ancestor\n$card.siblings(\".card\");    // peers, not counting itself\n$card.next();\n$card.nextAll(\"a\");"
+    },
+    {
+     "language": "javascript",
+     "code": "// Narrow a set without touching the document\nconst $rows = $(\"#table tr\");\n$rows.filter(\".paid\");\n$rows.not(\".paid\");\n$rows.has(\"input:checked\");\n$rows.eq(0);\n$rows.first();\n$rows.last();\n$rows.slice(2, 5);"
+    },
+    {
+     "language": "javascript",
+     "code": "// each() iterates; return false stops the loop\n$(\"#list li\").each(function (index) {\n  $(this).prepend(index + 1 + \". \");\n});\n\n// map() collects a plain array\nconst labels = $(\"#list li\")\n  .map(function () {\n    return $(this).text();\n  })\n  .get();\n\n// end() returns to the previous set in the chain\n$(\"#list\").find(\"li\").addClass(\"row\").end().addClass(\"has-rows\");"
+    }
+   ]
+  },
+  {
+   "id": "forms",
+   "title": "Forms",
+   "description": "Serialize controls, read values, and validate before sending.",
+   "snippets": [
+    {
+     "language": "javascript",
+     "code": "// serialize() produces a URL-encoded string for classic posts\n$(\"#signup\").on(\"submit\", function (event) {\n  event.preventDefault();\n  const payload = $(this).serialize();\n\n  $.post(\"/signup\", payload).done(function () {\n    $(\"#signup\")[0].reset();\n  });\n});"
+    },
+    {
+     "language": "javascript",
+     "code": "// serializeArray() keeps names and values as objects\nconst fields = $(\"#signup\").serializeArray();\n// [{ name: \"email\", value: \"ana@example.com\" }, ...]\n\n// Read and write single controls\nconst email = $(\"#email\").val();\n$(\"#email\").val(\"ana@example.com\");\n\n// Checkboxes and radios use prop, not attr\n$('input[name=\"plan\"]:checked').val();\n$(\"#terms\").prop(\"checked\", true);\n\n// Trigger a handler from code\n$(\"#signup\").trigger(\"submit\");"
+    },
+    {
+     "language": "javascript",
+     "code": "// Check before sending and mark the field\n$(\"#signup\").on(\"submit\", function (event) {\n  const email = $(\"#email\").val().trim();\n\n  if (!email.includes(\"@\")) {\n    event.preventDefault();\n    $(\"#email\").addClass(\"invalid\").trigger(\"focus\");\n  }\n});"
+    }
+   ]
+  },
+  {
+   "id": "plugins",
+   "title": "Plugins",
+   "description": "Extend the library with chainable functions that keep their own state.",
+   "snippets": [
+    {
+     "language": "javascript",
+     "code": "// A plugin is a function on $.fn; return this to stay chainable\n$.fn.highlight = function (options) {\n  const settings = $.extend({ color: \"#fff3a3\" }, options);\n\n  return this.each(function () {\n    $(this).css(\"background-color\", settings.color);\n  });\n};\n\n$(\"p.note\").highlight({ color: \"#d1f7c4\" });"
+    },
+    {
+     "language": "javascript",
+     "code": "// Keep per-element state in data(), never in globals\n$.fn.counter = function (step) {\n  const increment = step || 1;\n\n  return this.each(function () {\n    const $el = $(this);\n    const value = ($el.data(\"count\") || 0) + increment;\n    $el.data(\"count\", value).text(value);\n  });\n};\n\n$(\".badge\").counter(2);"
+    },
+    {
+     "language": "javascript",
+     "code": "// Namespace events so off() removes only your own handlers\n$.fn.dismissible = function () {\n  return this.each(function () {\n    $(this).on(\"click.dismissible\", \".close\", function () {\n      $(this).closest(\".alert\").slideUp();\n    });\n  });\n};\n\n$(\".alert\").dismissible();"
+    }
+   ]
+  },
+  {
+   "id": "migration",
+   "title": "Modern Alternatives",
+   "description": "Reach for the platform: most helpers have native equivalents today.",
+   "snippets": [
+    {
+     "language": "javascript",
+     "code": "// Instead of $(selector)\nconst el = document.querySelector(\"#app\");\nconst items = document.querySelectorAll(\".item\");\n\n// Instead of addClass / removeClass / toggleClass\nel.classList.add(\"ready\");\nel.classList.remove(\"ready\");\nel.classList.toggle(\"open\", isOpen);\n\n// Instead of text() and html()\nel.textContent = \"Done\";\nel.innerHTML = \"<strong>Done</strong>\";"
+    },
+    {
+     "language": "javascript",
+     "code": "// Instead of $.ajax, wrapped so the await stays inside a function\nasync function loadIssues() {\n  const res = await fetch(\"/api/issues\", {\n    headers: { Accept: \"application/json\" }\n  });\n  if (!res.ok) throw new Error(res.status);\n  return res.json();\n}\n\n// Instead of a POST with a serialized body\nfetch(\"/api/issues\", {\n  method: \"POST\",\n  headers: { \"Content-Type\": \"application/json\" },\n  body: JSON.stringify({ title: \"Login fails\" })\n});"
+    },
+    {
+     "language": "javascript",
+     "code": "// Instead of delegated .on(\"click\", \"li\", ...)\ndocument.querySelector(\"#list\").addEventListener(\"click\", (event) => {\n  const row = event.target.closest(\"li\");\n  if (row) row.classList.toggle(\"done\");\n});\n\n// Instead of append() and insertAfter()\nconst list = document.querySelector(\"#list\");\nlist.append(document.createElement(\"li\"));\nlist.insertAdjacentHTML(\"beforeend\", \"<li>Ship it</li>\");"
+    }
+   ]
+  }
+ ]
+}

@@ -1,0 +1,275 @@
+{
+ "slug": "lua",
+ "title": "Lua",
+ "label": "Lua",
+ "group": "Language",
+ "color": "#000080",
+ "desc": "A small, embeddable language built on tables, first-class functions, and cooperative coroutines.",
+ "sections": [
+  {
+   "id": "setup",
+   "title": "Setup",
+   "description": "Check the interpreter, run a file, and manage rocks",
+   "snippets": [
+    {
+     "language": "bash",
+     "code": "# Check the installed Lua version\nlua -v\n\n# Run a script file\nlua greet.lua\n\n# Start the interactive prompt, then leave with Ctrl-D\nlua"
+    },
+    {
+     "language": "lua",
+     "code": "-- greet.lua\n-- Usage: lua greet.lua Ada\nlocal name = arg[1] or \"world\"\nprint(\"hello, \" .. name)"
+    },
+    {
+     "language": "bash",
+     "code": "# Install a rock for the current user\nluarocks install --local inspect\n\n# Show the rocks available on the system\nluarocks list"
+    }
+   ]
+  },
+  {
+   "id": "syntax",
+   "title": "Syntax",
+   "description": "Comments, blocks, locals, and the shape of everyday statements",
+   "snippets": [
+    {
+     "language": "lua",
+     "code": "-- A comment runs to the end of the line.\n--[[\n  A long comment can span several lines.\n]]\n\nlocal name = \"Ada\"   -- local: visible only in this block\nlocal age = 36\n\nif age >= 18 and name ~= \"\" then\n  print(name .. \" is an adult\")\nelse\n  print(\"minor or missing name\")\nend\n\nfor i = 1, 3 do\n  io.write(i, \" \")\nend\nio.write(\"\\n\")"
+    },
+    {
+     "language": "lua",
+     "code": "local a, b = 1, 2\na, b = b, a\nprint(a, b)               -- 2 1\n\n-- Only nil and false are falsy; 0 and \"\" are true.\nlocal function greet(name)\n  name = name or \"world\"\n  return \"hello, \" .. name\nend\nprint(greet())            -- hello, world\n\nprint(7 // 2, 7 % 2)      -- 3 1\nprint(2 ^ 10)             -- 1024.0\nprint(1 == 1.0)           -- true"
+    }
+   ]
+  },
+  {
+   "id": "types",
+   "title": "Types",
+   "description": "The eight value types, integer versus float numbers, and conversions",
+   "snippets": [
+    {
+     "language": "lua",
+     "code": "print(type(nil))                             -- nil\nprint(type(true))                            -- boolean\nprint(type(42))                              -- number\nprint(type(3.5))                             -- number\nprint(type(\"lua\"))                           -- string\nprint(type({}))                              -- table\nprint(type(print))                           -- function\nprint(type(coroutine.create(function() end))) -- thread\nprint(type(io.stdout))                       -- userdata\n\nprint(math.type(42))                         -- integer\nprint(math.type(3.5))                        -- float\nprint(10 / 2)                                -- 5.0, division yields a float\nprint(10 // 2)                               -- 5, floor division keeps integers"
+    },
+    {
+     "language": "lua",
+     "code": "local n = tonumber(\"42\")        -- 42\nlocal f = tonumber(\"3.14\")      -- 3.14\nlocal bad = tonumber(\"lua\")     -- nil\n\nprint(n + 1)                    -- 43\nprint(f * 2)                    -- 6.28\nprint(bad)                      -- nil\nprint(tostring(42) .. \"!\")      -- 42!\nprint(math.tointeger(3.0))      -- 3\nprint(math.tointeger(3.5))      -- nil, not integral\n\n-- Numeric strings convert in arithmetic, but tonumber is explicit.\nprint(\"10\" + 5)                 -- 15"
+    }
+   ]
+  },
+  {
+   "id": "variables",
+   "title": "Variables",
+   "description": "Local scope, shadowing, constants, and the global table",
+   "snippets": [
+    {
+     "language": "lua",
+     "code": "local counter = 0\n\ndo\n  local counter = 10   -- shadows the outer variable\n  print(counter)       -- 10\nend\n\nprint(counter)         -- 0\n\n-- Lua 5.4: a const local cannot be assigned again.\nlocal LIMIT <const> = 100\nprint(LIMIT)           -- 100\n\n-- Globals live in the _G table.\n_G.app_name = \"cheatrs\"\nprint(app_name)        -- cheatrs\nprint(_G.app_name)     -- cheatrs"
+    },
+    {
+     "language": "lua",
+     "code": "local a, b = 1        -- b receives nil\nprint(a, b)           -- 1 nil\n\nlocal x = 10\nx = x + 5\nprint(x)              -- 15\n\nfor i = 1, 2 do\n  local doubled = i * 2\n  print(doubled)      -- 2 4\nend\n-- doubled no longer exists after the loop."
+    }
+   ]
+  },
+  {
+   "id": "strings",
+   "title": "Strings",
+   "description": "Immutable byte strings, concatenation, formatting, and patterns",
+   "snippets": [
+    {
+     "language": "lua",
+     "code": "local s = \"Lua\"\nprint(s .. \" 5.4\")             -- Lua 5.4\nprint(#s)                      -- 3\nprint(s:upper())               -- LUA\nprint(s:lower())               -- lua\nprint(s:rep(2, \"-\"))           -- Lua-Lua\n\nlocal text = \"  padded  \"\nlocal trimmed = text:gsub(\"^%s+\", \"\"):gsub(\"%s+$\", \"\")\nprint(trimmed)                 -- padded"
+    },
+    {
+     "language": "lua",
+     "code": "print(string.format(\"%s scored %d points (%.1f%%)\", \"Ada\", 9, 87.5))\n-- Ada scored 9 points (87.5%)\n\nlocal date = \"2026-11-04\"\nlocal y, m, d = date:match(\"(%d%d%d%d)-(%d%d)-(%d%d)\")\nprint(y, m, d)                 -- 2026 11 4\n\nfor word in (\"one two three\"):gmatch(\"%a+\") do\n  io.write(word, \" \")\nend\nio.write(\"\\n\")\n\nprint((\"abc\"):find(\"b\"))       -- 2 2\nprint((\"a.b.c\"):gsub(\"%.\", \"/\")) -- a/b/c 2"
+    },
+    {
+     "language": "lua",
+     "code": "local raw = [[no \\n escapes here]]\nprint(raw)                     -- no \\n escapes here\n\nprint(\"tab:\\tquote:\\\"\")\nprint(\"line one\\nline two\")\n\n-- %q escapes a value so it can be read back as Lua source.\nprint(string.format(\"%q\", 'he said \"hi\"')) -- \"he said \\\"hi\\\"\""
+    }
+   ]
+  },
+  {
+   "id": "tables",
+   "title": "Tables",
+   "description": "The one container: arrays, maps, insertion, sorting, and unpacking",
+   "snippets": [
+    {
+     "language": "lua",
+     "code": "local fruits = { \"apple\", \"banana\", \"cherry\" }\nprint(#fruits)                   -- 3\nprint(fruits[1])                 -- apple\n\ntable.insert(fruits, \"date\")\ntable.insert(fruits, 1, \"avocado\")\nprint(table.concat(fruits, \", \")) -- avocado, apple, banana, cherry, date\n\nprint(table.remove(fruits))      -- date\nprint(#fruits)                   -- 4"
+    },
+    {
+     "language": "lua",
+     "code": "local user = {\n  name = \"Ada\",\n  age = 36,\n  [\"favorite color\"] = \"blue\",\n}\n\nuser.email = \"ada@example.com\"\nprint(user.name, user[\"favorite color\"]) -- Ada blue\n\nfor key, value in pairs(user) do\n  print(key, value)\nend\n\n-- Array-like keys are visited in order with ipairs.\nfor index, value in ipairs({ \"a\", \"b\" }) do\n  print(index, value)\nend"
+    },
+    {
+     "language": "lua",
+     "code": "local scores = { 42, 7, 19, 88 }\n\ntable.sort(scores)               -- ascending\nprint(table.concat(scores, \" \")) -- 7 19 42 88\n\ntable.sort(scores, function(a, b) return a > b end)\nprint(table.concat(scores, \" \")) -- 88 42 19 7\n\nlocal first, second = table.unpack(scores)\nprint(first, second)             -- 88 42\n\nlocal copy = { table.unpack(scores) }\nprint(#copy)                     -- 4"
+    }
+   ]
+  },
+  {
+   "id": "functions",
+   "title": "Functions",
+   "description": "Named and anonymous functions, multiple returns, varargs, and methods",
+   "snippets": [
+    {
+     "language": "lua",
+     "code": "local function divide(a, b)\n  if b == 0 then\n    return nil, \"division by zero\"\n  end\n  return a / b\nend\n\nlocal value, err = divide(10, 4)\nprint(value)                     -- 2.5\nprint(err)                       -- nil\nprint(divide(1, 0))              -- nil  division by zero"
+    },
+    {
+     "language": "lua",
+     "code": "local function sum(...)\n  local total = 0\n  for _, n in ipairs({ ... }) do\n    total = total + n\n  end\n  return total\nend\n\nprint(sum(1, 2, 3, 4))           -- 10\n\nlocal function greet(name, greeting)\n  greeting = greeting or \"hello\"\n  return greeting .. \", \" .. name\nend\n\nprint(greet(\"Ada\"))              -- hello, Ada\nprint(greet(\"Ada\", \"good night\")) -- good night, Ada"
+    },
+    {
+     "language": "lua",
+     "code": "local account = { balance = 50 }\n\nfunction account.deposit(self, amount)\n  self.balance = self.balance + amount\n  return self.balance\nend\n\nfunction account:withdraw(amount) -- implicit self\n  self.balance = self.balance - amount\n  return self.balance\nend\n\nprint(account.deposit(account, 25)) -- 75\nprint(account:withdraw(10))         -- 65"
+    }
+   ]
+  },
+  {
+   "id": "control-flow",
+   "title": "Control Flow",
+   "description": "Conditionals, loops, break, and goto labels",
+   "snippets": [
+    {
+     "language": "lua",
+     "code": "local score = 82\n\nif score >= 90 then\n  print(\"A\")\nelseif score >= 80 then\n  print(\"B\")\nelse\n  print(\"C\")\nend\n\nfor i = 1, 5, 2 do\n  print(i)        -- 1 3 5\nend\n\nfor i = 3, 1, -1 do\n  print(i)        -- 3 2 1\nend"
+    },
+    {
+     "language": "lua",
+     "code": "local n = 0\nwhile n < 3 do\n  n = n + 1\n  print(\"while\", n)\nend\n\nrepeat\n  n = n - 1\n  print(\"repeat\", n)\nuntil n == 0\n\nfor i = 1, 10 do\n  if i % 2 == 0 then\n    break\n  end\n  print(\"odd\", i) -- odd 1\nend"
+    },
+    {
+     "language": "lua",
+     "code": "for i = 1, 5 do\n  if i % 2 == 0 then\n    goto continue\n  end\n  io.write(i, \" \") -- 1 3 5\n  ::continue::\nend\nio.write(\"\\n\")\n\nlocal attempts = 0\n::retry::\nattempts = attempts + 1\nif attempts < 3 then\n  goto retry\nend\nprint(attempts)    -- 3"
+    }
+   ]
+  },
+  {
+   "id": "metatables",
+   "title": "Metatables",
+   "description": "Operator overloading, inheritance through __index, and custom behavior",
+   "snippets": [
+    {
+     "language": "lua",
+     "code": "local vector = {}\nvector.__index = vector\n\nfunction vector.new(x, y)\n  return setmetatable({ x = x, y = y }, vector)\nend\n\nfunction vector:length()\n  return math.sqrt(self.x ^ 2 + self.y ^ 2)\nend\n\nfunction vector.__add(a, b)\n  return vector.new(a.x + b.x, a.y + b.y)\nend\n\nfunction vector.__tostring(v)\n  return string.format(\"(%g, %g)\", v.x, v.y)\nend\n\nlocal a = vector.new(3, 4)\nlocal b = vector.new(1, 2)\nprint(a:length())        -- 5.0\nprint(tostring(a + b))   -- (4, 6)"
+    },
+    {
+     "language": "lua",
+     "code": "local defaults = { color = \"blue\", size = 12 }\nlocal settings = setmetatable({}, { __index = defaults })\n\nprint(settings.color)            -- blue\nsettings.color = \"red\"           -- writes to settings, not defaults\nprint(settings.color)            -- red\nprint(defaults.color)            -- blue\nprint(rawget(settings, \"color\")) -- red\nprint(rawget(settings, \"size\"))  -- nil"
+    },
+    {
+     "language": "lua",
+     "code": "local meter = {}\nmeter.__index = meter\n\nfunction meter.new(value)\n  return setmetatable({ value = value }, meter)\nend\n\nmeter.__eq = function(a, b) return a.value == b.value end\nmeter.__lt = function(a, b) return a.value < b.value end\nmeter.__le = function(a, b) return a.value <= b.value end\nmeter.__call = function(self, extra) return self.value + extra end\n\nlocal one = meter.new(1)\nlocal two = meter.new(2)\nprint(one == meter.new(1)) -- true\nprint(one < two)           -- true\nprint(one(10))             -- 11"
+    }
+   ]
+  },
+  {
+   "id": "modules",
+   "title": "Modules",
+   "description": "Return a table from a file and load it with require",
+   "snippets": [
+    {
+     "language": "lua",
+     "code": "-- mathx.lua\nlocal M = {}\n\nfunction M.add(a, b)\n  return a + b\nend\n\nfunction M.double(n)\n  return n * 2\nend\n\nreturn M"
+    },
+    {
+     "language": "lua",
+     "code": "-- main.lua, placed next to mathx.lua\nlocal mathx = require(\"mathx\")\n\nprint(mathx.add(2, 3))           -- 5\nprint(mathx.double(21))          -- 42\n\n-- The file runs once; later requires return the cached table.\nprint(require(\"mathx\") == mathx) -- true"
+    }
+   ]
+  },
+  {
+   "id": "closures",
+   "title": "Closures",
+   "description": "Functions that keep private upvalues alive between calls",
+   "snippets": [
+    {
+     "language": "lua",
+     "code": "local function make_counter(start)\n  local count = start\n  return function()\n    count = count + 1\n    return count\n  end\nend\n\nlocal next_id = make_counter(100)\nprint(next_id())   -- 101\nprint(next_id())   -- 102\n\nlocal other = make_counter(0)\nprint(other())     -- 1\nprint(next_id())   -- 103"
+    },
+    {
+     "language": "lua",
+     "code": "local function make_account(balance)\n  local function deposit(amount)\n    balance = balance + amount\n    return balance\n  end\n\n  local function withdraw(amount)\n    if amount > balance then\n      return nil, \"insufficient funds\"\n    end\n    balance = balance - amount\n    return balance\n  end\n\n  return deposit, withdraw\nend\n\nlocal deposit, withdraw = make_account(50)\nprint(deposit(25))   -- 75\nprint(withdraw(100)) -- nil  insufficient funds\nprint(withdraw(30))  -- 45"
+    },
+    {
+     "language": "lua",
+     "code": "local callbacks = {}\nfor i = 1, 3 do\n  local value = i   -- fresh local for each iteration\n  callbacks[i] = function()\n    return value * 10\n  end\nend\n\nprint(callbacks[1](), callbacks[2](), callbacks[3]()) -- 10 20 30"
+    }
+   ]
+  },
+  {
+   "id": "coroutines",
+   "title": "Coroutines",
+   "description": "Cooperative multitasking with create, resume, yield, and wrap",
+   "snippets": [
+    {
+     "language": "lua",
+     "code": "local co = coroutine.create(function(a, b)\n  print(\"start\", a, b)       -- start 2 3\n  local c = coroutine.yield(a + b)\n  print(\"resumed with\", c)   -- resumed with 10\n  return \"done\"\nend)\n\nprint(coroutine.status(co))   -- suspended\nprint(coroutine.resume(co, 2, 3)) -- true 5\nprint(coroutine.resume(co, 10))   -- true done\nprint(coroutine.status(co))   -- dead"
+    },
+    {
+     "language": "lua",
+     "code": "local function range(n)\n  return coroutine.wrap(function()\n    for i = 1, n do\n      coroutine.yield(i)\n    end\n  end)\nend\n\nfor value in range(4) do\n  io.write(value, \" \")\nend\nio.write(\"\\n\")\n\nlocal next_value = range(3)\nprint(next_value())   -- 1\nprint(next_value())   -- 2\nprint(next_value())   -- 3"
+    }
+   ]
+  },
+  {
+   "id": "file-io",
+   "title": "File I/O",
+   "description": "Open, read, write, append, and close files with explicit handles",
+   "snippets": [
+    {
+     "language": "lua",
+     "code": "local out = assert(io.open(\"notes.txt\", \"w\"))\nout:write(\"first line\\n\")\nout:write(\"second line\\n\")\nout:close()\n\nfor line in io.lines(\"notes.txt\") do\n  print(line)\nend"
+    },
+    {
+     "language": "lua",
+     "code": "local file = assert(io.open(\"notes.txt\", \"r\"))\nlocal content = file:read(\"a\") -- \"a\" reads to end of file\nprint(#content)                -- 23\nfile:close()\n\nlocal f = assert(io.open(\"notes.txt\", \"r\"))\nprint(f:read(\"l\"))             -- first line\nf:seek(\"set\", 0)\nprint(f:read(5))               -- first\nf:close()"
+    },
+    {
+     "language": "lua",
+     "code": "local log = assert(io.open(\"app.log\", \"a\"))\nlog:write(os.date(\"%Y-%m-%d %H:%M:%S\"), \" started\\n\")\nlog:close()\n\nlocal ok, err = os.remove(\"missing.txt\")\nprint(ok == nil, err ~= nil) -- true true"
+    }
+   ]
+  },
+  {
+   "id": "stdlib",
+   "title": "Standard Library",
+   "description": "Useful parts of os, math, string, table, and utf8",
+   "snippets": [
+    {
+     "language": "lua",
+     "code": "print(os.time() > 0)                    -- true\nprint(os.date(\"!%Y-%m-%d\", 0))          -- 1970-01-01\nprint(type(os.getenv(\"HOME\")))          -- string\n\nprint(math.max(3, 9, 4))                -- 9\nprint(math.floor(2.9), math.ceil(2.1))  -- 2 3\nprint(math.abs(-7), math.sqrt(81))      -- 7 9.0\nprint(math.random(1, 6))                -- integer from 1 to 6"
+    },
+    {
+     "language": "lua",
+     "code": "local text = \"ação\"\nprint(#text)             -- 6 bytes in UTF-8\nprint(utf8.len(text))    -- 4 code points\n\nfor _, code in utf8.codes(text) do\n  io.write(code, \" \")\nend\nio.write(\"\\n\")           -- 97 231 227 111\n\nprint(utf8.char(76, 117, 97)) -- Lua"
+    },
+    {
+     "language": "lua",
+     "code": "local parts = { \"lua\", \"5.4\", \"guide\" }\nprint(table.concat(parts, \"-\"))     -- lua-5.4-guide\nprint(table.unpack({ 10, 20, 30 })) -- 10 20 30\n\nprint(string.rep(\"ab\", 3))          -- ababab\nprint((\"  trim me  \"):match(\"^%s*(.-)%s*$\")) -- trim me\nprint(string.byte(\"A\"), string.char(66))     -- 65 B"
+    }
+   ]
+  },
+  {
+   "id": "common-errors",
+   "title": "Common Errors",
+   "description": "Nil indexing, 1-based arrays, aliasing, and type mistakes",
+   "snippets": [
+    {
+     "language": "lua",
+     "code": "local config = nil\n-- print(config.name) -- error: attempt to index a nil value\n\nconfig = { name = \"app\" }\nprint(config.name)    -- app\n\nlocal list = { 10, 20, 30 }\n-- print(list[0])     -- nil: arrays start at index 1\nprint(list[1])        -- 10"
+    },
+    {
+     "language": "lua",
+     "code": "local sparse = { 1, 2, nil, 4 }\nprint(#sparse >= 2)    -- true; length with holes is undefined\n\nlocal original = { 1, 2, 3 }\nlocal alias = original  -- same table, not a copy\nalias[1] = 99\nprint(original[1])      -- 99\n\nlocal copy = { table.unpack(original) }\ncopy[1] = 1\nprint(original[1])      -- 99"
+    },
+    {
+     "language": "lua",
+     "code": "local total = 10\nlocal input = \"5\"\nlocal n = tonumber(input)\nif n then\n  print(total + n)     -- 15\nelse\n  print(\"not a number\")\nend\n\nlocal name = nil\n-- print(\"hello \" .. name) -- error: attempt to concatenate a nil value\nprint(\"hello \" .. tostring(name)) -- hello nil\n\n-- Different types never compare equal.\nprint(1 == \"1\")        -- false\nprint(nil == false)    -- false\nprint(1 ~= 2)          -- true"
+    }
+   ]
+  }
+ ]
+}

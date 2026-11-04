@@ -1,0 +1,254 @@
+{
+ "slug": "js",
+ "title": "JavaScript",
+ "label": "JavaScript",
+ "group": "Language",
+ "color": "#F7DF1E",
+ "desc": "Language of the web that also powers scripts, tooling, and Node.js services.",
+ "sections": [
+  {
+   "id": "setup",
+   "title": "Setup",
+   "description": "Check the runtime, run a file, and evaluate a one-liner.",
+   "snippets": [
+    {
+     "language": "bash",
+     "code": "# Check the installed runtime and package manager\nnode --version            # v22.11.0\nnpm --version             # 10.9.0\n\n# Run a script once, then rerun it on every save\nnode app.js\nnode --watch app.js\n\n# Evaluate an expression without creating a file\nnode -e \"console.log(2 ** 10)\"   # 1024"
+    },
+    {
+     "language": "javascript",
+     "code": "// app.js\nconst args = process.argv.slice(2);\nconst name = args[0] ?? \"world\";\nconsole.log(`Hello, ${name}`);\n// node app.js Ada  ->  Hello, Ada"
+    }
+   ]
+  },
+  {
+   "id": "syntax",
+   "title": "Syntax",
+   "description": "Comments, statements, blocks, and template literals.",
+   "snippets": [
+    {
+     "language": "javascript",
+     "code": "// Single-line comment\n/* Block comment\n   spanning two lines */\n\n// Statements end with a semicolon; it is optional but explicit is clearer\nconst total = 2 + 3;\n\n// Braces group statements\n{\n  const inner = \"only visible in this block\";\n  console.log(inner);\n}\n\n// Template literals interpolate expressions and keep line breaks\nconst user = \"Ada\";\nconsole.log(`Hello, ${user}! 2 + 2 = ${2 + 2}`);"
+    },
+    {
+     "language": "javascript",
+     "code": "// Line breaks usually end a statement\nconst a = 1\nconst b = 2\nconsole.log(a + b)   // 3\n\n// A line starting with a bracket continues the previous expression,\n// so leading semicolons protect against accidental calls\nconst sum = [1, 2, 3].reduce((acc, n) => acc + n, 0);\nconsole.log(sum);    // 6"
+    }
+   ]
+  },
+  {
+   "id": "types",
+   "title": "Types",
+   "description": "Primitive values, typeof results, and numeric edge cases.",
+   "snippets": [
+    {
+     "language": "javascript",
+     "code": "// The primitive types are string, number, bigint, boolean,\n// undefined, null and symbol\nconsole.log(typeof \"text\");          // \"string\"\nconsole.log(typeof 42);              // \"number\"\nconsole.log(typeof 42n);             // \"bigint\"\nconsole.log(typeof true);            // \"boolean\"\nconsole.log(typeof undefined);       // \"undefined\"\nconsole.log(typeof Symbol(\"id\"));    // \"symbol\"\n\n// Objects and the historical null quirk\nconsole.log(typeof null);            // \"object\"\nconsole.log(typeof {});              // \"object\"\nconsole.log(typeof []);              // \"object\"\nconsole.log(typeof function () {});  // \"function\""
+    },
+    {
+     "language": "javascript",
+     "code": "// undefined means \"not assigned\"; null is a deliberate empty value\nlet pending;\nconsole.log(pending);            // undefined\nconsole.log(null == undefined);  // true  (loose equality)\nconsole.log(null === undefined); // false (strict equality)\n\n// Numbers are IEEE-754 doubles, so some decimals are inexact\nconsole.log(0.1 + 0.2);              // 0.30000000000000004\nconsole.log(Number.isNaN(0 / 0));    // true\nconsole.log(Number.isInteger(7.0));  // true\nconsole.log(Number.MAX_SAFE_INTEGER); // 9007199254740991\n\n// BigInt keeps large integers exact\nconsole.log(9007199254740993n + 1n); // 9007199254740994n"
+    }
+   ]
+  },
+  {
+   "id": "variables",
+   "title": "Variables",
+   "description": "Declare bindings with const and let, and know their scope rules.",
+   "snippets": [
+    {
+     "language": "javascript",
+     "code": "// const is the default: the binding cannot be reassigned\nconst host = \"localhost\";\n\n// let allows reassignment and is block scoped\nlet attempts = 0;\nattempts += 1;\nconsole.log(attempts); // 1\n\n// var is function scoped and hoisted, so prefer let and const\nif (true) {\n  var leaked = \"visible after the block\";\n  let scoped = \"only inside the block\";\n}\nconsole.log(leaked);\n// console.log(scoped); // ReferenceError: scoped is not defined"
+    },
+    {
+     "language": "javascript",
+     "code": "// A let binding is unusable until its declaration executes\n// console.log(level); // ReferenceError: Cannot access 'level' before initialization\nlet level = 1;\n\n// const protects the binding, not the value behind it\nconst roles = [\"admin\"];\nroles.push(\"editor\");\nconsole.log(roles);  // [ 'admin', 'editor' ]\n// roles = [];       // TypeError: Assignment to constant variable.\n\n// Destructuring swaps two values without a temporary\nlet left = \"a\";\nlet right = \"b\";\n[left, right] = [right, left];\nconsole.log(left, right); // b a"
+    }
+   ]
+  },
+  {
+   "id": "operators",
+   "title": "Operators",
+   "description": "Arithmetic, strict comparison, and null-aware shortcuts.",
+   "snippets": [
+    {
+     "language": "javascript",
+     "code": "// Arithmetic and assignment shortcuts\nconsole.log(7 % 3);   // 1\nconsole.log(2 ** 8);  // 256\nlet score = 10;\nscore += 5;           // 15\nscore *= 2;           // 30\n\n// === compares type and value; == coerces before comparing\nconsole.log(\"5\" === 5); // false\nconsole.log(\"5\" == 5);  // true\n\n// Logical operators return an operand, not always a boolean\nconsole.log(0 || \"fallback\");    // \"fallback\"\nconsole.log(\"\" && \"never\");      // \"\"\nconsole.log(null ?? \"default\");  // \"default\""
+    },
+    {
+     "language": "javascript",
+     "code": "const user = { profile: { city: \"Recife\" } };\n\n// Optional chaining stops at the first null or undefined\nconsole.log(user.profile?.city);  // \"Recife\"\nconsole.log(user.account?.city);  // undefined\n\n// Nullish assignment writes only when the target is null or undefined\nconst settings = { theme: null, zoom: 1 };\nsettings.theme ??= \"dark\";\nsettings.zoom ??= 2;\nconsole.log(settings); // { theme: 'dark', zoom: 1 }\n\n// Ternary chooses a value; spread copies properties\nconst label = settings.zoom > 1 ? \"large\" : \"normal\";\nconst merged = { ...settings, lang: \"pt-BR\" };\nconsole.log(label, merged.lang); // large pt-BR"
+    }
+   ]
+  },
+  {
+   "id": "control-flow",
+   "title": "Control Flow",
+   "description": "Branch with if and switch, then loop over values and keys.",
+   "snippets": [
+    {
+     "language": "javascript",
+     "code": "const status = 404;\n\nif (status >= 200 && status < 300) {\n  console.log(\"success\");\n} else if (status === 404) {\n  console.log(\"not found\");\n} else {\n  console.log(\"other\");\n}\n\nswitch (status) {\n  case 200:\n    console.log(\"ok\");\n    break;\n  case 404:\n    console.log(\"missing\");\n    break;\n  default:\n    console.log(\"unknown\");\n}"
+    },
+    {
+     "language": "javascript",
+     "code": "const numbers = [4, 8, 15, 16, 23, 42];\n\nfor (const n of numbers) {\n  if (n % 2 !== 0) continue;  // skip odd values\n  if (n > 20) break;          // stop after 20\n  console.log(n);             // 4, 8, 16\n}\n\n// for...in walks property names; use it for objects, not array values\nconst config = { retries: 3, timeout: 500 };\nfor (const key in config) {\n  console.log(key, config[key]); // retries 3, then timeout 500\n}\n\nlet remaining = 3;\nwhile (remaining > 0) {\n  remaining -= 1;\n}\nconsole.log(remaining); // 0"
+    }
+   ]
+  },
+  {
+   "id": "functions",
+   "title": "Functions",
+   "description": "Declarations, arrows, closures, and the this binding.",
+   "snippets": [
+    {
+     "language": "javascript",
+     "code": "// Declarations are hoisted and callable before their definition\nconsole.log(add(2, 3)); // 5\nfunction add(a, b) {\n  return a + b;\n}\n\n// Arrow functions with an implicit return\nconst double = (n) => n * 2;\nconsole.log(double(21)); // 42\n\n// Default and rest parameters\nfunction greet(name = \"guest\", ...titles) {\n  return `${titles.join(\" \")} ${name}`.trim();\n}\nconsole.log(greet(\"Ada\", \"Dr.\")); // Dr. Ada"
+    },
+    {
+     "language": "javascript",
+     "code": "// Closures keep access to the scope where they were created\nfunction makeCounter(start = 0) {\n  let value = start;\n  return {\n    increment: () => ++value,\n    current: () => value,\n  };\n}\n\nconst counter = makeCounter(10);\ncounter.increment();\ncounter.increment();\nconsole.log(counter.current()); // 12\n\n// Functions are values: pass them around and call them later\nconst apply = (fn, value) => fn(value);\nconsole.log(apply((n) => n + 1, 5)); // 6\n\n// Regular functions get their own this; arrows inherit it from the caller\nconst timer = {\n  seconds: 0,\n  start() {\n    setTimeout(() => {\n      this.seconds += 1;\n    }, 1000);\n  },\n};\ntimer.start();"
+    }
+   ]
+  },
+  {
+   "id": "arrays",
+   "title": "Arrays",
+   "description": "Transform, filter, fold, and sort collections.",
+   "snippets": [
+    {
+     "language": "javascript",
+     "code": "const scores = [72, 95, 48, 88];\n\n// map transforms, filter keeps, reduce folds\nconst doubled = scores.map((n) => n * 2);\nconst passed = scores.filter((n) => n >= 60);\nconst total = scores.reduce((sum, n) => sum + n, 0);\nconsole.log(doubled); // [ 144, 190, 96, 176 ]\nconsole.log(passed);  // [ 72, 95, 88 ]\nconsole.log(total);   // 303\n\n// find returns the first match; at counts from the end\nconsole.log(scores.find((n) => n < 60)); // 48\nconsole.log(scores.at(-1));              // 88"
+    },
+    {
+     "language": "javascript",
+     "code": "const names = [\"ada\", \"Grace\", \"linus\"];\n\n// sort mutates and compares as text by default, so pass a comparator\nnames.sort((a, b) => a.localeCompare(b));\nconsole.log(names); // [ 'ada', 'Grace', 'linus' ]\n\n// Numeric order needs subtraction\nconst values = [10, 9, 100];\nvalues.sort((a, b) => a - b);\nconsole.log(values); // [ 9, 10, 100 ]\n\n// some, every and flat\nconsole.log(values.some((n) => n > 50)); // true\nconsole.log(values.every((n) => n > 5)); // true\nconsole.log([[1, 2], [3, 4]].flat());    // [ 1, 2, 3, 4 ]\n\n// Copy before adding so the original stays intact\nconst original = [1, 2, 3];\nconst copy = [...original, 4];\nconsole.log(original, copy); // [ 1, 2, 3 ] [ 1, 2, 3, 4 ]"
+    }
+   ]
+  },
+  {
+   "id": "objects",
+   "title": "Objects",
+   "description": "Build records, destructure them, and iterate their entries.",
+   "snippets": [
+    {
+     "language": "javascript",
+     "code": "const user = { name: \"Ada\", age: 36 };\n\n// Dot access for fixed keys, brackets for dynamic ones\nconsole.log(user.name);   // \"Ada\"\nconsole.log(user[\"age\"]); // 36\n\n// Shorthand properties, computed keys and methods\nconst key = \"role\";\nconst account = {\n  user,\n  [key]: \"admin\",\n  greet() {\n    return `Hi, ${this.user.name}`;\n  },\n};\nconsole.log(account.greet()); // Hi, Ada\nconsole.log(account.role);    // admin"
+    },
+    {
+     "language": "javascript",
+     "code": "const point = { x: 3, y: 7, z: 0 };\n\n// Destructuring with rest collects the remaining keys\nconst { x, y, ...rest } = point;\nconsole.log(x, y, rest); // 3 7 { z: 0 }\n\n// Object helpers\nconsole.log(Object.keys(point));    // [ 'x', 'y', 'z' ]\nconsole.log(Object.values(point));  // [ 3, 7, 0 ]\nconsole.log(Object.entries(point)); // [ [ 'x', 3 ], [ 'y', 7 ], [ 'z', 0 ] ]\n\n// Copy with an override, leaving the source unchanged\nconst shifted = { ...point, x: 10 };\nconsole.log(point.x, shifted.x); // 3 10\n\n// Freeze blocks new changes in strict mode\nconst limits = Object.freeze({ max: 5 });\n// limits.max = 9; // TypeError: Cannot assign to read only property\nconsole.log(limits.max); // 5"
+    }
+   ]
+  },
+  {
+   "id": "strings",
+   "title": "Strings",
+   "description": "Interpolate, search, slice, and reshape text.",
+   "snippets": [
+    {
+     "language": "javascript",
+     "code": "const name = \"Ada\";\n\n// Template literals interpolate values and keep formatting\nconst message = `Hello, ${name}.`;\nconsole.log(message);              // Hello, Ada.\nconsole.log(`2 + 3 = ${2 + 3}`);  // 2 + 3 = 5\n\n// Trim, case and length\nconsole.log(\"  spaced  \".trim()); // \"spaced\"\nconsole.log(\"ada\".toUpperCase()); // \"ADA\"\nconsole.log(\"Ada\".length);        // 3"
+    },
+    {
+     "language": "javascript",
+     "code": "const csv = \"ana,bruno,carla\";\n\n// split and join convert between text and arrays\nconst people = csv.split(\",\");\nconsole.log(people);            // [ 'ana', 'bruno', 'carla' ]\nconsole.log(people.join(\" | \")); // ana | bruno | carla\n\n// Search and replace\nconsole.log(csv.includes(\"bruno\"));        // true\nconsole.log(csv.startsWith(\"ana\"));        // true\nconsole.log(csv.replace(\"bruno\", \"bia\"));  // ana,bia,carla\nconsole.log(\"a-b-a\".replaceAll(\"a\", \"x\")); // x-b-x\n\n// slice excludes the end index; padStart fixes the width\nconsole.log(csv.slice(0, 3));      // \"ana\"\nconsole.log(\"7\".padStart(3, \"0\")); // \"007\"\nconsole.log(\"hello\".at(-1));       // \"o\""
+    }
+   ]
+  },
+  {
+   "id": "classes",
+   "title": "Classes",
+   "description": "Construct instances with private fields, getters, and inheritance.",
+   "snippets": [
+    {
+     "language": "javascript",
+     "code": "class Counter {\n  #count = 0; // private field, unreachable from outside\n\n  constructor(start = 0) {\n    this.#count = start;\n  }\n\n  increment(step = 1) {\n    this.#count += step;\n    return this;\n  }\n\n  get value() {\n    return this.#count;\n  }\n\n  static zero() {\n    return new Counter(0);\n  }\n}\n\nconst counter = Counter.zero().increment(2).increment(3);\nconsole.log(counter.value); // 5\n// console.log(counter.#count); // SyntaxError: private field outside the class"
+    },
+    {
+     "language": "javascript",
+     "code": "class Animal {\n  constructor(name) {\n    this.name = name;\n  }\n\n  get sound() {\n    return \"...\";\n  }\n\n  speak() {\n    return `${this.name} says ${this.sound}`;\n  }\n}\n\nclass Dog extends Animal {\n  get sound() {\n    return \"woof\";\n  }\n\n  speak() {\n    return `${super.speak()}!`;\n  }\n}\n\nconst dog = new Dog(\"Toby\");\nconsole.log(dog.speak());           // Toby says woof!\nconsole.log(dog instanceof Dog);    // true\nconsole.log(dog instanceof Animal); // true"
+    }
+   ]
+  },
+  {
+   "id": "modules",
+   "title": "Modules",
+   "description": "Share values between files with export and import.",
+   "snippets": [
+    {
+     "language": "javascript",
+     "code": "// math.js\nexport const PI = 3.14159;\n\nexport function area(radius) {\n  return PI * radius ** 2;\n}\n\nexport default function describe(radius) {\n  return `circle of radius ${radius}`;\n}"
+    },
+    {
+     "language": "javascript",
+     "code": "// app.js\nimport describe, { PI, area } from \"./math.js\";\n\nconsole.log(PI);                 // 3.14159\nconsole.log(area(2).toFixed(2)); // 12.57\nconsole.log(describe(3));        // circle of radius 3\n\n// A namespace import groups every named export\nimport * as math from \"./math.js\";\nconsole.log(math.PI === PI); // true\n\n// Dynamic import resolves at call time and returns a promise\nconst mod = await import(\"./math.js\");\nconsole.log(mod.area(1).toFixed(2)); // 3.14"
+    }
+   ]
+  },
+  {
+   "id": "async",
+   "title": "Promises and Async",
+   "description": "Chain and await asynchronous work, with error handling.",
+   "snippets": [
+    {
+     "language": "javascript",
+     "code": "// A promise settles once: fulfilled with a value or rejected with an error\nconst wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));\n\nasync function loadUser(id) {\n  await wait(500);\n  if (id <= 0) throw new Error(`invalid id: ${id}`);\n  return { id, name: \"Ada\" };\n}\n\nloadUser(7).then((user) => console.log(user.name));          // Ada\nloadUser(0).catch((error) => console.log(error.message));    // invalid id: 0"
+    },
+    {
+     "language": "javascript",
+     "code": "async function fetchTitle(url) {\n  const response = await fetch(url);\n  if (!response.ok) {\n    throw new Error(`HTTP ${response.status}`); // 404 for a missing page\n  }\n  return response.json();\n}\n\ntry {\n  const data = await fetchTitle(\"https://example.com/data.json\");\n  console.log(data.title);\n} catch (error) {\n  console.error(error.message);\n}"
+    },
+    {
+     "language": "javascript",
+     "code": "// allSettled waits for every promise and reports each outcome\nconst tasks = [\n  Promise.resolve(\"ok\"),\n  Promise.reject(new Error(\"boom\")),\n  Promise.resolve(\"fine\"),\n];\n\nconst results = await Promise.allSettled(tasks);\nconsole.log(results[0]); // { status: 'fulfilled', value: 'ok' }\nconsole.log(results[1]); // { status: 'rejected', reason: Error: boom }\nconsole.log(results.map((r) => r.status)); // [ 'fulfilled', 'rejected', 'fulfilled' ]"
+    }
+   ]
+  },
+  {
+   "id": "dom",
+   "title": "DOM",
+   "description": "Select, create, and update elements in the browser.",
+   "snippets": [
+    {
+     "language": "javascript",
+     "code": "// Select an element and replace its text safely\nconst title = document.querySelector(\"h1\");\ntitle.textContent = \"Updated title\";\n\n// textContent shows markup as text; innerHTML would parse it\nconst box = document.querySelector(\"#output\");\nbox.textContent = \"<strong>shown as text</strong>\";\n\n// classList and dataset edit presentation and data attributes\nbox.classList.add(\"visible\");\nbox.dataset.state = \"ready\";\nconsole.log(box.className); // \"visible\""
+    },
+    {
+     "language": "javascript",
+     "code": "// Build nodes instead of concatenating HTML strings\nconst list = document.querySelector(\"#items\");\nconst item = document.createElement(\"li\");\nitem.textContent = \"Third entry\";\nitem.setAttribute(\"data-index\", \"2\");\nlist.append(item);\n\n// Listen for events; the handler receives the event object\nconst button = document.querySelector(\"#save\");\nbutton.addEventListener(\"click\", (event) => {\n  event.preventDefault();\n  console.log(event.target.id); // \"save\"\n});"
+    }
+   ]
+  },
+  {
+   "id": "json",
+   "title": "JSON",
+   "description": "Serialize, revive, and validate JSON text.",
+   "snippets": [
+    {
+     "language": "javascript",
+     "code": "const user = { id: 1, name: \"Ada\", tags: [\"admin\"], active: true };\n\n// Pretty print with two spaces of indentation\nconst text = JSON.stringify(user, null, 2);\nconsole.log(text);\n// {\n//   \"id\": 1,\n//   \"name\": \"Ada\",\n//   \"tags\": [\"admin\"],\n//   \"active\": true\n// }\n\n// An array replacer keeps only the listed keys\nconsole.log(JSON.stringify(user, [\"id\", \"name\"])); // {\"id\":1,\"name\":\"Ada\"}"
+    },
+    {
+     "language": "javascript",
+     "code": "const raw = '{\"id\":2,\"name\":\"Grace\",\"score\":91.5}';\n\n// parse builds plain objects and throws on malformed text\nconst data = JSON.parse(raw);\nconsole.log(data.score); // 91.5\n\n// A reviver reshapes values while parsing\nconst dated = JSON.parse('{\"when\":\"2026-11-04\"}', (key, value) =>\n  key === \"when\" ? new Date(value) : value\n);\nconsole.log(dated.when.getUTCFullYear()); // 2026\n\n// Guard against invalid input from disk or network\ntry {\n  JSON.parse(\"{oops}\");\n} catch (error) {\n  console.log(error.name); // SyntaxError\n}"
+    }
+   ]
+  },
+  {
+   "id": "common-errors",
+   "title": "Common Errors",
+   "description": "Typical runtime traps and the fixes that avoid them.",
+   "snippets": [
+    {
+     "language": "javascript",
+     "code": "const user = { profile: null };\n\n// TypeError: the property read happens on a null value\n// console.log(user.profile.name);\n// TypeError: Cannot read properties of null (reading 'name')\n\n// Optional chaining plus a fallback keeps the read safe\nconsole.log(user.profile?.name ?? \"anonymous\"); // anonymous\n\n// Assigning to an undeclared name throws in strict mode,\n// and ES modules are always strict\n// total = 1; // ReferenceError: total is not defined\nlet total = 1;\nconsole.log(total); // 1"
+    },
+    {
+     "language": "javascript",
+     "code": "// Losing this: a detached method forgets its receiver\nconst counter = {\n  count: 5,\n  read() {\n    return this.count;\n  },\n};\n\nconst read = counter.read;\n// read(); // TypeError: Cannot read properties of undefined (reading 'count')\nconsole.log(counter.read());                 // 5\nconsole.log(read.call(counter));             // 5\nconsole.log(counter.read.call({ count: 9 })); // 9\n\n// Decimal sums rarely compare equal, so use a tolerance\nconsole.log(0.1 + 0.2 === 0.3);                // false\nconsole.log(Math.abs(0.1 + 0.2 - 0.3) < 1e-9); // true\n\n// An async function always returns a promise\nasync function value() {\n  return 42;\n}\nconsole.log(value());                 // Promise { 42 }\nvalue().then((n) => console.log(n));  // 42"
+    }
+   ]
+  }
+ ]
+}

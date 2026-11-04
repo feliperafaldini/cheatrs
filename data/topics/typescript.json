@@ -1,0 +1,289 @@
+{
+ "slug": "typescript",
+ "title": "TypeScript",
+ "label": "TypeScript",
+ "group": "Language",
+ "color": "#3178C6",
+ "desc": "Typed superset of JavaScript whose compiler catches mistakes before the code runs.",
+ "sections": [
+  {
+   "id": "setup",
+   "title": "Setup",
+   "description": "Install the compiler and a runner, then execute a first typed file.",
+   "snippets": [
+    {
+     "language": "bash",
+     "code": "# Create a package and install the compiler plus a fast runner\nnpm init -y\nnpm install --save-dev typescript tsx @types/node\n\n# Check the installed versions\nnpx tsc --version\nnpx tsx --version"
+    },
+    {
+     "language": "typescript",
+     "code": "// hello.ts\nconst name: string = \"Felipe\";\nconst year: number = 2026;\n\nfunction greet(who: string, when: number): string {\n  return `Hello, ${who} in ${when}`;\n}\n\nconsole.log(greet(name, year));"
+    },
+    {
+     "language": "bash",
+     "code": "# Run the file directly, without an emit step\nnpx tsx hello.ts\n\n# Or compile it and run the JavaScript output\nnpx tsc hello.ts\nnode hello.js"
+    }
+   ]
+  },
+  {
+   "id": "tsconfig",
+   "title": "tsconfig",
+   "description": "Compiler options that keep a project strict, explicit and fast to check.",
+   "snippets": [
+    {
+     "language": "json",
+     "code": "{\n  \"compilerOptions\": {\n    \"target\": \"ES2022\",\n    \"lib\": [\"ES2022\"],\n    \"module\": \"NodeNext\",\n    \"moduleResolution\": \"NodeNext\",\n    \"rootDir\": \"src\",\n    \"outDir\": \"dist\",\n    \"strict\": true,\n    \"noUncheckedIndexedAccess\": true,\n    \"noImplicitOverride\": true,\n    \"exactOptionalPropertyTypes\": true,\n    \"verbatimModuleSyntax\": true,\n    \"declaration\": true,\n    \"sourceMap\": true,\n    \"skipLibCheck\": true\n  },\n  \"include\": [\"src/**/*.ts\"],\n  \"exclude\": [\"dist\", \"node_modules\"]\n}"
+    },
+    {
+     "language": "bash",
+     "code": "npx tsc                    # read tsconfig.json in the current directory\nnpx tsc --noEmit           # type-check only, the CI-friendly form\nnpx tsc --watch            # rebuild whenever a source file changes\nnpx tsc -p tsconfig.build.json"
+    }
+   ]
+  },
+  {
+   "id": "types",
+   "title": "Types",
+   "description": "The primitive types, arrays, tuples and the literal-friendly keywords.",
+   "snippets": [
+    {
+     "language": "typescript",
+     "code": "// Primitives and inference\nlet title: string = \"TypeScript Handbook\";\nlet pages: number = 720;\nlet stable: boolean = true;\nlet empty: null = null;\nlet missing: undefined = undefined;\n\n// Arrays and tuples\nlet scores: number[] = [91, 78, 84];\nlet pair: [string, number] = [\"release\", 5];\nlet labels: readonly string[] = [\"a\", \"b\"];\n\n// Object shape written inline\nlet author: { name: string; active: boolean } = { name: \"Ada\", active: true };\n\n// `unknown` holds anything, but it must be checked before use\nlet payload: unknown = JSON.parse('{\"ok\":true}');\n\n// `never` is the type of a call that cannot return\nfunction fail(message: string): never {\n  throw new Error(message);\n}\n\nconsole.log(title, pages, stable, empty, missing, scores, pair, labels, author);"
+    },
+    {
+     "language": "typescript",
+     "code": "// `as const` keeps literal types and makes the value deeply read-only\nconst routes = [\"home\", \"settings\", \"profile\"] as const;\ntype Route = (typeof routes)[number]; // \"home\" | \"settings\" | \"profile\"\n\nconst first: Route = routes[0];\nconsole.log(routes.length, first);\n\n// Without `as const` the array widens to string[]\nconst looseRoutes = [\"home\", \"settings\"];\ntype LooseRoute = (typeof looseRoutes)[number]; // string"
+    }
+   ]
+  },
+  {
+   "id": "interfaces",
+   "title": "Interfaces",
+   "description": "Named object contracts with optional, readonly and inherited members.",
+   "snippets": [
+    {
+     "language": "typescript",
+     "code": "interface Address {\n  street: string;\n  city: string;\n  zip?: string; // optional\n}\n\ninterface User {\n  readonly id: number; // cannot be reassigned after creation\n  name: string;\n  email: string | null;\n  address: Address;\n  tags: string[];\n}\n\nconst user: User = {\n  id: 7,\n  name: \"Felipe\",\n  email: null,\n  address: { street: \"Rua das Flores\", city: \"Curitiba\" },\n  tags: [\"admin\", \"beta\"],\n};\n\n// user.id = 8; // error: cannot assign to a read-only property\nconsole.log(user.name, user.address.city);"
+    },
+    {
+     "language": "typescript",
+     "code": "interface Shape {\n  area(): number;\n}\n\ninterface Named {\n  name: string;\n}\n\n// An interface may extend several others\ninterface Circle extends Shape, Named {\n  radius: number;\n}\n\nconst circle: Circle = {\n  name: \"circle\",\n  radius: 2,\n  area() {\n    return Math.PI * this.radius ** 2;\n  },\n};\n\n// Declaration merging: the second block adds to the first\ninterface Config {\n  host: string;\n}\ninterface Config {\n  port: number;\n}\nconst config: Config = { host: \"localhost\", port: 5432 };\n\nconsole.log(circle.area().toFixed(2), config.port);"
+    }
+   ]
+  },
+  {
+   "id": "type-aliases",
+   "title": "Type Aliases",
+   "description": "Reusable names for unions, tuples, functions and computed types.",
+   "snippets": [
+    {
+     "language": "typescript",
+     "code": "type Id = string | number;\ntype Point = { x: number; y: number };\ntype Callback = (error: Error | null, value: string) => void;\ntype Coordinates = readonly [number, number];\n\nlet userId: Id = 42;\nuserId = \"u_42\";\n\nconst origin: Point = { x: 0, y: 0 };\n\nconst log: Callback = (error, value) => {\n  if (error) console.error(error.message);\n  else console.log(value);\n};\n\nfunction draw(at: Coordinates): void {\n  console.log(at[0], at[1]);\n}\n\nlog(null, \"ready\");\ndraw([10, 20]);\nconsole.log(userId, origin.x);"
+    },
+    {
+     "language": "typescript",
+     "code": "type EventName = \"click\" | \"focus\" | \"blur\";\ntype Handler = `on${Capitalize<EventName>}`; // \"onClick\" | \"onFocus\" | \"onBlur\"\n\ntype Flags = Record<EventName, boolean>;\nconst flags: Flags = { click: true, focus: false, blur: false };\n\n// Mapped type: every property becomes optional\ntype Loose<T> = { [K in keyof T]?: T[K] };\ntype Person = { id: number; name: string };\nconst draft: Loose<Person> = { name: \"Ada\" };\n\nconst handler: Handler = \"onFocus\";\nconsole.log(handler, flags.click, draft.name);"
+    }
+   ]
+  },
+  {
+   "id": "unions",
+   "title": "Unions and Literals",
+   "description": "Combine alternatives, discriminate them by a tag and keep literals narrow.",
+   "snippets": [
+    {
+     "language": "typescript",
+     "code": "type Status = \"idle\" | \"loading\" | \"ready\" | \"error\";\n\nfunction label(status: Status): string {\n  switch (status) {\n    case \"idle\":\n      return \"Waiting\";\n    case \"loading\":\n      return \"Loading\";\n    case \"ready\":\n      return \"Ready\";\n    case \"error\":\n      return \"Failed\";\n  }\n}\n\n// Optional chaining and nullish coalescing respect the union\ntype Profile = { nickname?: string | null };\nconst profile: Profile = { nickname: null };\nconst shown = profile.nickname ?? \"anonymous\";\n\nconsole.log(label(\"ready\"), shown);"
+    },
+    {
+     "language": "typescript",
+     "code": "// A shared literal field turns the union into a discriminated union\ntype Result =\n  | { ok: true; value: number }\n  | { ok: false; error: string };\n\nfunction unwrap(result: Result): number {\n  if (result.ok) {\n    return result.value; // narrowed to the success branch\n  }\n  throw new Error(result.error); // narrowed to the failure branch\n}\n\n// A function call keeps the union wide, so both branches stay reachable\nfunction check(flag: boolean): Result {\n  return flag ? { ok: true, value: 42 } : { ok: false, error: \"timeout\" };\n}\n\nconst result = check(true);\nconsole.log(unwrap(result));\nconsole.log(result.ok ? result.value : result.error);"
+    },
+    {
+     "language": "typescript",
+     "code": "type Palette = Record<\"primary\" | \"danger\", string | readonly [number, number, number]>;\n\n// `satisfies` checks the value against Palette without widening its own type\nconst palette = {\n  primary: \"#3178C6\",\n  danger: [220, 53, 69],\n} as const satisfies Palette;\n\nconst rgb: readonly [number, number, number] = palette.danger;\nconst primary: \"#3178C6\" = palette.primary;\n\nconsole.log(rgb[0], primary);"
+    }
+   ]
+  },
+  {
+   "id": "generics",
+   "title": "Generics",
+   "description": "Functions and types parameterised by the shapes they receive.",
+   "snippets": [
+    {
+     "language": "typescript",
+     "code": "function first<T>(items: readonly T[]): T | undefined {\n  return items[0];\n}\n\n// K is constrained to the keys of T, so the return type follows the key\nfunction get<T, K extends keyof T>(obj: T, key: K): T[K] {\n  return obj[key];\n}\n\nconst user = { id: 7, name: \"Felipe\" };\nconst id = get(user, \"id\"); // number\nconst name = get(user, \"name\"); // string\n\nconsole.log(first([10, 20, 30]), id + 1, name.toUpperCase());"
+    },
+    {
+     "language": "typescript",
+     "code": "interface Box<T> {\n  value: T;\n}\n\n// A second parameter can carry a default\ninterface Page<T, M = { total: number }> {\n  items: T[];\n  meta: M;\n}\n\nfunction map<T, U>(items: T[], fn: (item: T) => U): U[] {\n  return items.map(fn);\n}\n\nconst box: Box<string> = { value: \"cheatsheet\" };\nconst page: Page<number> = { items: [1, 2, 3], meta: { total: 3 } };\nconst lengths: number[] = map([\"a\", \"bb\", \"ccc\"], (text) => text.length);\n\nconsole.log(box.value, page.meta.total, lengths);"
+    }
+   ]
+  },
+  {
+   "id": "narrowing",
+   "title": "Narrowing",
+   "description": "Turn broad unions into specific types with runtime checks the compiler trusts.",
+   "snippets": [
+    {
+     "language": "typescript",
+     "code": "function format(value: string | number | Date | null): string {\n  if (value === null) return \"none\";\n  if (typeof value === \"number\") return value.toFixed(2);\n  if (typeof value === \"string\") return value.trim();\n  if (value instanceof Date) return value.toISOString();\n  return \"unreachable\";\n}\n\ntype Cat = { meow(): void };\ntype Dog = { bark(): void };\n\nfunction speak(pet: Cat | Dog): void {\n  if (\"meow\" in pet) pet.meow();\n  else pet.bark();\n}\n\nconsole.log(format(3.14159), format(\"  hi  \"));"
+    },
+    {
+     "language": "typescript",
+     "code": "type ApiUser = { id: number; name: string };\n\n// A type predicate teaches the compiler what the check proves\nfunction isApiUser(value: unknown): value is ApiUser {\n  if (typeof value !== \"object\" || value === null) return false;\n  const candidate = value as Record<string, unknown>;\n  return typeof candidate.id === \"number\" && typeof candidate.name === \"string\";\n}\n\n// Exhaustiveness helper: the argument can only be never here\nfunction assertNever(value: never): never {\n  throw new Error(`unexpected value: ${String(value)}`);\n}\n\ntype Level = \"low\" | \"high\";\n\nfunction score(level: Level): number {\n  switch (level) {\n    case \"low\":\n      return 1;\n    case \"high\":\n      return 10;\n    default:\n      return assertNever(level);\n  }\n}\n\nconst payload: unknown = JSON.parse('{\"id\":1,\"name\":\"Ada\"}');\nif (isApiUser(payload)) {\n  console.log(payload.name.toUpperCase(), score(\"high\"));\n}"
+    }
+   ]
+  },
+  {
+   "id": "functions",
+   "title": "Functions",
+   "description": "Parameter kinds, overloads and call signatures with explicit contracts.",
+   "snippets": [
+    {
+     "language": "typescript",
+     "code": "// Optional, default and rest parameters\nfunction greet(name: string, greeting = \"Hello\", ...titles: string[]): string {\n  const prefix = titles.length > 0 ? `${titles.join(\" \")} ` : \"\";\n  return `${greeting}, ${prefix}${name}!`;\n}\n\nconsole.log(greet(\"Felipe\"));\nconsole.log(greet(\"Ada\", \"Hi\", \"Dr.\"));\n\n// A function type kept in an alias\ntype Mapper = (value: number) => string;\nconst hex: Mapper = (value) => `0x${value.toString(16)}`;\nconsole.log(hex(255));"
+    },
+    {
+     "language": "typescript",
+     "code": "// Overload signatures describe each accepted call shape\nfunction parse(input: string): string[];\nfunction parse(input: number): number;\nfunction parse(input: string | number): string[] | number {\n  if (typeof input === \"number\") return input * 2;\n  return input.split(\",\");\n}\n\nconst items = parse(\"a,b,c\"); // string[]\nconst doubled = parse(21); // number\n\n// `this` can be typed explicitly inside object methods\ninterface Counter {\n  count: number;\n  increment(this: Counter, by: number): void;\n}\n\nconst counter: Counter = {\n  count: 0,\n  increment(by) {\n    this.count += by;\n  },\n};\n\ncounter.increment(2);\nconsole.log(items.length, doubled, counter.count);"
+    }
+   ]
+  },
+  {
+   "id": "classes",
+   "title": "Classes",
+   "description": "Fields, access modifiers, accessors and inheritance with type checks.",
+   "snippets": [
+    {
+     "language": "typescript",
+     "code": "class Account {\n  static readonly currency = \"BRL\";\n  readonly id: number;\n  #balance = 0; // truly private, enforced at runtime\n  protected owner: string;\n\n  constructor(id: number, owner: string) {\n    this.id = id;\n    this.owner = owner;\n  }\n\n  deposit(amount: number): number {\n    if (amount <= 0) throw new RangeError(\"amount must be positive\");\n    this.#balance += amount;\n    return this.#balance;\n  }\n\n  get balance(): number {\n    return this.#balance;\n  }\n}\n\nconst account = new Account(1, \"Felipe\");\naccount.deposit(250);\nconsole.log(Account.currency, account.balance);"
+    },
+    {
+     "language": "typescript",
+     "code": "interface Printable {\n  describe(): string;\n}\n\nabstract class Animal implements Printable {\n  // Parameter properties declare and assign the field in one step\n  constructor(public readonly name: string) {}\n\n  abstract sound(): string;\n\n  describe(): string {\n    return `${this.name} says ${this.sound()}`;\n  }\n}\n\nclass Dog extends Animal {\n  override sound(): string {\n    return \"woof\";\n  }\n}\n\nconst dog: Animal = new Dog(\"Rex\");\nconsole.log(dog.describe());"
+    }
+   ]
+  },
+  {
+   "id": "enums",
+   "title": "Enums",
+   "description": "Numeric and string enums, plus the union-of-literals alternative.",
+   "snippets": [
+    {
+     "language": "typescript",
+     "code": "enum Direction {\n  Up = 1,\n  Down, // 2\n  Left, // 3\n  Right, // 4\n}\n\nenum LogLevel {\n  Info = \"INFO\",\n  Warn = \"WARN\",\n  Error = \"ERROR\",\n}\n\nfunction log(level: LogLevel, message: string): void {\n  console.log(`[${level}] ${message}`);\n}\n\nlog(LogLevel.Warn, `moving ${Direction[Direction.Up]}`);"
+    },
+    {
+     "language": "typescript",
+     "code": "// Plain object plus a union type: no generated enum object\nconst Color = {\n  Red: \"red\",\n  Green: \"green\",\n  Blue: \"blue\",\n} as const;\n\ntype Color = (typeof Color)[keyof typeof Color]; // \"red\" | \"green\" | \"blue\"\n\nfunction paint(color: Color): string {\n  return `painting ${color}`;\n}\n\nconsole.log(paint(Color.Green));"
+    }
+   ]
+  },
+  {
+   "id": "modules",
+   "title": "Modules",
+   "description": "ES module syntax with type-only imports and NodeNext resolution.",
+   "snippets": [
+    {
+     "language": "typescript",
+     "code": "// math.ts\nexport const PI = 3.14159;\n\nexport function area(radius: number): number {\n  return PI * radius ** 2;\n}\n\nexport type Circle = { radius: number };\n\nexport default function describe(circle: Circle): string {\n  return `circle with area ${area(circle.radius).toFixed(2)}`;\n}"
+    },
+    {
+     "language": "typescript",
+     "code": "// main.ts — NodeNext needs the .js extension in the specifier\nimport describe, { PI, area, type Circle } from \"./math.js\";\nimport * as math from \"./math.js\";\n\nconst circle: Circle = { radius: 3 };\n\nconsole.log(describe(circle), PI, math.area(1));"
+    },
+    {
+     "language": "typescript",
+     "code": "// index.ts — re-export a value and a type separately\nexport { area } from \"./math.js\";\nexport type { Circle } from \"./math.js\";"
+    }
+   ]
+  },
+  {
+   "id": "utility-types",
+   "title": "Utility Types",
+   "description": "Built-in mapped types for reshaping existing object and function types.",
+   "snippets": [
+    {
+     "language": "typescript",
+     "code": "interface User {\n  id: number;\n  name: string;\n  email: string;\n}\n\ntype Draft = Partial<User>; // every field optional\ntype Public = Omit<User, \"email\">; // drop a field\ntype Identity = Pick<User, \"id\" | \"name\">; // keep only these fields\ntype ById = Record<number, User>; // index by number\ntype Frozen = Readonly<User>; // no reassignment\n\nconst draft: Draft = { name: \"Ada\" };\nconst pub: Public = { id: 1, name: \"Ada\" };\nconst identity: Identity = { id: 1, name: \"Ada\" };\nconst users: ById = { 1: { id: 1, name: \"Ada\", email: \"ada@example.com\" } };\nconst frozen: Frozen = { id: 2, name: \"Linus\", email: \"linus@example.com\" };\n\nconsole.log(draft.name, pub.id, identity.name, users[1]?.name, frozen.name);"
+    },
+    {
+     "language": "typescript",
+     "code": "function makeUser(id: number, name: string) {\n  return { id, name, createdAt: new Date() };\n}\n\ntype NewUser = ReturnType<typeof makeUser>;\ntype Args = Parameters<typeof makeUser>; // [id: number, name: string]\ntype Maybe = Exclude<string | null | undefined, null | undefined>; // string\ntype OnlyNumbers = Extract<string | number | boolean, number>; // number\ntype Loaded = Awaited<Promise<Promise<number>>>; // number\n\nconst args: Args = [7, \"Felipe\"];\nconst user: NewUser = makeUser(...args);\nconst maybe: Maybe = \"checked\";\nconst only: OnlyNumbers = 42;\nconst loaded: Loaded = 1;\n\nconsole.log(user.name, maybe, only, loaded);"
+    },
+    {
+     "language": "typescript",
+     "code": "type Settings = { theme?: string; lang?: string };\n\ntype Complete = Required<Settings>; // both fields required\ntype Theme = NonNullable<Settings[\"theme\"]>; // string\n\nconst settings: Complete = { theme: \"dark\", lang: \"pt-BR\" };\nconst theme: Theme = settings.theme;\n\nconsole.log(theme, settings.lang);"
+    }
+   ]
+  },
+  {
+   "id": "async",
+   "title": "Async and Promises",
+   "description": "Typed promises, concurrent work, error handling and async iteration.",
+   "snippets": [
+    {
+     "language": "typescript",
+     "code": "type User = { id: number; name: string };\n\nasync function fetchUser(id: number): Promise<User> {\n  const response = await fetch(`https://api.example.com/users/${id}`);\n  if (!response.ok) {\n    throw new Error(`request failed with ${response.status}`);\n  }\n  return (await response.json()) as User;\n}\n\nasync function main(): Promise<void> {\n  try {\n    const user = await fetchUser(7);\n    console.log(user.name);\n  } catch (error: unknown) {\n    // A caught value is unknown until it is checked\n    const message = error instanceof Error ? error.message : String(error);\n    console.error(message);\n  }\n}\n\nvoid main();"
+    },
+    {
+     "language": "typescript",
+     "code": "type Post = { id: number; title: string };\n\nasync function loadPost(id: number): Promise<Post> {\n  const response = await fetch(`/api/posts/${id}`);\n  return (await response.json()) as Post;\n}\n\nasync function loadAll(ids: number[]): Promise<Post[]> {\n  // Promise.all keeps the element type instead of widening to unknown\n  return Promise.all(ids.map((id) => loadPost(id)));\n}\n\nloadAll([1, 2, 3]).then((posts) => console.log(posts.map((post) => post.title)));"
+    },
+    {
+     "language": "typescript",
+     "code": "async function* countdown(from: number): AsyncGenerator<number> {\n  for (let i = from; i > 0; i--) {\n    yield i;\n  }\n}\n\nasync function run(): Promise<void> {\n  for await (const value of countdown(3)) {\n    console.log(value);\n  }\n}\n\nvoid run();"
+    }
+   ]
+  },
+  {
+   "id": "decorators",
+   "title": "Decorators",
+   "description": "Standard class decorators, available without experimental flags since 5.0.",
+   "snippets": [
+    {
+     "language": "typescript",
+     "code": "// Method decorator: wrap the original method while keeping its types\nfunction logged<This, Args extends unknown[], Return>(\n  method: (this: This, ...args: Args) => Return,\n  context: ClassMethodDecoratorContext<This, (this: This, ...args: Args) => Return>,\n): (this: This, ...args: Args) => Return {\n  const name = String(context.name);\n  return function (this: This, ...args: Args): Return {\n    console.log(`calling ${name} with ${args.length} argument(s)`);\n    return method.call(this, ...args);\n  };\n}\n\nclass Cart {\n  #items: string[] = [];\n\n  @logged\n  add(item: string): number {\n    this.#items.push(item);\n    return this.#items.length;\n  }\n}\n\nconst cart = new Cart();\nconsole.log(cart.add(\"book\"));"
+    },
+    {
+     "language": "typescript",
+     "code": "const registered: string[] = [];\n\n// Class decorator: receives the class itself and a context object\nfunction register<Class extends abstract new (...args: any[]) => object>(\n  value: Class,\n  context: ClassDecoratorContext<Class>,\n): void {\n  registered.push(String(context.name));\n}\n\n@register\nclass Invoice {\n  constructor(readonly total: number) {}\n}\n\n@register\nclass Receipt {\n  constructor(readonly total: number) {}\n}\n\nconsole.log(registered, new Invoice(199).total);"
+    }
+   ]
+  },
+  {
+   "id": "testing",
+   "title": "Testing",
+   "description": "Vitest setup, typed assertions and a minimal project config.",
+   "snippets": [
+    {
+     "language": "bash",
+     "code": "npm install --save-dev vitest @vitest/coverage-v8\n\nnpx vitest run           # single run, the default in CI\nnpx vitest               # watch mode\nnpx vitest --coverage    # collect coverage with the v8 provider"
+    },
+    {
+     "language": "typescript",
+     "code": "// src/sum.ts\nexport function sum(values: number[]): number {\n  return values.reduce((total, value) => total + value, 0);\n}\n\n// src/sum.test.ts\nimport { describe, expect, expectTypeOf, it } from \"vitest\";\nimport { sum } from \"./sum.js\";\n\ndescribe(\"sum\", () => {\n  it(\"adds every value\", () => {\n    expect(sum([1, 2, 3])).toBe(6);\n  });\n\n  it(\"returns zero for an empty list\", () => {\n    expect(sum([])).toBe(0);\n  });\n\n  it(\"keeps the numeric return type\", () => {\n    expectTypeOf(sum([1])).toEqualTypeOf<number>();\n  });\n});"
+    },
+    {
+     "language": "typescript",
+     "code": "// vitest.config.ts\nimport { defineConfig } from \"vitest/config\";\n\nexport default defineConfig({\n  test: {\n    environment: \"node\",\n    include: [\"src/**/*.test.ts\"],\n    coverage: {\n      provider: \"v8\",\n      reporter: [\"text\", \"html\"],\n    },\n  },\n});"
+    }
+   ]
+  },
+  {
+   "id": "common-errors",
+   "title": "Common Errors",
+   "description": "The diagnostics you will meet most often and the habit that fixes each one.",
+   "snippets": [
+    {
+     "language": "text",
+     "code": "error TS2322: Type 'string' is not assignable to type 'number'.\nerror TS2345: Argument of type 'string' is not assignable to parameter of type 'number'.\nerror TS2532: Object is possibly 'undefined'.\nerror TS18048: 'user' is possibly 'undefined'.\nerror TS2339: Property 'nmae' does not exist on type 'User'.\nerror TS2741: Property 'email' is missing in type '{ id: number; }' but required in type 'User'.\nerror TS7006: Parameter 'value' implicitly has an 'any' type.\nerror TS2588: Cannot assign to 'id' because it is a constant."
+    },
+    {
+     "language": "typescript",
+     "code": "interface User {\n  id: number;\n  name: string;\n  email: string;\n}\n\n// TS2322: widen the target instead of forcing the value\nconst label: string | number = 42;\n\n// TS2345: convert before passing the value\nfunction double(value: number): number {\n  return value * 2;\n}\nconst raw = \"21\";\nconst doubled = double(Number(raw));\n\n// TS18048: handle the absent case instead of asserting\nfunction printName(user: User | undefined): void {\n  if (!user) {\n    console.log(\"no user\");\n    return;\n  }\n  console.log(user.name);\n}\n\n// TS2741: satisfy every required property\nconst user: User = { id: 1, name: \"Ada\", email: \"ada@example.com\" };\n\n// TS7006: annotate the callback parameter when inference cannot help\nconst ids = [1, 2, 3].map((id: number) => id * 10);\n\nprintName(user);\nconsole.log(label, doubled, ids);"
+    }
+   ]
+  }
+ ]
+}

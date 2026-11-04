@@ -1,0 +1,246 @@
+{
+ "slug": "cpp",
+ "title": "C++",
+ "label": "C++",
+ "group": "Language",
+ "color": "#00599C",
+ "desc": "A statically typed systems language with zero-cost abstractions and deterministic resource management.",
+ "sections": [
+  {
+   "id": "setup",
+   "title": "Setup",
+   "description": "Compile and run a C++20 program with GCC or Clang:",
+   "snippets": [
+    {
+     "language": "bash",
+     "code": "g++ --version\nclang++ --version\n\n# Compile with C++20, warnings and optimizations\ng++ -std=c++20 -Wall -Wextra -Wpedantic -O2 main.cpp -o app\n\n# Run the executable\n./app"
+    },
+    {
+     "language": "cpp",
+     "code": "// main.cpp\n#include <iostream>\n\nint main() {\n    std::cout << \"Hello, C++20\\n\";\n    return 0;\n}"
+    }
+   ]
+  },
+  {
+   "id": "syntax",
+   "title": "Syntax",
+   "description": "Program structure, comments, control flow and functions:",
+   "snippets": [
+    {
+     "language": "cpp",
+     "code": "#include <iostream>\n#include <string>\n\nint main() {\n    // Single-line comment\n    /* Block\n       comment */\n\n    int count = 3;\n    auto price = 19.99;          // double\n    std::string name = \"Ada\";\n\n    // Range-based for over a braced-init-list\n    for (int value : {1, 2, 3}) {\n        std::cout << value << ' ';\n    }\n    std::cout << '\\n';\n\n    // if with an initializer (C++17)\n    if (auto total = count * 2; total > 5) {\n        std::cout << name << \" total: \" << total << '\\n';\n    }\n}"
+    },
+    {
+     "language": "cpp",
+     "code": "#include <iostream>\n\nnamespace math {\n    constexpr double pi = 3.141592653589793;\n\n    int square(int value) { return value * value; }\n}\n\nint add(int a, int b = 10) { return a + b; }\n\nint main() {\n    static_assert(math::pi > 3.14);\n\n    int x = math::square(5);     // 25\n    int y = add(x);              // 35, default argument\n    int z = add(x, 1);           // 26\n\n    std::cout << x << ' ' << y << ' ' << z << '\\n';\n    return (y + z) == 61 ? 0 : 1;\n}"
+    }
+   ]
+  },
+  {
+   "id": "types",
+   "title": "Types",
+   "description": "Fundamental, fixed-width, compound and variant types:",
+   "snippets": [
+    {
+     "language": "cpp",
+     "code": "#include <cstdint>\n#include <iostream>\n#include <string>\n#include <vector>\n\nenum class Status { Pending, Active, Closed };\n\nstruct Point {\n    double x = 0.0;\n    double y = 0.0;\n};\n\nint main() {\n    bool ok = true;\n    char letter = 'A';\n    int count = 42;\n    unsigned int mask = 0xFFu;\n    long long big = 9'000'000'000LL;\n    float ratio = 0.5f;\n    double precise = 2.718281828;\n\n    std::int32_t fixed = 7;      // exactly 32 bits\n    std::uint8_t byte = 200;\n\n    Status status = Status::Active;\n    Point point{1.5, 2.5};\n\n    std::string text = \"hello\";\n    std::vector<int> values{1, 2, 3};\n\n    int total = fixed + static_cast<int>(byte) + static_cast<int>(big % 1000);\n    if (status == Status::Active && ok && !text.empty()) {\n        total += count + static_cast<int>(values.size());\n    }\n\n    std::cout << total << ' ' << letter << ' ' << ratio << ' ' << precise\n              << ' ' << point.x + point.y << ' ' << mask << '\\n';\n    return total == 252 ? 0 : 1;\n}"
+    },
+    {
+     "language": "cpp",
+     "code": "#include <optional>\n#include <string>\n#include <variant>\n\nstd::optional<int> parse_port(const std::string& text) {\n    try {\n        return std::stoi(text);\n    } catch (const std::exception&) {\n        return std::nullopt;\n    }\n}\n\nint main() {\n    std::variant<int, std::string> value = 42;\n    value = std::string{\"hello\"};\n\n    if (std::holds_alternative<std::string>(value)) {\n        auto& text = std::get<std::string>(value);  // safe after the check\n        text += \" world\";\n    }\n\n    auto port = parse_port(\"8080\");\n    return port.value_or(0) == 8080 ? 0 : 1;\n}"
+    }
+   ]
+  },
+  {
+   "id": "references",
+   "title": "References",
+   "description": "Aliases, const references and lifetime rules:",
+   "snippets": [
+    {
+     "language": "cpp",
+     "code": "#include <iostream>\n#include <string>\n\nvoid scale(int& value, int factor) { value *= factor; }\n\nvoid print(const std::string& text) { std::cout << text << '\\n'; }\n\nint main() {\n    int number = 10;\n    int& alias = number;         // alias refers to number\n    alias = 20;\n    scale(number, 3);            // number becomes 60\n\n    int* pointer = &number;\n    *pointer = 70;\n\n    print(\"references avoid a copy\");\n    return number == 70 ? 0 : 1;\n}"
+    },
+    {
+     "language": "cpp",
+     "code": "#include <string>\n\nconst std::string& make_label() {\n    static const std::string label = \"stable\";\n    return label;                // static storage lives for the whole program\n}\n\nint main() {\n    const int& bound = 5;        // the temporary's lifetime is extended\n    const std::string& label = make_label();\n    std::string copy = label;    // copy when ownership is needed\n\n    return bound + static_cast<int>(copy.size()) == 11 ? 0 : 1;\n}"
+    }
+   ]
+  },
+  {
+   "id": "classes",
+   "title": "Classes",
+   "description": "Encapsulation, constructors, const members and RAII:",
+   "snippets": [
+    {
+     "language": "cpp",
+     "code": "#include <string>\n#include <utility>\n\nclass Account {\npublic:\n    Account(std::string owner, double balance)\n        : owner_(std::move(owner)), balance_(balance) {}\n\n    void deposit(double amount) {\n        if (amount > 0.0) {\n            balance_ += amount;\n        }\n    }\n\n    bool withdraw(double amount) {\n        if (amount <= 0.0 || amount > balance_) {\n            return false;\n        }\n        balance_ -= amount;\n        return true;\n    }\n\n    double balance() const { return balance_; }          // does not modify the object\n    const std::string& owner() const { return owner_; }\n\n    static double fee() { return 1.25; }\n\nprivate:\n    std::string owner_;\n    double balance_ = 0.0;\n};\n\nint main() {\n    Account account{\"Ada\", 100.0};\n    account.deposit(50.0);\n    bool paid = account.withdraw(30.0);\n    return (paid && account.balance() == 120.0) ? 0 : 1;\n}"
+    },
+    {
+     "language": "cpp",
+     "code": "#include <cstdio>\n#include <string>\n\nclass File {\npublic:\n    explicit File(const std::string& path)\n        : handle_(std::fopen(path.c_str(), \"r\")) {}\n\n    ~File() {\n        if (handle_ != nullptr) {\n            std::fclose(handle_);  // released automatically by the destructor\n        }\n    }\n\n    File(const File&) = delete;             // no copies\n    File& operator=(const File&) = delete;\n\n    bool is_open() const { return handle_ != nullptr; }\n\nprivate:\n    std::FILE* handle_ = nullptr;\n};\n\nint main() {\n    File file{\"data.txt\"};\n    return file.is_open() ? 0 : 1;\n}"
+    }
+   ]
+  },
+  {
+   "id": "inheritance",
+   "title": "Inheritance",
+   "description": "Virtual dispatch, abstract classes and polymorphic ownership:",
+   "snippets": [
+    {
+     "language": "cpp",
+     "code": "#include <iostream>\n#include <memory>\n#include <string>\n#include <vector>\n\nclass Shape {\npublic:\n    virtual ~Shape() = default;\n    virtual double area() const = 0;              // pure virtual\n    virtual std::string name() const { return \"shape\"; }\n};\n\nclass Circle : public Shape {\npublic:\n    explicit Circle(double radius) : radius_(radius) {}\n    double area() const override { return 3.141592653589793 * radius_ * radius_; }\n    std::string name() const override { return \"circle\"; }\n\nprivate:\n    double radius_;\n};\n\nclass Square : public Shape {\npublic:\n    explicit Square(double side) : side_(side) {}\n    double area() const override { return side_ * side_; }\n    std::string name() const override { return \"square\"; }\n\nprivate:\n    double side_;\n};\n\nint main() {\n    std::vector<std::unique_ptr<Shape>> shapes;\n    shapes.push_back(std::make_unique<Circle>(2.0));\n    shapes.push_back(std::make_unique<Square>(3.0));\n\n    double total = 0.0;\n    for (const auto& shape : shapes) {\n        std::cout << shape->name() << ' ';\n        total += shape->area();                   // virtual dispatch\n    }\n    std::cout << total << '\\n';\n\n    return total > 21.5 ? 0 : 1;                  // 12.566 + 9\n}"
+    }
+   ]
+  },
+  {
+   "id": "templates",
+   "title": "Templates",
+   "description": "Generic functions, concepts and class templates:",
+   "snippets": [
+    {
+     "language": "cpp",
+     "code": "#include <concepts>\n#include <cstddef>\n#include <type_traits>\n\ntemplate <typename T>\nT clamp_value(T value, T low, T high) {\n    return value < low ? low : (value > high ? high : value);\n}\n\ntemplate <typename T>\nconcept Numeric = std::is_arithmetic_v<T>;\n\ntemplate <Numeric T>\nT average(const T* data, std::size_t count) {\n    T sum{};\n    for (std::size_t i = 0; i < count; ++i) {\n        sum += data[i];\n    }\n    return count == 0 ? T{} : sum / static_cast<T>(count);\n}\n\nint main() {\n    int capped = clamp_value(15, 0, 10);          // 10\n    double values[3] = {1.0, 2.0, 6.0};\n    double mean = average(values, 3);             // 3.0\n\n    return (capped == 10 && mean == 3.0) ? 0 : 1;\n}"
+    },
+    {
+     "language": "cpp",
+     "code": "#include <cstddef>\n#include <stdexcept>\n#include <vector>\n\ntemplate <typename T>\nclass Stack {\npublic:\n    void push(const T& value) { items_.push_back(value); }\n\n    T pop() {\n        if (items_.empty()) {\n            throw std::out_of_range(\"Stack::pop on empty stack\");\n        }\n        T value = items_.back();\n        items_.pop_back();\n        return value;\n    }\n\n    bool empty() const { return items_.empty(); }\n    std::size_t size() const { return items_.size(); }\n\nprivate:\n    std::vector<T> items_;\n};\n\nint main() {\n    Stack<int> stack;\n    stack.push(1);\n    stack.push(2);\n    return (stack.pop() == 2 && stack.size() == 1) ? 0 : 1;\n}"
+    }
+   ]
+  },
+  {
+   "id": "containers",
+   "title": "STL Containers",
+   "description": "Sequence, associative and adapter containers:",
+   "snippets": [
+    {
+     "language": "cpp",
+     "code": "#include <map>\n#include <set>\n#include <string>\n#include <unordered_map>\n#include <vector>\n\nint main() {\n    std::vector<int> values{4, 1, 3};\n    values.push_back(2);\n    values[0] = 10;\n\n    std::map<std::string, int> ordered{{\"one\", 1}, {\"two\", 2}};\n    ordered[\"three\"] = 3;\n\n    std::unordered_map<std::string, int> fast{{\"a\", 1}};\n    fast[\"b\"] = 2;\n\n    std::set<int> unique{3, 1, 3, 2};             // holds 1, 2, 3\n    unique.insert(4);\n\n    return (values.size() == 4 && ordered.size() == 3 && fast.size() == 2\n            && unique.size() == 4) ? 0 : 1;\n}"
+    },
+    {
+     "language": "cpp",
+     "code": "#include <array>\n#include <queue>\n#include <stack>\n#include <string>\n\nint main() {\n    std::array<double, 3> coords{1.0, 2.0, 3.0};\n\n    std::stack<std::string> history;\n    history.push(\"first\");\n    history.push(\"second\");\n\n    std::queue<int> jobs;\n    jobs.push(10);\n    jobs.push(20);\n\n    bool ok = coords.at(1) == 2.0 && history.top() == \"second\"\n              && jobs.front() == 10;\n    return ok ? 0 : 1;\n}"
+    }
+   ]
+  },
+  {
+   "id": "iterators",
+   "title": "Iterators and Algorithms",
+   "description": "Traverse ranges and apply standard algorithms:",
+   "snippets": [
+    {
+     "language": "cpp",
+     "code": "#include <algorithm>\n#include <iostream>\n#include <numeric>\n#include <vector>\n\nint main() {\n    std::vector<int> values{5, 2, 8, 1, 9, 3};\n\n    std::sort(values.begin(), values.end());\n    auto found = std::find(values.begin(), values.end(), 8);\n    int sum = std::accumulate(values.begin(), values.end(), 0);\n\n    std::vector<int> doubled(values.size());\n    std::transform(values.begin(), values.end(), doubled.begin(),\n                   [](int value) { return value * 2; });\n\n    std::cout << \"first: \" << values.front() << \" sum: \" << sum\n              << \" found: \" << (found != values.end()) << '\\n';\n    return (sum == 28 && doubled.back() == 18) ? 0 : 1;\n}"
+    },
+    {
+     "language": "cpp",
+     "code": "#include <algorithm>\n#include <iterator>\n#include <vector>\n\nint main() {\n    std::vector<int> values{1, 2, 3, 4, 5, 6};\n    values.erase(std::remove_if(values.begin(), values.end(),\n                                [](int value) { return value % 2 == 0; }),\n                 values.end());\n\n    std::vector<int> extra;\n    std::copy(values.begin(), values.end(), std::back_inserter(extra));\n\n    return (values.size() == 3 && extra.size() == 3) ? 0 : 1;\n}"
+    }
+   ]
+  },
+  {
+   "id": "lambdas",
+   "title": "Lambdas",
+   "description": "Anonymous functions, captures and generic lambdas:",
+   "snippets": [
+    {
+     "language": "cpp",
+     "code": "#include <algorithm>\n#include <functional>\n#include <vector>\n\nint main() {\n    int limit = 5;\n    int calls = 0;\n\n    auto above = [limit](int value) { return value > limit; };\n    auto count_up = [calls]() mutable { return ++calls; };  // captured by copy\n\n    std::vector<int> values{2, 7, 9, 1};\n    auto matches = std::count_if(values.begin(), values.end(), above);\n\n    count_up();\n    count_up();\n\n    std::function<int(int)> square = [](int value) { return value * value; };\n    return (matches == 2 && calls == 0 && square(4) == 16) ? 0 : 1;\n}"
+    },
+    {
+     "language": "cpp",
+     "code": "#include <iostream>\n#include <vector>\n\nint main() {\n    std::vector<int> values{1, 2, 3, 4};\n    int total = 0;\n\n    auto add_to_total = [&total](auto value) {\n        total += static_cast<int>(value);\n    };\n\n    for (auto value : values) {\n        add_to_total(value);\n    }\n\n    // Immediately invoked lambda\n    int product = [](int a, int b) { return a * b; }(3, 4);\n\n    std::cout << total << ' ' << product << '\\n';\n    return (total == 10 && product == 12) ? 0 : 1;\n}"
+    }
+   ]
+  },
+  {
+   "id": "smart-pointers",
+   "title": "Smart Pointers",
+   "description": "Exclusive, shared and weak ownership:",
+   "snippets": [
+    {
+     "language": "cpp",
+     "code": "#include <iostream>\n#include <memory>\n#include <string>\n#include <utility>\n\nclass Widget {\npublic:\n    explicit Widget(std::string name) : name_(std::move(name)) {}\n    ~Widget() { std::cout << \"destroyed \" << name_ << '\\n'; }\n    const std::string& name() const { return name_; }\n\nprivate:\n    std::string name_;\n};\n\nint main() {\n    // Exclusive ownership, no delete required\n    std::unique_ptr<Widget> owner = std::make_unique<Widget>(\"one\");\n\n    // Shared ownership\n    std::shared_ptr<Widget> shared = std::make_shared<Widget>(\"two\");\n    std::shared_ptr<Widget> copy = shared;\n    std::cout << \"uses: \" << shared.use_count() << '\\n';   // 2\n\n    // Non-owning observer, does not keep the object alive\n    std::weak_ptr<Widget> observer = shared;\n    if (auto locked = observer.lock()) {\n        std::cout << \"alive: \" << locked->name() << '\\n';\n    }\n\n    shared.reset();\n    copy.reset();\n    std::cout << \"expired: \" << std::boolalpha << observer.expired() << '\\n';\n\n    return observer.expired() ? 0 : 1;\n}"
+    }
+   ]
+  },
+  {
+   "id": "move-semantics",
+   "title": "Move Semantics",
+   "description": "Rvalue references, moves and perfect forwarding:",
+   "snippets": [
+    {
+     "language": "cpp",
+     "code": "#include <cstddef>\n#include <iostream>\n#include <utility>\n#include <vector>\n\nclass Buffer {\npublic:\n    explicit Buffer(std::size_t size) : data_(size, 0) {}\n\n    // Move constructor: steals the storage, leaves the source valid\n    Buffer(Buffer&& other) noexcept : data_(std::move(other.data_)) {}\n\n    Buffer& operator=(Buffer&& other) noexcept {\n        if (this != &other) {\n            data_ = std::move(other.data_);\n        }\n        return *this;\n    }\n\n    Buffer(const Buffer&) = default;\n    Buffer& operator=(const Buffer&) = default;\n\n    std::size_t size() const { return data_.size(); }\n\nprivate:\n    std::vector<int> data_;\n};\n\nint main() {\n    Buffer source(1000);\n    Buffer target(std::move(source));\n\n    std::vector<Buffer> buffers;\n    buffers.push_back(Buffer(10));   // moved, not copied\n    buffers.emplace_back(20);        // constructed in place\n\n    std::cout << target.size() << ' ' << source.size() << '\\n';\n    return (target.size() == 1000 && buffers.size() == 2) ? 0 : 1;\n}"
+    },
+    {
+     "language": "cpp",
+     "code": "#include <utility>\n\nvoid process(int& value) { value += 1; }\nvoid process(int&& value) { value += 2; }\n\ntemplate <typename T>\nvoid forward_to_process(T&& value) {\n    process(std::forward<T>(value));\n}\n\nint main() {\n    int number = 10;\n    forward_to_process(number);   // lvalue stays an lvalue reference\n    forward_to_process(5);        // rvalue binds to int&&\n\n    return number == 11 ? 0 : 1;\n}"
+    }
+   ]
+  },
+  {
+   "id": "exceptions",
+   "title": "Exceptions",
+   "description": "Throw, catch and design exception-safe code:",
+   "snippets": [
+    {
+     "language": "cpp",
+     "code": "#include <iostream>\n#include <stdexcept>\n\ndouble divide(double numerator, double denominator) {\n    if (denominator == 0.0) {\n        throw std::domain_error(\"division by zero\");\n    }\n    return numerator / denominator;\n}\n\nint main() {\n    try {\n        double result = divide(10.0, 0.0);\n        std::cout << result << '\\n';\n    } catch (const std::domain_error& error) {\n        std::cerr << \"domain error: \" << error.what() << '\\n';\n    } catch (const std::exception& error) {\n        std::cerr << \"error: \" << error.what() << '\\n';\n    }\n    return 0;\n}"
+    },
+    {
+     "language": "cpp",
+     "code": "#include <stdexcept>\n#include <string>\n\nclass ParseError : public std::runtime_error {\npublic:\n    explicit ParseError(const std::string& input)\n        : std::runtime_error(\"cannot parse: \" + input) {}\n};\n\nint parse_positive(const std::string& text) {\n    std::size_t consumed = 0;\n    int value = std::stoi(text, &consumed);   // may throw std::invalid_argument\n    if (consumed != text.size() || value <= 0) {\n        throw ParseError(text);\n    }\n    return value;\n}\n\nint main() noexcept {\n    try {\n        parse_positive(\"12x\");\n        return 1;                    // not reached for this input\n    } catch (const ParseError&) {\n        return 0;                    // trailing text rejected as expected\n    } catch (const std::exception&) {\n        return 2;\n    }\n}"
+    }
+   ]
+  },
+  {
+   "id": "build",
+   "title": "CMake",
+   "description": "Describe targets, then configure and build out of tree:",
+   "snippets": [
+    {
+     "language": "cmake",
+     "code": "cmake_minimum_required(VERSION 3.20)\nproject(greeter LANGUAGES CXX)\n\nset(CMAKE_CXX_STANDARD 20)\nset(CMAKE_CXX_STANDARD_REQUIRED ON)\nset(CMAKE_CXX_EXTENSIONS OFF)\n\nadd_library(core STATIC src/core.cpp)\ntarget_include_directories(core PUBLIC include)\n\nadd_executable(greeter src/main.cpp)\ntarget_link_libraries(greeter PRIVATE core)\ntarget_compile_options(greeter PRIVATE -Wall -Wextra -Wpedantic)"
+    },
+    {
+     "language": "bash",
+     "code": "# Configure a Debug build in build/\ncmake -S . -B build -DCMAKE_BUILD_TYPE=Debug\n\n# Build every target with parallel jobs\ncmake --build build --parallel\n\n# Run the executable\n./build/greeter\n\n# Reconfigure with another build type for release\ncmake -S . -B build-release -DCMAKE_BUILD_TYPE=Release\ncmake --build build-release --parallel"
+    }
+   ]
+  },
+  {
+   "id": "concurrency",
+   "title": "Concurrency",
+   "description": "Threads, mutual exclusion, atomics and async tasks:",
+   "snippets": [
+    {
+     "language": "cpp",
+     "code": "#include <iostream>\n#include <mutex>\n#include <thread>\n\nint main() {\n    int counter = 0;\n    std::mutex guard;\n\n    auto worker = [&]() {\n        for (int i = 0; i < 1000; ++i) {\n            std::lock_guard<std::mutex> lock(guard);\n            ++counter;\n        }\n    };\n\n    std::thread first(worker);\n    std::thread second(worker);\n    first.join();\n    second.join();\n\n    std::cout << counter << '\\n';\n    return counter == 2000 ? 0 : 1;\n}"
+    },
+    {
+     "language": "cpp",
+     "code": "#include <atomic>\n#include <thread>\n\nint main() {\n    std::atomic<int> counter{0};\n\n    auto worker = [&counter]() {\n        for (int i = 0; i < 1000; ++i) {\n            counter.fetch_add(1, std::memory_order_relaxed);\n        }\n    };\n\n    std::thread a(worker);\n    std::thread b(worker);\n    a.join();\n    b.join();\n\n    return counter.load() == 2000 ? 0 : 1;\n}"
+    },
+    {
+     "language": "cpp",
+     "code": "#include <future>\n#include <iostream>\n\nint sum_range(int from, int to) {\n    int total = 0;\n    for (int value = from; value < to; ++value) {\n        total += value;\n    }\n    return total;\n}\n\nint main() {\n    auto low = std::async(std::launch::async, sum_range, 0, 50);\n    auto high = std::async(std::launch::async, sum_range, 50, 100);\n\n    int total = low.get() + high.get();   // 0 + ... + 99\n    std::cout << total << '\\n';\n    return total == 4950 ? 0 : 1;\n}"
+    }
+   ]
+  },
+  {
+   "id": "common-errors",
+   "title": "Common Errors",
+   "description": "Mistakes that compile but break at runtime:",
+   "snippets": [
+    {
+     "language": "cpp",
+     "code": "#include <iostream>\n#include <memory>\n#include <vector>\n\nstruct Base {\n    virtual ~Base() = default;\n};\n\nstruct Derived : Base {\n    int extra = 7;\n};\n\nint main() {\n    // Slicing: copying into a Base value drops the Derived part\n    Derived derived;\n    Base sliced = derived;               // wrong: extra is lost\n    Base& polymorphic = derived;         // right: keeps the dynamic type\n\n    // Ownership: prefer smart pointers over manual new/delete\n    auto owned = std::make_unique<Derived>();   // no delete needed\n\n    // Iterator invalidation: re-acquire after a structural change\n    std::vector<int> values{1, 2, 3};\n    values.push_back(4);                 // may reallocate\n    auto first = values.begin();         // re-acquire after push_back\n\n    std::cout << \"first: \" << *first << '\\n';\n    return (*first == 1 && owned != nullptr) ? 0 : 1;\n}"
+    },
+    {
+     "language": "cpp",
+     "code": "#include <cstddef>\n#include <iostream>\n#include <memory>\n#include <vector>\n\nint main() {\n    // Uninitialized local: always give a value\n    int count = 0;                       // int count; holds an indeterminate value\n\n    // Signed/unsigned: use size_t for sizes and cast explicitly\n    std::vector<int> values{1, 2, 3};\n    for (std::size_t i = 0; i < values.size(); ++i) {\n        count += values[i];\n    }\n\n    // Double delete and leaks: let one owner destroy the object\n    auto buffer = std::make_unique<int[]>(4);\n    buffer[0] = 9;\n\n    std::cout << count << ' ' << buffer[0] << '\\n';\n    return count == 6 ? 0 : 1;\n}"
+    }
+   ]
+  }
+ ]
+}

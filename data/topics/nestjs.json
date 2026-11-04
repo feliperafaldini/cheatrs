@@ -1,0 +1,298 @@
+{
+ "slug": "nestjs",
+ "title": "NestJS",
+ "label": "NestJS",
+ "group": "Framework",
+ "color": "#E0234E",
+ "desc": "Progressive Node.js framework with modules, decorators, and dependency injection.",
+ "sections": [
+  {
+   "id": "setup",
+   "title": "Setup",
+   "description": "Scaffold a NestJS project and configure the application bootstrap.",
+   "snippets": [
+    {
+     "language": "bash",
+     "code": "# Create a project with the official CLI\nnpx @nestjs/cli@latest new users-api --package-manager npm\n\ncd users-api\n\n# Start with hot reload on port 3000\nnpm run start:dev"
+    },
+    {
+     "language": "typescript",
+     "code": "// src/main.ts\nimport { NestFactory } from '@nestjs/core';\nimport { ValidationPipe } from '@nestjs/common';\nimport { AppModule } from './app.module';\n\nasync function bootstrap() {\n  const app = await NestFactory.create(AppModule);\n\n  app.setGlobalPrefix('api');\n  app.useGlobalPipes(\n    new ValidationPipe({ whitelist: true, transform: true }),\n  );\n  app.enableCors({ origin: 'http://localhost:5173' });\n\n  await app.listen(3000);\n}\n\nvoid bootstrap();"
+    },
+    {
+     "language": "bash",
+     "code": "# Default scripts created by the CLI\nnpm run start        # Run once, no watch mode\nnpm run start:dev    # Watch mode with hot reload\nnpm run start:prod   # Run the compiled output in dist/\nnpm run build        # Compile with the Nest CLI\nnpm run test         # Run Jest unit tests\nnpm run test:e2e     # Run the e2e suite in test/"
+    }
+   ]
+  },
+  {
+   "id": "cli",
+   "title": "CLI",
+   "description": "Generate building blocks and run the project from the terminal.",
+   "snippets": [
+    {
+     "language": "bash",
+     "code": "# Generators, also available as nest g\nnest generate module users\nnest generate controller users --no-spec\nnest generate service users\nnest generate resource orders      # Module, controller, service, DTOs, entity\nnest generate guard auth\nnest generate interceptor logging\nnest generate filter http-exception\nnest generate pipe parse-date\nnest generate middleware request-id"
+    },
+    {
+     "language": "bash",
+     "code": "# Compile TypeScript into dist/\nnest build\n\n# Run from source and reload on changes\nnest start --watch\n\n# Attach the Node inspector on port 9229\nnest start --debug --watch\n\n# Print Node, npm, and Nest package versions\nnest info"
+    }
+   ]
+  },
+  {
+   "id": "modules",
+   "title": "Modules",
+   "description": "Group related controllers and providers inside a module boundary.",
+   "snippets": [
+    {
+     "language": "typescript",
+     "code": "// src/users/users.module.ts\nimport { Module } from '@nestjs/common';\nimport { UsersController } from './users.controller';\nimport { UsersService } from './users.service';\n\n@Module({\n  controllers: [UsersController],\n  providers: [UsersService],\n  exports: [UsersService],\n})\nexport class UsersModule {}"
+    },
+    {
+     "language": "typescript",
+     "code": "// src/app.module.ts\nimport { Module } from '@nestjs/common';\nimport { ConfigModule } from '@nestjs/config';\nimport { UsersModule } from './users/users.module';\nimport { OrdersModule } from './orders/orders.module';\n\n@Module({\n  imports: [\n    ConfigModule.forRoot({ isGlobal: true }),\n    UsersModule,\n    OrdersModule,\n  ],\n})\nexport class AppModule {}"
+    },
+    {
+     "language": "typescript",
+     "code": "// src/cache/cache.module.ts\nimport { DynamicModule, Module } from '@nestjs/common';\nimport { CacheService } from './cache.service';\n\n@Module({})\nexport class CacheModule {\n  static register(ttlSeconds: number): DynamicModule {\n    return {\n      module: CacheModule,\n      providers: [\n        CacheService,\n        { provide: 'CACHE_TTL', useValue: ttlSeconds },\n      ],\n      exports: [CacheService],\n    };\n  }\n}\n\n// Usage: imports: [CacheModule.register(60)]"
+    }
+   ]
+  },
+  {
+   "id": "controllers",
+   "title": "Controllers",
+   "description": "Bind HTTP routes to handler methods and read request data with decorators.",
+   "snippets": [
+    {
+     "language": "typescript",
+     "code": "// src/users/users.controller.ts\nimport {\n  Body,\n  Controller,\n  DefaultValuePipe,\n  Delete,\n  Get,\n  HttpCode,\n  HttpStatus,\n  Param,\n  ParseIntPipe,\n  Post,\n  Query,\n} from '@nestjs/common';\nimport { CreateUserDto } from './dto/create-user.dto';\nimport { UsersService } from './users.service';\n\n@Controller('users')\nexport class UsersController {\n  constructor(private readonly usersService: UsersService) {}\n\n  @Get()\n  findAll(\n    @Query('limit', new DefaultValuePipe(20), ParseIntPipe) limit: number,\n  ) {\n    return this.usersService.findAll(limit);\n  }\n\n  @Get(':id')\n  findOne(@Param('id', ParseIntPipe) id: number) {\n    return this.usersService.findOne(id);\n  }\n\n  @Post()\n  @HttpCode(HttpStatus.CREATED)\n  create(@Body() dto: CreateUserDto) {\n    return this.usersService.create(dto);\n  }\n\n  @Delete(':id')\n  @HttpCode(HttpStatus.NO_CONTENT)\n  async remove(@Param('id', ParseIntPipe) id: number) {\n    await this.usersService.remove(id);\n  }\n}"
+    },
+    {
+     "language": "typescript",
+     "code": "// src/users/users.controller.ts\nimport { Controller, Get, Header, Res } from '@nestjs/common';\nimport type { Response } from 'express';\n\n@Controller('users')\nexport class UsersExportController {\n  @Get('export')\n  @Header('Content-Type', 'text/csv')\n  exportCsv(@Res({ passthrough: true }) res: Response): string {\n    res.setHeader('Content-Disposition', 'attachment; filename=users.csv');\n    return `id,email\n1,ada@example.com\n2,grace@example.com`;\n  }\n}"
+    }
+   ]
+  },
+  {
+   "id": "providers",
+   "title": "Providers",
+   "description": "Register classes, values, and factories in the Nest inversion-of-control container.",
+   "snippets": [
+    {
+     "language": "typescript",
+     "code": "// src/users/users.service.ts\nimport { Injectable, NotFoundException } from '@nestjs/common';\nimport { PrismaService } from '../prisma/prisma.service';\nimport { CreateUserDto } from './dto/create-user.dto';\n\n@Injectable()\nexport class UsersService {\n  constructor(private readonly prisma: PrismaService) {}\n\n  findAll(limit: number) {\n    return this.prisma.user.findMany({\n      take: limit,\n      orderBy: { id: 'asc' },\n    });\n  }\n\n  async findOne(id: number) {\n    const user = await this.prisma.user.findUnique({ where: { id } });\n    if (!user) throw new NotFoundException(`User ${id} not found`);\n    return user;\n  }\n\n  create(dto: CreateUserDto) {\n    return this.prisma.user.create({ data: dto });\n  }\n\n  async remove(id: number) {\n    await this.prisma.user.delete({ where: { id } });\n  }\n}"
+    },
+    {
+     "language": "typescript",
+     "code": "// src/app.module.ts\nimport { Module } from '@nestjs/common';\nimport { ConfigService } from '@nestjs/config';\nimport { JsonLoggerService } from './logger/json-logger.service';\nimport { LoggerService } from './logger/logger.service';\n\ninterface PaymentClient {\n  baseUrl: string;\n  timeoutMs: number;\n}\n\n@Module({\n  providers: [\n    // Literal value\n    { provide: 'API_KEY', useValue: 'dev-api-key-1234' },\n\n    // Swap an implementation for another class\n    { provide: LoggerService, useClass: JsonLoggerService },\n\n    // Build the instance at startup and inject its dependencies\n    {\n      provide: 'PAYMENT_CLIENT',\n      useFactory: (config: ConfigService): PaymentClient => ({\n        baseUrl: config.get('PAYMENT_URL', 'http://localhost:4000'),\n        timeoutMs: 3000,\n      }),\n      inject: [ConfigService],\n    },\n  ],\n  exports: ['API_KEY', LoggerService, 'PAYMENT_CLIENT'],\n})\nexport class AppModule {}"
+    }
+   ]
+  },
+  {
+   "id": "injection",
+   "title": "Dependency Injection",
+   "description": "Receive dependencies through constructors, tokens, request scopes, and circular references.",
+   "snippets": [
+    {
+     "language": "typescript",
+     "code": "// src/reports/reports.service.ts\nimport { Inject, Injectable } from '@nestjs/common';\nimport { ConfigService } from '@nestjs/config';\nimport type { PaymentClient } from '../payments/payment-client.interface';\nimport { PrismaService } from '../prisma/prisma.service';\n\n@Injectable()\nexport class ReportsService {\n  constructor(\n    private readonly prisma: PrismaService,\n    private readonly config: ConfigService,\n    @Inject('PAYMENT_CLIENT') private readonly payments: PaymentClient,\n  ) {}\n\n  currency() {\n    return this.config.get('CURRENCY', 'BRL');\n  }\n\n  paymentBaseUrl() {\n    return this.payments.baseUrl;\n  }\n}"
+    },
+    {
+     "language": "typescript",
+     "code": "// src/common/request-context.service.ts\nimport { Inject, Injectable, Scope } from '@nestjs/common';\nimport { REQUEST } from '@nestjs/core';\nimport type { Request } from 'express';\n\n@Injectable({ scope: Scope.REQUEST })\nexport class RequestContextService {\n  constructor(@Inject(REQUEST) private readonly request: Request) {}\n\n  get tenantId(): string {\n    return String(this.request.headers['x-tenant-id'] ?? 'public');\n  }\n\n  get userId(): string | undefined {\n    return this.request.headers['x-user-id'] as string | undefined;\n  }\n}"
+    },
+    {
+     "language": "typescript",
+     "code": "// src/orders/orders.service.ts\nimport { forwardRef, Inject, Injectable } from '@nestjs/common';\nimport { PaymentsService } from '../payments/payments.service';\n\n@Injectable()\nexport class OrdersService {\n  constructor(\n    @Inject(forwardRef(() => PaymentsService))\n    private readonly payments: PaymentsService,\n  ) {}\n\n  async checkout(orderId: number) {\n    return this.payments.charge(orderId);\n  }\n}"
+    }
+   ]
+  },
+  {
+   "id": "dto",
+   "title": "DTO and Validation",
+   "description": "Describe payloads as classes and reject invalid input with class-validator.",
+   "snippets": [
+    {
+     "language": "typescript",
+     "code": "// src/users/dto/create-user.dto.ts\nimport {\n  IsEmail,\n  IsIn,\n  IsOptional,\n  IsString,\n  MinLength,\n} from 'class-validator';\n\nexport class CreateUserDto {\n  @IsEmail()\n  email: string;\n\n  @IsString()\n  @MinLength(8)\n  password: string;\n\n  @IsOptional()\n  @IsIn(['admin', 'member'])\n  role?: 'admin' | 'member';\n}"
+    },
+    {
+     "language": "typescript",
+     "code": "// src/main.ts\nimport { ValidationPipe } from '@nestjs/common';\nimport { NestFactory } from '@nestjs/core';\nimport { AppModule } from './app.module';\n\nasync function bootstrap() {\n  const app = await NestFactory.create(AppModule);\n\n  app.useGlobalPipes(\n    new ValidationPipe({\n      whitelist: true,              // Strip unknown properties\n      forbidNonWhitelisted: true,   // Reject payloads with extra keys\n      transform: true,              // Convert payloads into DTO instances\n      transformOptions: { enableImplicitConversion: true },\n    }),\n  );\n\n  await app.listen(3000);\n}\n\nvoid bootstrap();"
+    },
+    {
+     "language": "typescript",
+     "code": "// src/orders/dto/create-order.dto.ts\nimport { Type } from 'class-transformer';\nimport { IsArray, IsString, ValidateNested } from 'class-validator';\nimport { PartialType } from '@nestjs/mapped-types';\nimport { CreateUserDto } from '../../users/dto/create-user.dto';\n\nexport class AddressDto {\n  @IsString()\n  street: string;\n\n  @IsString()\n  city: string;\n}\n\nexport class CreateOrderDto {\n  @IsArray()\n  @ValidateNested({ each: true })\n  @Type(() => AddressDto)\n  addresses: AddressDto[];\n}\n\n// All fields become optional, validation rules are preserved\nexport class UpdateUserDto extends PartialType(CreateUserDto) {}"
+    }
+   ]
+  },
+  {
+   "id": "pipes",
+   "title": "Pipes",
+   "description": "Validate or transform individual route arguments before the handler runs.",
+   "snippets": [
+    {
+     "language": "typescript",
+     "code": "// src/users/users.controller.ts\nimport {\n  Controller,\n  Get,\n  Param,\n  ParseBoolPipe,\n  ParseIntPipe,\n  ParseUUIDPipe,\n  Query,\n} from '@nestjs/common';\n\n@Controller('users')\nexport class UsersController {\n  @Get('settings')\n  settings(@Query('enabled', ParseBoolPipe) enabled: boolean) {\n    return { enabled };\n  }\n\n  @Get('session/:token')\n  session(@Param('token', new ParseUUIDPipe({ version: '4' })) token: string) {\n    return { token };\n  }\n\n  @Get(':id')\n  findOne(@Param('id', ParseIntPipe) id: number) {\n    return { id };\n  }\n}"
+    },
+    {
+     "language": "typescript",
+     "code": "// src/common/parse-date.pipe.ts\nimport {\n  BadRequestException,\n  Injectable,\n  PipeTransform,\n} from '@nestjs/common';\n\n@Injectable()\nexport class ParseDatePipe implements PipeTransform {\n  transform(value: string): Date {\n    const date = new Date(value);\n\n    if (Number.isNaN(date.getTime())) {\n      throw new BadRequestException(`${value} is not a valid ISO date`);\n    }\n\n    return date;\n  }\n}\n\n// Usage: @Query('since', ParseDatePipe) since: Date"
+    },
+    {
+     "language": "typescript",
+     "code": "// src/main.ts\nimport { BadRequestException, ValidationPipe } from '@nestjs/common';\nimport { NestFactory } from '@nestjs/core';\nimport { AppModule } from './app.module';\n\nasync function bootstrap() {\n  const app = await NestFactory.create(AppModule);\n\n  app.useGlobalPipes(\n    new ValidationPipe({\n      transform: true,\n      whitelist: true,\n      exceptionFactory: (errors) => {\n        const fields = errors.map((error) => error.property);\n        return new BadRequestException({\n          message: 'Validation failed',\n          fields,\n        });\n      },\n    }),\n  );\n\n  await app.listen(3000);\n}\n\nvoid bootstrap();"
+    }
+   ]
+  },
+  {
+   "id": "guards",
+   "title": "Guards",
+   "description": "Decide whether a request is allowed to reach a route handler.",
+   "snippets": [
+    {
+     "language": "typescript",
+     "code": "// src/auth/roles.guard.ts\nimport {\n  CanActivate,\n  ExecutionContext,\n  ForbiddenException,\n  Injectable,\n  SetMetadata,\n} from '@nestjs/common';\nimport { Reflector } from '@nestjs/core';\n\nexport const Roles = (...roles: string[]) => SetMetadata('roles', roles);\n\n@Injectable()\nexport class RolesGuard implements CanActivate {\n  constructor(private readonly reflector: Reflector) {}\n\n  canActivate(context: ExecutionContext): boolean {\n    const required = this.reflector.getAllAndOverride('roles', [\n      context.getHandler(),\n      context.getClass(),\n    ]);\n\n    if (!required || required.length === 0) return true;\n\n    const request = context.switchToHttp().getRequest();\n    if (!required.includes(request.user?.role)) {\n      throw new ForbiddenException('Role is not allowed for this route');\n    }\n\n    return true;\n  }\n}\n\n// Usage: @Roles('admin')"
+    },
+    {
+     "language": "typescript",
+     "code": "// src/auth/jwt-auth.guard.ts\nimport { Injectable } from '@nestjs/common';\nimport { AuthGuard } from '@nestjs/passport';\n\n@Injectable()\nexport class JwtAuthGuard extends AuthGuard('jwt') {}\n\n// src/orders/orders.controller.ts\nimport { Controller, Get, UseGuards } from '@nestjs/common';\nimport { Roles, RolesGuard } from '../auth/roles.guard';\nimport { JwtAuthGuard } from '../auth/jwt-auth.guard';\n\n@Controller('orders')\n@UseGuards(JwtAuthGuard, RolesGuard)\nexport class OrdersController {\n  @Get()\n  @Roles('admin', 'member')\n  findAll() {\n    return [];\n  }\n}"
+    },
+    {
+     "language": "typescript",
+     "code": "// src/app.module.ts\nimport { Module } from '@nestjs/common';\nimport { APP_GUARD } from '@nestjs/core';\nimport { RolesGuard } from './auth/roles.guard';\n\n@Module({\n  providers: [\n    // Apply to every route; use @Public() or metadata to opt out\n    { provide: APP_GUARD, useClass: RolesGuard },\n  ],\n})\nexport class AppModule {}"
+    }
+   ]
+  },
+  {
+   "id": "interceptors",
+   "title": "Interceptors",
+   "description": "Wrap handler execution to shape responses and add cross-cutting behavior.",
+   "snippets": [
+    {
+     "language": "typescript",
+     "code": "// src/common/transform.interceptor.ts\nimport {\n  CallHandler,\n  ExecutionContext,\n  Injectable,\n  NestInterceptor,\n} from '@nestjs/common';\nimport { map } from 'rxjs';\n\n@Injectable()\nexport class TransformInterceptor implements NestInterceptor {\n  intercept(context: ExecutionContext, next: CallHandler) {\n    return next.handle().pipe(\n      map((data) => ({\n        success: true,\n        data,\n        timestamp: new Date().toISOString(),\n      })),\n    );\n  }\n}"
+    },
+    {
+     "language": "typescript",
+     "code": "// src/common/logging.interceptor.ts\nimport {\n  CallHandler,\n  ExecutionContext,\n  Injectable,\n  Logger,\n  NestInterceptor,\n} from '@nestjs/common';\nimport { tap } from 'rxjs';\n\n@Injectable()\nexport class LoggingInterceptor implements NestInterceptor {\n  private readonly logger = new Logger(LoggingInterceptor.name);\n\n  intercept(context: ExecutionContext, next: CallHandler) {\n    const request = context.switchToHttp().getRequest();\n    const startedAt = Date.now();\n\n    return next.handle().pipe(\n      tap(() => {\n        const elapsed = Date.now() - startedAt;\n        this.logger.log(`${request.method} ${request.url} ${elapsed}ms`);\n      }),\n    );\n  }\n}"
+    },
+    {
+     "language": "typescript",
+     "code": "// src/users/users.controller.ts\nimport { Controller, Get, UseInterceptors } from '@nestjs/common';\nimport { LoggingInterceptor } from '../common/logging.interceptor';\nimport { TransformInterceptor } from '../common/transform.interceptor';\n\n@Controller('users')\n@UseInterceptors(LoggingInterceptor, TransformInterceptor)\nexport class UsersController {\n  @Get()\n  findAll() {\n    return [{ id: 1, email: 'ada@example.com' }];\n  }\n}"
+    }
+   ]
+  },
+  {
+   "id": "middleware",
+   "title": "Middleware",
+   "description": "Run Express-style functions before guards and route handlers.",
+   "snippets": [
+    {
+     "language": "typescript",
+     "code": "// src/common/request-id.middleware.ts\nimport { Injectable, NestMiddleware } from '@nestjs/common';\nimport { randomUUID } from 'node:crypto';\nimport type { NextFunction, Request, Response } from 'express';\n\n@Injectable()\nexport class RequestIdMiddleware implements NestMiddleware {\n  use(req: Request, res: Response, next: NextFunction) {\n    const id = req.header('x-request-id') ?? randomUUID();\n\n    req.headers['x-request-id'] = id;\n    res.setHeader('x-request-id', id);\n    next();\n  }\n}"
+    },
+    {
+     "language": "typescript",
+     "code": "// src/app.module.ts\nimport {\n  MiddlewareConsumer,\n  Module,\n  NestModule,\n  RequestMethod,\n} from '@nestjs/common';\nimport { RequestIdMiddleware } from './common/request-id.middleware';\nimport { UsersModule } from './users/users.module';\n\n@Module({ imports: [UsersModule] })\nexport class AppModule implements NestModule {\n  configure(consumer: MiddlewareConsumer) {\n    consumer\n      .apply(RequestIdMiddleware)\n      .exclude({ path: 'health', method: RequestMethod.GET })\n      .forRoutes({ path: 'users', method: RequestMethod.ALL });\n  }\n}"
+    }
+   ]
+  },
+  {
+   "id": "errors",
+   "title": "Exception Filters",
+   "description": "Throw HTTP exceptions and format every error response in one place.",
+   "snippets": [
+    {
+     "language": "typescript",
+     "code": "// src/users/user-rules.service.ts\nimport {\n  BadRequestException,\n  ConflictException,\n  ForbiddenException,\n  HttpException,\n  HttpStatus,\n  Injectable,\n  NotFoundException,\n  UnauthorizedException,\n} from '@nestjs/common';\n\ninterface User {\n  id: number;\n  email: string;\n  role: string;\n}\n\n@Injectable()\nexport class UserRulesService {\n  assertCanDelete(actor: User | undefined, targetId: number): void {\n    if (!actor) throw new UnauthorizedException('Missing bearer token');\n    if (targetId !== actor.id && actor.role !== 'admin') {\n      throw new ForbiddenException('Only the owner can delete this order');\n    }\n  }\n\n  assertValidEmail(email: string): void {\n    if (!email.includes('@')) {\n      throw new BadRequestException('Email must be a valid address');\n    }\n  }\n\n  assertAvailable(email: string, taken: string[]): void {\n    if (taken.includes(email)) {\n      throw new ConflictException(`Email ${email} is already registered`);\n    }\n  }\n\n  notFound(id: number): never {\n    throw new NotFoundException(`User ${id} not found`);\n  }\n\n  throttle(retryAfter: number): never {\n    throw new HttpException(\n      { reason: 'Rate limit exceeded', retryAfter },\n      HttpStatus.TOO_MANY_REQUESTS,\n    );\n  }\n}"
+    },
+    {
+     "language": "typescript",
+     "code": "// src/common/all-exceptions.filter.ts\nimport {\n  ArgumentsHost,\n  Catch,\n  ExceptionFilter,\n  HttpException,\n  HttpStatus,\n  Logger,\n} from '@nestjs/common';\n\n@Catch()\nexport class AllExceptionsFilter implements ExceptionFilter {\n  private readonly logger = new Logger(AllExceptionsFilter.name);\n\n  catch(exception: unknown, host: ArgumentsHost) {\n    const ctx = host.switchToHttp();\n    const response = ctx.getResponse();\n    const request = ctx.getRequest();\n    const status =\n      exception instanceof HttpException\n        ? exception.getStatus()\n        : HttpStatus.INTERNAL_SERVER_ERROR;\n    const message =\n      exception instanceof HttpException\n        ? exception.getResponse()\n        : 'Internal server error';\n\n    this.logger.error(\n      `${request.method} ${request.url} failed with ${status}`,\n      exception instanceof Error ? exception.stack : undefined,\n    );\n\n    response.status(status).json({\n      statusCode: status,\n      path: request.url,\n      message,\n      timestamp: new Date().toISOString(),\n    });\n  }\n}\n\n// src/main.ts: app.useGlobalFilters(new AllExceptionsFilter());"
+    },
+    {
+     "language": "typescript",
+     "code": "// src/payments/insufficient-balance.exception.ts\nimport { HttpException, HttpStatus } from '@nestjs/common';\n\nexport class InsufficientBalanceException extends HttpException {\n  constructor(requiredCents: number, availableCents: number) {\n    super(\n      {\n        error: 'InsufficientBalance',\n        requiredCents,\n        availableCents,\n      },\n      HttpStatus.PAYMENT_REQUIRED,\n    );\n  }\n}\n\n// throw new InsufficientBalanceException(5000, 3200);"
+    }
+   ]
+  },
+  {
+   "id": "config",
+   "title": "Configuration",
+   "description": "Load environment variables and expose them through ConfigService.",
+   "snippets": [
+    {
+     "language": "typescript",
+     "code": "// src/app.module.ts\nimport { Module } from '@nestjs/common';\nimport { ConfigModule } from '@nestjs/config';\nimport * as Joi from 'joi';\n\n@Module({\n  imports: [\n    ConfigModule.forRoot({\n      isGlobal: true,\n      cache: true,\n      envFilePath: ['.env.local', '.env'],\n      validationSchema: Joi.object({\n        NODE_ENV: Joi.string()\n          .valid('development', 'test', 'production')\n          .default('development'),\n        PORT: Joi.number().port().default(3000),\n        DATABASE_URL: Joi.string().required(),\n      }),\n      validationOptions: { abortEarly: false },\n    }),\n  ],\n})\nexport class AppModule {}"
+    },
+    {
+     "language": "typescript",
+     "code": "// src/database/database.config.ts\nimport { Injectable } from '@nestjs/common';\nimport { ConfigService } from '@nestjs/config';\n\n@Injectable()\nexport class DatabaseConfig {\n  constructor(private readonly config: ConfigService) {}\n\n  get url() {\n    return this.config.getOrThrow('DATABASE_URL');\n  }\n\n  get poolSize() {\n    return this.config.get('DB_POOL_SIZE', 10);\n  }\n\n  get isProduction() {\n    return this.config.get('NODE_ENV') === 'production';\n  }\n}"
+    },
+    {
+     "language": "typescript",
+     "code": "// src/config/redis.config.ts\nimport { registerAs } from '@nestjs/config';\n\nexport default registerAs('redis', () => ({\n  host: process.env.REDIS_HOST ?? '127.0.0.1',\n  port: Number(process.env.REDIS_PORT ?? 6379),\n  ttlSeconds: Number(process.env.REDIS_TTL ?? 60),\n}));\n\n// src/cache/cache.service.ts\nimport { Inject, Injectable } from '@nestjs/common';\nimport redisConfig from '../config/redis.config';\n\ninterface RedisConfig {\n  host: string;\n  port: number;\n  ttlSeconds: number;\n}\n\n@Injectable()\nexport class CacheService {\n  constructor(\n    @Inject(redisConfig.KEY) private readonly redis: RedisConfig,\n  ) {}\n\n  get host() {\n    return this.redis.host;\n  }\n\n  get ttl() {\n    return this.redis.ttlSeconds;\n  }\n}"
+    }
+   ]
+  },
+  {
+   "id": "prisma",
+   "title": "Prisma Integration",
+   "description": "Wire Prisma Client into the Nest lifecycle and query the database from services.",
+   "snippets": [
+    {
+     "language": "bash",
+     "code": "# Install the runtime and the CLI\nnpm install @prisma/client\nnpm install --save-dev prisma\n\n# Create prisma/schema.prisma for PostgreSQL\nnpx prisma init --datasource-provider postgresql\n\n# Create the first migration and regenerate the client\nnpx prisma migrate dev --name init\n\n# Regenerate after editing the schema\nnpx prisma generate"
+    },
+    {
+     "language": "prisma",
+     "code": "// prisma/schema.prisma\ngenerator client {\n  provider = \"prisma-client-js\"\n}\n\ndatasource db {\n  provider = \"postgresql\"\n  url      = env(\"DATABASE_URL\")\n}\n\nmodel User {\n  id        Int      @id @default(autoincrement())\n  email     String   @unique\n  name      String\n  role      String   @default(\"member\")\n  createdAt DateTime @default(now())\n}"
+    },
+    {
+     "language": "typescript",
+     "code": "// src/prisma/prisma.service.ts\nimport {\n  Injectable,\n  OnModuleDestroy,\n  OnModuleInit,\n} from '@nestjs/common';\nimport { PrismaClient } from '@prisma/client';\n\n@Injectable()\nexport class PrismaService\n  extends PrismaClient\n  implements OnModuleInit, OnModuleDestroy\n{\n  async onModuleInit() {\n    await this.$connect();\n  }\n\n  async onModuleDestroy() {\n    await this.$disconnect();\n  }\n}\n\n// src/prisma/prisma.module.ts\nimport { Global, Module } from '@nestjs/common';\n\n@Global()\n@Module({\n  providers: [PrismaService],\n  exports: [PrismaService],\n})\nexport class PrismaModule {}\n\n// Usage inside a service: constructor(private prisma: PrismaService) {}"
+    }
+   ]
+  },
+  {
+   "id": "testing",
+   "title": "Testing",
+   "description": "Test providers in isolation and exercise HTTP routes end to end.",
+   "snippets": [
+    {
+     "language": "typescript",
+     "code": "// src/users/users.service.spec.ts\nimport { Test } from '@nestjs/testing';\nimport { PrismaService } from '../prisma/prisma.service';\nimport { UsersService } from './users.service';\n\ndescribe('UsersService', () => {\n  let service: UsersService;\n  const prisma = {\n    user: {\n      findMany: jest\n        .fn()\n        .mockResolvedValue([{ id: 1, email: 'ada@example.com' }]),\n    },\n  };\n\n  beforeEach(async () => {\n    const moduleRef = await Test.createTestingModule({\n      providers: [\n        UsersService,\n        { provide: PrismaService, useValue: prisma },\n      ],\n    }).compile();\n\n    service = moduleRef.get(UsersService);\n  });\n\n  it('returns users from Prisma', async () => {\n    await expect(service.findAll(20)).resolves.toEqual([\n      { id: 1, email: 'ada@example.com' },\n    ]);\n\n    expect(prisma.user.findMany).toHaveBeenCalledWith({\n      take: 20,\n      orderBy: { id: 'asc' },\n    });\n  });\n});"
+    },
+    {
+     "language": "typescript",
+     "code": "// test/users.e2e-spec.ts\nimport { INestApplication, ValidationPipe } from '@nestjs/common';\nimport { Test } from '@nestjs/testing';\nimport request from 'supertest';\nimport { AppModule } from '../src/app.module';\n\ndescribe('Users (e2e)', () => {\n  let app: INestApplication;\n\n  beforeAll(async () => {\n    const moduleRef = await Test.createTestingModule({\n      imports: [AppModule],\n    }).compile();\n\n    app = moduleRef.createNestApplication();\n    app.useGlobalPipes(new ValidationPipe({ whitelist: true }));\n    await app.init();\n  });\n\n  afterAll(async () => {\n    await app.close();\n  });\n\n  it('GET /users returns 200', async () => {\n    await request(app.getHttpServer()).get('/users').expect(200);\n  });\n\n  it('POST /users rejects an invalid email', async () => {\n    await request(app.getHttpServer())\n      .post('/users')\n      .send({ email: 'not-an-email', password: 'secret123' })\n      .expect(400);\n  });\n});"
+    },
+    {
+     "language": "typescript",
+     "code": "// test/orders.e2e-spec.ts\nimport { INestApplication } from '@nestjs/common';\nimport { Test } from '@nestjs/testing';\nimport request from 'supertest';\nimport { AppModule } from '../src/app.module';\nimport { JwtAuthGuard } from '../src/auth/jwt-auth.guard';\n\ndescribe('Orders (e2e) with an authenticated user', () => {\n  let app: INestApplication;\n\n  beforeAll(async () => {\n    const moduleRef = await Test.createTestingModule({\n      imports: [AppModule],\n    })\n      // Replace the real guard so the test does not need a token\n      .overrideGuard(JwtAuthGuard)\n      .useValue({ canActivate: () => true })\n      .compile();\n\n    app = moduleRef.createNestApplication();\n    await app.init();\n  });\n\n  afterAll(async () => {\n    await app.close();\n  });\n\n  it('GET /orders returns 200', async () => {\n    await request(app.getHttpServer()).get('/orders').expect(200);\n  });\n});"
+    }
+   ]
+  },
+  {
+   "id": "swagger",
+   "title": "OpenAPI",
+   "description": "Publish an OpenAPI document and decorate DTOs for the generated docs.",
+   "snippets": [
+    {
+     "language": "bash",
+     "code": "npm install @nestjs/swagger"
+    },
+    {
+     "language": "typescript",
+     "code": "// src/main.ts\nimport { NestFactory } from '@nestjs/core';\nimport { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';\nimport { AppModule } from './app.module';\n\nasync function bootstrap() {\n  const app = await NestFactory.create(AppModule);\n\n  const config = new DocumentBuilder()\n    .setTitle('Users API')\n    .setDescription('Create, read, and manage user accounts')\n    .setVersion('1.0.0')\n    .addBearerAuth()\n    .build();\n\n  const document = SwaggerModule.createDocument(app, config);\n  SwaggerModule.setup('docs', app, document, {\n    swaggerOptions: { persistAuthorization: true },\n  });\n\n  await app.listen(3000);\n}\n\nvoid bootstrap();"
+    },
+    {
+     "language": "typescript",
+     "code": "// src/users/dto/create-user.dto.ts\nimport { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';\n\nexport class CreateUserDto {\n  @ApiProperty({\n    example: 'ada@example.com',\n    description: 'Unique email address',\n  })\n  email: string;\n\n  @ApiProperty({ example: 'correct-horse-battery', minLength: 8 })\n  password: string;\n\n  @ApiPropertyOptional({ enum: ['admin', 'member'], default: 'member' })\n  role?: string;\n}\n\n// src/users/users.controller.ts\nimport { Controller, Get } from '@nestjs/common';\nimport { ApiOperation, ApiTags } from '@nestjs/swagger';\n\n@ApiTags('users')\n@Controller('users')\nexport class UsersController {\n  @Get()\n  @ApiOperation({ summary: 'List users' })\n  findAll() {\n    return [];\n  }\n}"
+    }
+   ]
+  }
+ ]
+}

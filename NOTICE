@@ -1,0 +1,10 @@
+cheatrs
+Copyright (c) 2026 Felipe Albino Rafaldini
+
+The cheatsheet data shipped by this repository, everything under data/topics/,
+was written for this project: 52 topics, each with its own selection of
+sections, descriptions and examples.
+
+Code examples here are meant to be read and copied. Verify them against the
+documentation of the tool or language in question before running anything
+destructive.

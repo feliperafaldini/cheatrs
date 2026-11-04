@@ -1,0 +1,264 @@
+{
+ "slug": "numpy",
+ "title": "NumPy",
+ "label": "NumPy",
+ "group": "Library",
+ "color": "#013243",
+ "desc": "N-dimensional arrays with vectorized math, broadcasting and linear algebra.",
+ "sections": [
+  {
+   "id": "setup",
+   "title": "Setup",
+   "description": "Install the package and confirm which build is active.",
+   "snippets": [
+    {
+     "language": "bash",
+     "code": "# Install from PyPI\npip install numpy\n\n# Or from conda-forge\nconda install -c conda-forge numpy"
+    },
+    {
+     "language": "python",
+     "code": "import numpy as np\n\nprint(np.__version__)   # 2.1.3\nnp.show_config()        # BLAS/LAPACK backend in use"
+    }
+   ]
+  },
+  {
+   "id": "arrays",
+   "title": "Arrays",
+   "description": "The ndarray holds one typed block of memory plus its shape.",
+   "snippets": [
+    {
+     "language": "python",
+     "code": "import numpy as np\n\na = np.array([1, 2, 3, 4])\nprint(a)          # [1 2 3 4]\nprint(a.ndim)     # 1\nprint(a.shape)    # (4,)\nprint(a.size)     # 4\nprint(a.dtype)    # int64\nprint(a.itemsize) # 8\nprint(a.nbytes)   # 32"
+    },
+    {
+     "language": "python",
+     "code": "# Rows are days, columns are prices for three products\nprices = np.array([[10.5, 11.0, 9.75],\n                   [12.0, 12.5, 13.0]])\nprint(prices.shape)                 # (2, 3)\nprint(prices.strides)               # (24, 8)\nprint(prices.T.shape)               # (3, 2)\nprint(prices.flags['C_CONTIGUOUS']) # True"
+    }
+   ]
+  },
+  {
+   "id": "creation",
+   "title": "Creating Arrays",
+   "description": "Build arrays from constants, ranges or an existing template.",
+   "snippets": [
+    {
+     "language": "python",
+     "code": "np.zeros((2, 3))              # 2x3 of 0.0\nnp.ones(3, dtype=np.int32)    # [1 1 1]\nnp.full((2, 2), 7)            # [[7 7] [7 7]]\nnp.eye(3)                     # 3x3 identity\nnp.empty((2, 2))              # uninitialized values"
+    },
+    {
+     "language": "python",
+     "code": "np.arange(0, 10, 2)      # [0 2 4 6 8]\nnp.linspace(0, 1, 5)     # [0.   0.25 0.5  0.75 1.  ]\nnp.arange(12).reshape(3, 4)\n\n# Match the shape and dtype of another array\ntemplate = np.zeros((4, 2), dtype=np.float32)\nnp.ones_like(template)   # (4, 2) float32\nnp.zeros_like(template)"
+    }
+   ]
+  },
+  {
+   "id": "indexing",
+   "title": "Indexing",
+   "description": "Reach single elements, positions from a list, or every element matching a mask.",
+   "snippets": [
+    {
+     "language": "python",
+     "code": "a = np.array([10, 20, 30, 40, 50])\na[0]          # 10\na[-1]         # 50\na[[0, 2, 4]]  # [10 30 50]  fancy indexing\na[[1, 1, 3]]  # [20 20 40]  repeats allowed"
+    },
+    {
+     "language": "python",
+     "code": "a = np.array([10, 20, 30, 40, 50])\nmask = a > 25\nmask                # [False False  True  True  True]\na[mask]             # [30 40 50]\nnp.where(a > 25, a, 0)  # [ 0  0 30 40 50]\nnp.nonzero(mask)        # (array([2, 3, 4]),)"
+    },
+    {
+     "language": "python",
+     "code": "grid = np.arange(12).reshape(3, 4)\ngrid[1, 2]      # 6\ngrid[0]         # first row\ngrid[:, 1]      # second column\nrows = np.array([0, 2])\ncols = np.array([1, 3])\ngrid[rows, cols]     # [ 1 11]  one element per pair\ngrid[[0, 2]][:, [1, 3]]  # 2x2 submatrix"
+    }
+   ]
+  },
+  {
+   "id": "slicing",
+   "title": "Slicing",
+   "description": "Select ranges per axis; the result is usually a view, not a copy.",
+   "snippets": [
+    {
+     "language": "python",
+     "code": "a = np.arange(10)   # [0 1 2 3 4 5 6 7 8 9]\na[2:5]    # [2 3 4]\na[:3]     # [0 1 2]\na[7:]     # [7 8 9]\na[::2]    # [0 2 4 6 8]\na[1::3]   # [1 4 7]\na[::-1]   # reversed: [9 8 7 6 5 4 3 2 1 0]"
+    },
+    {
+     "language": "python",
+     "code": "m = np.arange(12).reshape(3, 4)\nm[0:2, 1:3]   # rows 0-1, columns 1-2\nm[:, ::2]     # every other column\nm[::2, ::-1]  # alternate rows, columns reversed\nm[..., -1]    # last column of every row"
+    },
+    {
+     "language": "python",
+     "code": "# A basic slice shares memory with the original\na = np.arange(6)\nview = a[1:4]\nview[0] = 99\nprint(a)              # [ 0 99  2  3  4  5]\nprint(view.base is a) # True\n\n# .copy() detaches the buffer\nsafe = a[1:4].copy()\nsafe[0] = -1\nprint(a[1])           # 99"
+    }
+   ]
+  },
+  {
+   "id": "shapes",
+   "title": "Shapes and Reshaping",
+   "description": "Change how many axes an array has without touching its values.",
+   "snippets": [
+    {
+     "language": "python",
+     "code": "a = np.arange(12)\na.reshape(3, 4)\na.reshape(2, -1)             # -1 infers the 6\na.reshape(2, 2, 3)\na.reshape(3, 4).ravel()      # view when possible\na.reshape(3, 4).flatten()    # always a copy"
+    },
+    {
+     "language": "python",
+     "code": "v = np.array([1, 2, 3])\nv[:, np.newaxis].shape            # (3, 1)\nnp.expand_dims(v, axis=0).shape   # (1, 3)\nnp.squeeze(np.zeros((1, 3, 1))).shape  # (3,)\n\nm = np.arange(6).reshape(2, 3)\nm.T.shape              # (3, 2)\nnp.transpose(m, (1, 0)).shape  # (3, 2)"
+    },
+    {
+     "language": "python",
+     "code": "a = np.array([[1, 2], [3, 4]])\nb = np.array([[5, 6]])\nnp.concatenate([a, b], axis=0).shape  # (3, 2)\nnp.vstack([a, b]).shape               # (3, 2)\nnp.hstack([a, a]).shape               # (2, 4)\nnp.stack([a, a], axis=0).shape        # (2, 2, 2)\nnp.split(np.arange(6), 3)             # three arrays of 2"
+    }
+   ]
+  },
+  {
+   "id": "dtype",
+   "title": "Data Types",
+   "description": "Every array has one element type, and conversions can lose information.",
+   "snippets": [
+    {
+     "language": "python",
+     "code": "np.array([1, 2, 3]).dtype              # int64\nnp.array([1.0, 2.0]).dtype             # float64\nnp.array([True, False]).dtype          # bool\nnp.array([1, 2], dtype=np.float32).dtype  # float32\nnp.array([1, 2], dtype='int8').dtype      # int8"
+    },
+    {
+     "language": "python",
+     "code": "a = np.array([1.7, -2.3, 3.9])\na.astype(np.int64)      # [ 1 -2  3] truncates toward zero\na.astype(np.float32)    # keeps the fraction, less precision\nnp.float64(2.5).astype(np.int32)  # 2"
+    },
+    {
+     "language": "python",
+     "code": "np.iinfo(np.int32)    # min=-2147483648 max=2147483647\nnp.finfo(np.float32)  # eps=1.1920929e-07 max=3.4028235e+38\nnp.result_type(np.int32, np.float32)  # float64"
+    }
+   ]
+  },
+  {
+   "id": "operations",
+   "title": "Arithmetic",
+   "description": "Operators apply element by element, and @ performs matrix products.",
+   "snippets": [
+    {
+     "language": "python",
+     "code": "a = np.array([1, 2, 3, 4])\nb = np.array([10, 20, 30, 40])\na + b    # [11 22 33 44]\nb - a    # [ 9 18 27 36]\na * b    # [ 10  40  90 160]\nb / a    # [10. 10. 10. 10.]\nb // a   # [10 10 10 10]\nb % a    # [0 0 0 0]\na ** 2   # [ 1  4  9 16]"
+    },
+    {
+     "language": "python",
+     "code": "a = np.array([1, 2, 3])\na + 10                    # [11 12 13]\n-a                        # [-1 -2 -3]\nnp.abs(np.array([-3, 4])) # [3 4]\nnp.sqrt(np.array([4.0, 9.0]))  # [2. 3.]\nnp.maximum(a, 2)          # [2 2 3]"
+    },
+    {
+     "language": "python",
+     "code": "A = np.array([[1, 2], [3, 4]])\nB = np.array([[0, 1], [1, 0]])\nA * B          # elementwise: [[0 2] [3 0]]\nA @ B          # [[2 1] [4 3]]\nnp.matmul(A, B)  # same as A @ B\nA.dot(B)       # same as A @ B"
+    }
+   ]
+  },
+  {
+   "id": "broadcasting",
+   "title": "Broadcasting",
+   "description": "Shapes are aligned from the right and stretched wherever an axis has length 1.",
+   "snippets": [
+    {
+     "language": "python",
+     "code": "a = np.array([[1, 2, 3], [4, 5, 6]])  # (2, 3)\nb = np.array([10, 20, 30])            # (3,)\na + b\n# [[11 22 33]\n#  [14 25 36]]\n# b is reused for both rows"
+    },
+    {
+     "language": "python",
+     "code": "a = np.array([[1, 2, 3], [4, 5, 6]])  # (2, 3)\ncol = np.array([[100], [200]])        # (2, 1)\na + col\n# [[101 102 103]\n#  [204 205 206]]\n\nrow = np.array([1, 2, 3])\ncol * row    # shape (2, 3): [[100 200 300] [200 400 600]]"
+    },
+    {
+     "language": "python",
+     "code": "# Two 1-D arrays do not broadcast into a grid by default\nx = np.arange(3)   # (3,)\ny = np.arange(4)   # (4,)\n(x[:, np.newaxis] * y).shape   # (3, 4)\n\n# Incompatible axes raise instead of guessing\nnp.zeros((2, 3)) + np.zeros((2,))  # ValueError: (2,3) vs (2,)"
+    }
+   ]
+  },
+  {
+   "id": "ufuncs",
+   "title": "Universal Functions",
+   "description": "Elementwise kernels with reduce, accumulate and outer variants.",
+   "snippets": [
+    {
+     "language": "python",
+     "code": "np.add(1, 2)                          # 3\nnp.sqrt(np.array([1.0, 4.0, 9.0]))    # [1. 2. 3.]\nnp.exp(np.array([0.0, 1.0]))          # [1. 2.71828183]\nnp.log(np.array([1.0, np.e]))         # [0. 1.]\nnp.maximum(np.array([1, 5]), np.array([3, 2]))  # [3 5]"
+    },
+    {
+     "language": "python",
+     "code": "a = np.arange(1, 6)   # [1 2 3 4 5]\nnp.add.reduce(a)      # 15\nnp.add.accumulate(a)  # [ 1  3  6 10 15]\nnp.multiply.outer([1, 2], [10, 20])  # [[10 20] [20 40]]\nnp.add.at(a, [0, 0, 4], 10)          # a becomes [21 2 3 4 15]"
+    },
+    {
+     "language": "python",
+     "code": "# out= reuses a buffer instead of allocating a new array\na = np.array([1.0, 2.0, 3.0])\nout = np.empty_like(a)\nnp.exp(a, out=out)\nout   # [ 2.71828183  7.3890561  20.08553692]"
+    }
+   ]
+  },
+  {
+   "id": "aggregation",
+   "title": "Aggregation",
+   "description": "Collapse axes into summary values, optionally keeping the dimension.",
+   "snippets": [
+    {
+     "language": "python",
+     "code": "a = np.array([[1, 2, 3], [4, 5, 6]])\na.sum()          # 21\na.sum(axis=0)    # [5 7 9]   per column\na.sum(axis=1)    # [ 6 15]   per row\na.mean()         # 3.5\na.mean(axis=0, keepdims=True).shape  # (1, 3)"
+    },
+    {
+     "language": "python",
+     "code": "a = np.array([[1, 2, 3], [4, 5, 6]])\na.min(), a.max()        # (1, 6)\na.argmin(), a.argmax()  # (0, 5) flat index\na.std(), a.var()        # (1.707825127659933, 2.9166666666666665)\na.cumsum(axis=1)        # [[ 1  3  6] [ 4  9 15]]\nnp.median(a)            # 3.5\nnp.percentile(a, 75)    # 4.75"
+    },
+    {
+     "language": "python",
+     "code": "data = np.array([1.0, np.nan, 3.0])\ndata.sum()        # nan\nnp.nansum(data)   # 4.0\nnp.nanmean(data)  # 2.0\nnp.isnan(data)    # [False  True False]"
+    }
+   ]
+  },
+  {
+   "id": "random",
+   "title": "Random",
+   "description": "Draw samples from a Generator, seeded explicitly for repeatability.",
+   "snippets": [
+    {
+     "language": "python",
+     "code": "rng = np.random.default_rng(seed=42)\nrng.random(3)                 # 3 floats in [0, 1)\nrng.integers(1, 7, size=5)    # 5 dice rolls\nrng.normal(loc=0.0, scale=1.0, size=4)\nrng.uniform(0.0, 1.0, size=(2, 3))"
+    },
+    {
+     "language": "python",
+     "code": "rng = np.random.default_rng(7)\nrng.choice([10, 20, 30], size=4, replace=True)\nrng.choice(5, size=3, replace=False)  # 3 distinct values from 0 to 4\ndeck = np.arange(52)\nrng.shuffle(deck)\nrng.permutation(10)"
+    },
+    {
+     "language": "python",
+     "code": "# The same seed always produces the same stream\na = np.random.default_rng(0).normal(size=2)\nb = np.random.default_rng(0).normal(size=2)\nprint(np.array_equal(a, b))   # True"
+    }
+   ]
+  },
+  {
+   "id": "linalg",
+   "title": "Linear Algebra",
+   "description": "Solve systems, factor matrices and fit least squares.",
+   "snippets": [
+    {
+     "language": "python",
+     "code": "A = np.array([[3.0, 1.0], [1.0, 2.0]])\nb = np.array([9.0, 8.0])\nx = np.linalg.solve(A, b)   # [2. 3.]\nnp.allclose(A @ x, b)       # True"
+    },
+    {
+     "language": "python",
+     "code": "A = np.array([[3.0, 1.0], [1.0, 2.0]])\nnp.linalg.inv(A)\nnp.linalg.det(A)            # 5.000000000000001 (float rounding)\nnp.linalg.matrix_rank(A)    # 2\nnp.linalg.norm(np.array([9.0, 8.0]))  # 12.041594578792296\nnp.trace(A)                 # 5.0"
+    },
+    {
+     "language": "python",
+     "code": "A = np.array([[3.0, 1.0], [1.0, 2.0]])\nvals, vecs = np.linalg.eig(A)\nU, s, Vt = np.linalg.svd(A)\n\ncoef, residuals, rank, sv = np.linalg.lstsq(\n    np.array([[1.0, 0.0], [0.0, 1.0], [1.0, 1.0]]),\n    np.array([1.0, 2.0, 3.0]),\n    rcond=None,\n)\ncoef   # [1. 2.]"
+    }
+   ]
+  },
+  {
+   "id": "io",
+   "title": "Reading and Writing",
+   "description": "Persist arrays in the compact binary format or exchange plain text.",
+   "snippets": [
+    {
+     "language": "python",
+     "code": "a = np.arange(6).reshape(2, 3)\nnp.save('matrix.npy', a)\nloaded = np.load('matrix.npy')   # exact shape and dtype\n\nnp.savez('bundle.npz', first=a, second=a * 2)\nbundle = np.load('bundle.npz')\nbundle['first']"
+    },
+    {
+     "language": "python",
+     "code": "a = np.arange(6).reshape(2, 3)\nnp.savetxt('values.csv', a, delimiter=',', fmt='%.2f')\nnp.loadtxt('values.csv', delimiter=',')   # 2x3 float64"
+    },
+    {
+     "language": "python",
+     "code": "# Header names become fields of a structured array\nreadings = np.genfromtxt(\n    'readings.csv',\n    delimiter=',',\n    names=True,\n    dtype=None,\n    encoding='utf-8',\n)\nreadings['temperature']"
+    }
+   ]
+  }
+ ]
+}

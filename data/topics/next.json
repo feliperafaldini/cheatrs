@@ -1,0 +1,237 @@
+{
+ "slug": "next",
+ "title": "Next.js",
+ "label": "Next.js",
+ "group": "Framework",
+ "color": "#000000",
+ "desc": "React framework that renders on the server and bundles a router, data layer, and build pipeline for full-stack apps.",
+ "sections": [
+  {
+   "id": "setup",
+   "title": "Setup",
+   "description": "Scaffold an App Router project with the official CLI, then start the dev server on port 3000.",
+   "snippets": [
+    {
+     "language": "bash",
+     "code": "# Create a TypeScript app with the recommended defaults\nnpx create-next-app@latest atlas --yes\ncd atlas\n\n# Start the dev server with Turbopack\nnpm run dev"
+    },
+    {
+     "language": "json",
+     "code": "{\n  \"scripts\": {\n    \"dev\": \"next dev\",\n    \"build\": \"next build\",\n    \"start\": \"next start\"\n  }\n}"
+    }
+   ]
+  },
+  {
+   "id": "structure",
+   "title": "Project Structure",
+   "description": "Folders under app become URL segments, while reserved filenames decide what each segment renders.",
+   "snippets": [
+    {
+     "language": "text",
+     "code": "atlas/\n  app/\n    layout.tsx             root layout, always required\n    page.tsx               route /\n    (shop)/\n      cart/page.tsx        route /cart, group name hidden\n    guides/[slug]/page.tsx route /guides/:slug\n    api/health/route.ts    GET /api/health\n    _components/           private folder, never routable\n  public/                  files served from /\n  next.config.ts           build and runtime settings"
+    },
+    {
+     "language": "typescript",
+     "code": "import type { NextConfig } from 'next'\n\nconst nextConfig: NextConfig = {\n  reactStrictMode: true,\n  poweredByHeader: false,\n}\n\nexport default nextConfig"
+    }
+   ]
+  },
+  {
+   "id": "routing",
+   "title": "Routing",
+   "description": "A page file makes its folder public; bracketed segments capture URL values and arrive as a promise.",
+   "snippets": [
+    {
+     "language": "typescript",
+     "code": "import { notFound } from 'next/navigation'\nimport { getRecipe } from '@/lib/recipes'\n\ntype Props = { params: Promise<{ slug: string }> }\n\nexport default async function RecipePage({ params }: Props) {\n  const { slug } = await params\n  const recipe = await getRecipe(slug)\n\n  if (!recipe) notFound()\n\n  return (\n    <article>\n      <h1>{recipe.title}</h1>\n      <p>Serves {recipe.servings} people</p>\n    </article>\n  )\n}"
+    },
+    {
+     "language": "typescript",
+     "code": "import { loadDoc } from '@/lib/docs'\n\ntype Props = { params: Promise<{ path: string[] }> }\n\nexport default async function DocsPage({ params }: Props) {\n  const { path } = await params\n  const doc = await loadDoc(path.join('/'))\n\n  // /docs/kit/stove resolves to path = ['kit', 'stove']\n  return (\n    <main>\n      <p>Section: {path[0]}</p>\n      <h1>{doc.title}</h1>\n    </main>\n  )\n}"
+    },
+    {
+     "language": "typescript",
+     "code": "import { getRecipeSlugs } from '@/lib/recipes'\n\n// Unknown slugs return 404 instead of rendering on demand\nexport const dynamicParams = false\n\nexport async function generateStaticParams() {\n  const slugs = await getRecipeSlugs()\n  return slugs.map((slug) => ({ slug }))\n}"
+    }
+   ]
+  },
+  {
+   "id": "layouts",
+   "title": "Layouts",
+   "description": "A layout wraps every page beneath its folder, stays mounted across navigation, and the root one must render html and body.",
+   "snippets": [
+    {
+     "language": "typescript",
+     "code": "import type { ReactNode } from 'react'\nimport './globals.css'\n\nexport default function RootLayout({ children }: { children: ReactNode }) {\n  return (\n    <html lang=\"en\">\n      <body className=\"min-h-screen bg-stone-50 text-stone-900\">\n        {children}\n      </body>\n    </html>\n  )\n}"
+    },
+    {
+     "language": "typescript",
+     "code": "import Link from 'next/link'\nimport type { ReactNode } from 'react'\n\nexport default function DashboardLayout({ children }: { children: ReactNode }) {\n  return (\n    <div className=\"grid grid-cols-[220px_1fr]\">\n      <aside className=\"border-r p-4\">\n        <Link href=\"/dashboard\">Overview</Link>\n        <Link href=\"/dashboard/billing\">Billing</Link>\n      </aside>\n      <section className=\"p-6\">{children}</section>\n    </div>\n  )\n}"
+    }
+   ]
+  },
+  {
+   "id": "server-components",
+   "title": "Server Components",
+   "description": "Components run on the server unless marked otherwise, so they can await data directly and keep secrets out of the bundle.",
+   "snippets": [
+    {
+     "language": "typescript",
+     "code": "import { db } from '@/lib/db'\n\nexport default async function ProductList() {\n  const products = await db.product.findMany({\n    where: { published: true },\n    orderBy: { name: 'asc' },\n  })\n\n  return (\n    <ul>\n      {products.map((product) => (\n        <li key={product.id}>\n          {product.name} costs ${product.price}\n        </li>\n      ))}\n    </ul>\n  )\n}"
+    },
+    {
+     "language": "typescript",
+     "code": "import 'server-only'\nimport { cookies } from 'next/headers'\nimport { db } from '@/lib/db'\n\nexport async function currentUser() {\n  const token = (await cookies()).get('session')?.value\n  if (!token) return null\n\n  // This module fails the build if a client component imports it\n  return db.user.findUnique({ where: { token } })\n}"
+    }
+   ]
+  },
+  {
+   "id": "client-components",
+   "title": "Client Components",
+   "description": "The use client directive marks a module for the browser, enabling state, effects, and DOM event handlers.",
+   "snippets": [
+    {
+     "language": "typescript",
+     "code": "'use client'\n\nimport { useState } from 'react'\n\nexport function QuantityPicker({ max = 10 }: { max?: number }) {\n  const [quantity, setQuantity] = useState(1)\n\n  return (\n    <div>\n      <button onClick={() => setQuantity((q) => Math.max(1, q - 1))}>-</button>\n      <span>{quantity}</span>\n      <button onClick={() => setQuantity((q) => Math.min(max, q + 1))}>+</button>\n    </div>\n  )\n}"
+    },
+    {
+     "language": "typescript",
+     "code": "'use client'\n\nimport { useState } from 'react'\nimport type { ReactNode } from 'react'\n\nexport function Collapsible({ children }: { children: ReactNode }) {\n  const [open, setOpen] = useState(false)\n\n  return (\n    <section>\n      <button onClick={() => setOpen((value) => !value)}>\n        {open ? 'Hide' : 'Show'} details\n      </button>\n      {open && children}\n    </section>\n  )\n}"
+    },
+    {
+     "language": "typescript",
+     "code": "import { Collapsible } from './collapsible'\nimport { getSpecs } from '@/lib/specs'\n\nexport default async function Page() {\n  const specs = await getSpecs()\n\n  // Children are rendered on the server and passed through as a slot\n  return (\n    <Collapsible>\n      <dl>\n        <dt>Packed weight</dt>\n        <dd>{specs.weightKg} kg</dd>\n      </dl>\n    </Collapsible>\n  )\n}"
+    }
+   ]
+  },
+  {
+   "id": "data-fetching",
+   "title": "Data Fetching",
+   "description": "Await data inside server components; use cache gives the result a lifetime and cacheTag names it for invalidation.",
+   "snippets": [
+    {
+     "language": "typescript",
+     "code": "import { cacheLife, cacheTag } from 'next/cache'\n\n// Requires cacheComponents: true in next.config.ts\nexport async function getPosts() {\n  'use cache'\n  cacheLife('hours')\n  cacheTag('posts')\n\n  const response = await fetch('https://api.vercel.app/blog')\n  if (!response.ok) throw new Error('Posts request failed')\n  return response.json()\n}"
+    },
+    {
+     "language": "typescript",
+     "code": "import { Suspense } from 'react'\n\ntype Forecast = { current: { temperature_2m: number } }\n\nasync function Weather() {\n  const response = await fetch(\n    'https://api.open-meteo.com/v1/forecast?latitude=52.52&longitude=13.41&current=temperature_2m',\n    { cache: 'no-store' },\n  )\n  const data: Forecast = await response.json()\n\n  return <p>Berlin: {data.current.temperature_2m} °C</p>\n}\n\nexport default function Page() {\n  return (\n    <main>\n      <h1>Trailhead</h1>\n      <Suspense fallback={<p>Loading the current temperature</p>}>\n        <Weather />\n      </Suspense>\n    </main>\n  )\n}"
+    },
+    {
+     "language": "typescript",
+     "code": "'use server'\n\nimport { updateTag } from 'next/cache'\nimport { redirect } from 'next/navigation'\nimport { db } from '@/lib/db'\n\nexport async function publishPost(id: string) {\n  await db.post.update({ where: { id }, data: { published: true } })\n\n  // Expire the tag now so the author sees the change immediately\n  updateTag('posts')\n  redirect(`/blog/${id}`)\n}"
+    }
+   ]
+  },
+  {
+   "id": "api-routes",
+   "title": "Route Handlers",
+   "description": "A route file exports one function per HTTP verb and receives a web Request plus the segment params.",
+   "snippets": [
+    {
+     "language": "typescript",
+     "code": "import { NextResponse } from 'next/server'\nimport { db } from '@/lib/db'\n\nexport async function GET() {\n  const tickets = await db.ticket.findMany({ where: { open: true } })\n  return NextResponse.json({ tickets })\n}"
+    },
+    {
+     "language": "typescript",
+     "code": "import { NextResponse } from 'next/server'\nimport { db } from '@/lib/db'\n\nexport async function POST(request: Request) {\n  const body = await request.json()\n\n  if (typeof body.subject !== 'string' || body.subject.length === 0) {\n    return NextResponse.json({ error: 'subject is required' }, { status: 400 })\n  }\n\n  const ticket = await db.ticket.create({ data: { subject: body.subject } })\n  return NextResponse.json(ticket, { status: 201 })\n}"
+    },
+    {
+     "language": "typescript",
+     "code": "import { db } from '@/lib/db'\n\nexport async function DELETE(\n  _request: Request,\n  { params }: { params: Promise<{ id: string }> },\n) {\n  const { id } = await params\n  await db.ticket.delete({ where: { id } })\n\n  return new Response(null, { status: 204 })\n}"
+    }
+   ]
+  },
+  {
+   "id": "metadata",
+   "title": "Metadata",
+   "description": "Export a metadata object or a generateMetadata function from a server page or layout to fill the head tags.",
+   "snippets": [
+    {
+     "language": "typescript",
+     "code": "import type { Metadata } from 'next'\n\nexport const metadata: Metadata = {\n  metadataBase: new URL('https://atlas.example.com'),\n  title: {\n    default: 'Atlas',\n    template: '%s | Atlas',\n  },\n  description: 'Field guides for backcountry trips.',\n  openGraph: {\n    type: 'website',\n    siteName: 'Atlas',\n    images: ['/trail-ridge.jpg'],\n  },\n}\n\nexport default function RootLayout({ children }: { children: React.ReactNode }) {\n  return (\n    <html lang=\"en\">\n      <body>{children}</body>\n    </html>\n  )\n}"
+    },
+    {
+     "language": "typescript",
+     "code": "import type { Metadata } from 'next'\nimport { getGuide } from '@/lib/guides'\n\nexport async function generateMetadata({\n  params,\n}: {\n  params: Promise<{ slug: string }>\n}): Promise<Metadata> {\n  const { slug } = await params\n  const guide = await getGuide(slug)\n\n  return {\n    title: guide.title,\n    description: guide.summary,\n    alternates: { canonical: `/guides/${slug}` },\n  }\n}"
+    },
+    {
+     "language": "typescript",
+     "code": "import type { Viewport } from 'next'\n\nexport const viewport: Viewport = {\n  width: 'device-width',\n  initialScale: 1,\n  themeColor: '#1c1917',\n}"
+    }
+   ]
+  },
+  {
+   "id": "styling",
+   "title": "Styling",
+   "description": "Global CSS, CSS Modules, and Tailwind are built in; module files keep class names local to one component.",
+   "snippets": [
+    {
+     "language": "css",
+     "code": "@import 'tailwindcss';\n\n:root {\n  --brand: #0f766e;\n}\n\nbody {\n  font-family: var(--font-geist-sans), system-ui, sans-serif;\n}"
+    },
+    {
+     "language": "css",
+     "code": ".card {\n  border: 1px solid #d6d3d1;\n  border-radius: 12px;\n  padding: 24px;\n}\n\n.featured {\n  border-color: #0f766e;\n  box-shadow: 0 8px 24px rgb(15 118 110 / 0.18);\n}"
+    },
+    {
+     "language": "typescript",
+     "code": "import styles from './price-card.module.css'\n\nexport function PriceCard({ featured }: { featured: boolean }) {\n  return (\n    <article className={`${styles.card} ${featured ? styles.featured : ''}`}>\n      <h2>Team plan</h2>\n      <p>$49 per month</p>\n    </article>\n  )\n}"
+    }
+   ]
+  },
+  {
+   "id": "images",
+   "title": "Images and Fonts",
+   "description": "next/image reserves layout space and optimizes formats, while next/font self-hosts typefaces during the build.",
+   "snippets": [
+    {
+     "language": "typescript",
+     "code": "import Image from 'next/image'\nimport hero from './hero.jpg'\n\nexport function Hero() {\n  return (\n    <Image\n      src={hero}\n      alt=\"Hikers on a ridge above the treeline\"\n      preload\n      sizes=\"100vw\"\n      style={{ width: '100%', height: 'auto' }}\n    />\n  )\n}"
+    },
+    {
+     "language": "typescript",
+     "code": "import type { NextConfig } from 'next'\n\nconst nextConfig: NextConfig = {\n  images: {\n    remotePatterns: [\n      {\n        protocol: 'https',\n        hostname: 'images.unsplash.com',\n        pathname: '/**',\n      },\n    ],\n  },\n}\n\nexport default nextConfig"
+    },
+    {
+     "language": "typescript",
+     "code": "import { Geist } from 'next/font/google'\n\nconst geist = Geist({\n  subsets: ['latin'],\n  variable: '--font-geist-sans',\n})\n\nexport default function RootLayout({ children }: { children: React.ReactNode }) {\n  return (\n    <html lang=\"en\" className={geist.variable}>\n      <body>{children}</body>\n    </html>\n  )\n}"
+    }
+   ]
+  },
+  {
+   "id": "middleware",
+   "title": "Middleware",
+   "description": "Proxy, the file convention renamed from middleware in Next.js 16, runs before rendering to redirect, rewrite, or add headers.",
+   "snippets": [
+    {
+     "language": "typescript",
+     "code": "import { NextResponse } from 'next/server'\nimport type { NextRequest } from 'next/server'\n\nexport function proxy(request: NextRequest) {\n  const session = request.cookies.get('session')\n\n  if (!session && request.nextUrl.pathname.startsWith('/account')) {\n    const login = new URL('/login', request.url)\n    login.searchParams.set('next', request.nextUrl.pathname)\n    return NextResponse.redirect(login)\n  }\n\n  return NextResponse.next()\n}\n\nexport const config = {\n  matcher: ['/account/:path*', '/checkout/:path*'],\n}"
+    },
+    {
+     "language": "typescript",
+     "code": "import { NextResponse } from 'next/server'\nimport type { NextRequest } from 'next/server'\n\nexport function proxy(request: NextRequest) {\n  const headers = new Headers(request.headers)\n  headers.set('x-request-id', crypto.randomUUID())\n\n  // Forward the header to the route and harden the response\n  const response = NextResponse.next({ request: { headers } })\n  response.headers.set('x-frame-options', 'DENY')\n  return response\n}\n\nexport const config = {\n  matcher: '/((?!_next/static|_next/image|favicon.ico).*)',\n}"
+    }
+   ]
+  },
+  {
+   "id": "deployment",
+   "title": "Deployment",
+   "description": "Build once with next build, serve with next start, or copy a standalone bundle into a small container image.",
+   "snippets": [
+    {
+     "language": "bash",
+     "code": "# Produce the production bundle\nnpm run build\n\n# Serve it; -p changes the port\nnpx next start -p 8080"
+    },
+    {
+     "language": "typescript",
+     "code": "import type { NextConfig } from 'next'\n\nconst nextConfig: NextConfig = {\n  output: 'standalone',\n}\n\nexport default nextConfig"
+    },
+    {
+     "language": "dockerfile",
+     "code": "FROM node:22-alpine AS build\nWORKDIR /app\nCOPY package.json package-lock.json ./\nRUN npm ci\nCOPY . .\nRUN npm run build\n\nFROM node:22-alpine AS run\nWORKDIR /app\nENV NODE_ENV=production\nCOPY --from=build /app/public ./public\nCOPY --from=build /app/.next/standalone ./\nCOPY --from=build /app/.next/static ./.next/static\nEXPOSE 3000\nCMD [\"node\", \"server.js\"]"
+    }
+   ]
+  }
+ ]
+}

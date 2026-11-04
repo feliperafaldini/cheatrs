@@ -1,0 +1,236 @@
+{
+ "slug": "laravel",
+ "title": "Laravel",
+ "label": "Laravel",
+ "group": "Framework",
+ "color": "#FF2D20",
+ "desc": "A full-stack PHP framework for routing, database work, authentication and background queues.",
+ "sections": [
+  {
+   "id": "setup",
+   "title": "Setup",
+   "description": "Install the framework, prepare a local database and start the development server:",
+   "snippets": [
+    {
+     "language": "bash",
+     "code": "# Scaffold a project with Composer\ncomposer create-project laravel/laravel inventory\ncd inventory\n\n# The default connection is SQLite; make sure the file exists\ntouch database/database.sqlite\nphp artisan migrate\n\n# Serve the app on http://127.0.0.1:8000\nphp artisan serve"
+    },
+    {
+     "language": "bash",
+     "code": "# Overview of versions, drivers and environment\nphp artisan about\n\n# Every registered route with method, URI and action\nphp artisan route:list\n\n# Rebuild the cached config after editing .env\nphp artisan config:clear"
+    }
+   ]
+  },
+  {
+   "id": "structure",
+   "title": "Project Structure",
+   "description": "Directories that matter in a fresh application:",
+   "snippets": [
+    {
+     "language": "text",
+     "code": "inventory/\n  app/\n    Http/Controllers/ProductController.php\n    Http/Middleware/EnsureTokenIsValid.php\n    Models/Product.php\n    Providers/AppServiceProvider.php\n  bootstrap/app.php              # Middleware, routing and exception wiring\n  config/database.php\n  database/\n    migrations/2026_01_15_120000_create_products_table.php\n    seeders/DatabaseSeeder.php\n  public/index.php               # Front controller for every request\n  resources/views/products/index.blade.php\n  routes/web.php                 # Browser routes\n  routes/console.php             # Artisan closures\n  storage/app/private\n  tests/Feature/ProductTest.php\n  artisan\n  composer.json"
+    }
+   ]
+  },
+  {
+   "id": "routing",
+   "title": "Routing",
+   "description": "Declare URLs in routes/web.php, with parameters, names and groups:",
+   "snippets": [
+    {
+     "language": "php",
+     "code": "<?php\n\nuse App\\Http\\Controllers\\Admin\\DashboardController;\nuse App\\Http\\Controllers\\ProductController;\nuse Illuminate\\Support\\Facades\\Route;\n\n// Closure route with a required segment\nRoute::get('/hello/{name}', fn (string $name) => \"Hello {$name}\");\n\n// Numeric constraint plus a name used by route('products.show', 42)\nRoute::get('/products/{product}', [ProductController::class, 'show'])\n    ->whereNumber('product')\n    ->name('products.show');\n\n// Shared prefix, name prefix and middleware\nRoute::middleware('auth')->prefix('admin')->name('admin.')->group(function () {\n    Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');\n});"
+    },
+    {
+     "language": "php",
+     "code": "// Generates index, create, store, show, edit, update and destroy\nRoute::resource('products', ProductController::class);\n\n// Read-only subset: index and show\nRoute::resource('categories', CategoryController::class)->only(['index', 'show']);\n\n// Catches anything not matched above; keep it last\nRoute::fallback(fn () => response('Not found', 404));"
+    }
+   ]
+  },
+  {
+   "id": "controllers",
+   "title": "Controllers",
+   "description": "Group request handling; generate one with Artisan and inject dependencies:",
+   "snippets": [
+    {
+     "language": "bash",
+     "code": "# Resource controller with all seven actions\nphp artisan make:controller ProductController --resource --model=Product\n\n# API controller without create/edit views\nphp artisan make:controller Api/ProductController --api"
+    },
+    {
+     "language": "php",
+     "code": "<?php\n\nnamespace App\\Http\\Controllers;\n\nuse App\\Models\\Product;\nuse Illuminate\\Http\\RedirectResponse;\nuse Illuminate\\Http\\Request;\nuse Illuminate\\View\\View;\n\nclass ProductController extends Controller\n{\n    public function index(): View\n    {\n        return view('products.index', [\n            'products' => Product::query()->latest()->paginate(15),\n        ]);\n    }\n\n    public function store(Request $request): RedirectResponse\n    {\n        $product = Product::create($request->validate([\n            'name' => ['required', 'string', 'max:120'],\n            'price_cents' => ['required', 'integer', 'min:0'],\n        ]));\n\n        return redirect()->route('products.show', $product);\n    }\n}"
+    }
+   ]
+  },
+  {
+   "id": "models",
+   "title": "Models",
+   "description": "Each table gets a model class that maps columns to PHP attributes:",
+   "snippets": [
+    {
+     "language": "bash",
+     "code": "# Model plus migration, factory and seeder\nphp artisan make:model Product -mfs\n\n# Wiring for an existing table, keeping the generated files\nphp artisan make:model Category -mf"
+    },
+    {
+     "language": "php",
+     "code": "<?php\n\nnamespace App\\Models;\n\nuse Illuminate\\Database\\Eloquent\\Factories\\HasFactory;\nuse Illuminate\\Database\\Eloquent\\Model;\n\nclass Product extends Model\n{\n    use HasFactory;\n\n    // Columns allowed in mass assignment\n    protected $fillable = ['name', 'slug', 'price_cents', 'published_at'];\n\n    // Keep PHP types stable when reading rows\n    protected function casts(): array\n    {\n        return [\n            'price_cents' => 'integer',\n            'is_active' => 'boolean',\n            'published_at' => 'datetime',\n        ];\n    }\n}"
+    }
+   ]
+  },
+  {
+   "id": "migrations",
+   "title": "Migrations",
+   "description": "Version the schema in PHP so every environment can rebuild it:",
+   "snippets": [
+    {
+     "language": "bash",
+     "code": "# Create a migration for a new table or an existing one\nphp artisan make:migration create_products_table\nphp artisan make:migration add_sku_to_products_table --table=products\n\n# Apply and undo\nphp artisan migrate\nphp artisan migrate:rollback --step=1"
+    },
+    {
+     "language": "php",
+     "code": "<?php\n\nuse Illuminate\\Database\\Migrations\\Migration;\nuse Illuminate\\Database\\Schema\\Blueprint;\nuse Illuminate\\Support\\Facades\\Schema;\n\nreturn new class extends Migration\n{\n    public function up(): void\n    {\n        Schema::create('products', function (Blueprint $table) {\n            $table->id();\n            $table->string('name', 120);\n            $table->string('slug', 140)->unique();\n            $table->unsignedInteger('price_cents');\n            $table->boolean('is_active')->default(true);\n            $table->foreignId('category_id')->constrained()->cascadeOnDelete();\n            $table->timestamps();\n            $table->index(['is_active', 'created_at']);\n        });\n    }\n\n    public function down(): void\n    {\n        Schema::dropIfExists('products');\n    }\n};"
+    },
+    {
+     "language": "php",
+     "code": "Schema::table('products', function (Blueprint $table) {\n    $table->string('sku', 32)->nullable()->after('id');\n    $table->dropColumn('legacy_code');\n});"
+    }
+   ]
+  },
+  {
+   "id": "eloquent",
+   "title": "Eloquent",
+   "description": "Query through models instead of hand-written SQL:",
+   "snippets": [
+    {
+     "language": "php",
+     "code": "use App\\Models\\Product;\n\n// Filter, sort and paginate; the view gets a paginator\n$products = Product::query()\n    ->where('is_active', true)\n    ->whereBetween('price_cents', [1000, 5000])\n    ->orderByDesc('created_at')\n    ->paginate(20);\n\n// Existing record or an unsaved instance\n$product = Product::firstOrNew(['slug' => 'desk-lamp']);\n\n// Insert or update several rows in one statement\nProduct::upsert([\n    ['slug' => 'desk-lamp', 'name' => 'Desk Lamp', 'price_cents' => 4590],\n    ['slug' => 'floor-lamp', 'name' => 'Floor Lamp', 'price_cents' => 8990],\n], ['slug'], ['name', 'price_cents']);"
+    },
+    {
+     "language": "php",
+     "code": "use App\\Models\\Order;\nuse App\\Models\\Product;\nuse Illuminate\\Support\\Facades\\DB;\n\n// Stream large tables in batches of 500\nProduct::query()->where('is_active', true)->chunkById(500, function ($products) {\n    foreach ($products as $product) {\n        $product->update(['reviewed_at' => now()]);\n    }\n});\n\n$average = Product::query()->avg('price_cents');\n\n// Both writes commit together or not at all\nDB::transaction(function () {\n    $order = Order::findOrFail(42);\n    $order->decrement('stock');\n    $order->invoice()->create(['total_cents' => $order->total_cents]);\n});"
+    }
+   ]
+  },
+  {
+   "id": "relationships",
+   "title": "Relationships",
+   "description": "Describe links between models and let Eloquent join the rows:",
+   "snippets": [
+    {
+     "language": "php",
+     "code": "<?php\n\nnamespace App\\Models;\n\nuse Illuminate\\Database\\Eloquent\\Relations\\BelongsTo;\nuse Illuminate\\Database\\Eloquent\\Relations\\BelongsToMany;\nuse Illuminate\\Database\\Eloquent\\Relations\\HasMany;\n\nclass Category extends Model\n{\n    public function products(): HasMany\n    {\n        return $this->hasMany(Product::class);\n    }\n}\n\nclass Product extends Model\n{\n    public function category(): BelongsTo\n    {\n        return $this->belongsTo(Category::class);\n    }\n\n    public function tags(): BelongsToMany\n    {\n        return $this->belongsToMany(Tag::class)->withTimestamps();\n    }\n}"
+    },
+    {
+     "language": "php",
+     "code": "use App\\Models\\Category;\n\n// Eager load two levels: two queries instead of one per row\n$categories = Category::query()->with('products.tags')->get();\n\n// Count and filter by the related table without loading it\n$categories = Category::query()\n    ->withCount('products')\n    ->whereHas('products', fn ($query) => $query->where('is_active', true))\n    ->get();\n\n// Pivot rows for a many-to-many relation\n$product->tags()->attach($tagId);\n$product->tags()->sync([1, 4, 9]);\n$product->tags()->detach($tagId);"
+    }
+   ]
+  },
+  {
+   "id": "validation",
+   "title": "Validation",
+   "description": "Validate in a form request, then consume only the checked data:",
+   "snippets": [
+    {
+     "language": "php",
+     "code": "<?php\n\nnamespace App\\Http\\Requests;\n\nuse App\\Models\\Product;\nuse Illuminate\\Foundation\\Http\\FormRequest;\nuse Illuminate\\Validation\\Rule;\n\nclass StoreProductRequest extends FormRequest\n{\n    public function authorize(): bool\n    {\n        return $this->user()->can('create', Product::class);\n    }\n\n    public function rules(): array\n    {\n        return [\n            'name' => ['required', 'string', 'max:120'],\n            'slug' => ['required', 'alpha_dash', Rule::unique('products', 'slug')],\n            'price_cents' => ['required', 'integer', 'min:0'],\n            'category_id' => ['required', 'exists:categories,id'],\n            'published_at' => ['nullable', 'date', 'after:today'],\n        ];\n    }\n}"
+    },
+    {
+     "language": "php",
+     "code": "use App\\Http\\Requests\\StoreProductRequest;\nuse App\\Models\\Product;\nuse Illuminate\\Http\\RedirectResponse;\n\npublic function store(StoreProductRequest $request): RedirectResponse\n{\n    // validated() returns only the fields covered by the rules\n    $product = Product::create($request->validated());\n\n    return redirect()\n        ->route('products.show', $product)\n        ->with('status', 'Product created.');\n}"
+    }
+   ]
+  },
+  {
+   "id": "blade",
+   "title": "Blade Templates",
+   "description": "Templates compile to plain PHP and escape output by default:",
+   "snippets": [
+    {
+     "language": "blade",
+     "code": "{{-- resources/views/components/layout.blade.php --}}\n@props(['title' => 'Inventory'])\n\n<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n    <meta charset=\"utf-8\">\n    <title>{{ $title }}</title>\n</head>\n<body>\n    <nav>\n        <a href=\"{{ route('products.index') }}\">Products</a>\n    </nav>\n\n    <main>\n        {{ $slot }}\n    </main>\n</body>\n</html>"
+    },
+    {
+     "language": "blade",
+     "code": "{{-- resources/views/products/index.blade.php --}}\n<x-layout title=\"Product list\">\n    <h1>Products</h1>\n\n    @forelse ($products as $product)\n        <article>\n            <h2>{{ $product->name }}</h2>\n            <p>{{ number_format($product->price_cents / 100, 2) }} EUR</p>\n        </article>\n    @empty\n        <p>No products yet.</p>\n    @endforelse\n\n    {{ $products->links() }}\n</x-layout>"
+    },
+    {
+     "language": "blade",
+     "code": "<form method=\"POST\" action=\"{{ route('products.store') }}\">\n    @csrf\n\n    <label for=\"name\">Name</label>\n    <input id=\"name\" name=\"name\" value=\"{{ old('name') }}\" required>\n\n    @error('name')\n        <p class=\"error\">{{ $message }}</p>\n    @enderror\n\n    <button type=\"submit\">Save</button>\n</form>"
+    }
+   ]
+  },
+  {
+   "id": "middleware",
+   "title": "Middleware",
+   "description": "Wrap a request before it reaches the route, or a response on the way out:",
+   "snippets": [
+    {
+     "language": "bash",
+     "code": "# Generate the class in app/Http/Middleware\nphp artisan make:middleware EnsureTokenIsValid"
+    },
+    {
+     "language": "php",
+     "code": "<?php\n\nnamespace App\\Http\\Middleware;\n\nuse Closure;\nuse Illuminate\\Http\\Request;\nuse Symfony\\Component\\HttpFoundation\\Response;\n\nclass EnsureTokenIsValid\n{\n    public function handle(Request $request, Closure $next): Response\n    {\n        if ($request->header('X-Api-Token') !== config('services.reports.token')) {\n            return response()->json(['message' => 'Invalid token'], 401);\n        }\n\n        return $next($request);\n    }\n}"
+    },
+    {
+     "language": "php",
+     "code": "// bootstrap/app.php\nuse App\\Http\\Middleware\\EnsureTokenIsValid;\nuse Illuminate\\Foundation\\Application;\n\nreturn Application::configure(basePath: dirname(__DIR__))\n    ->withRouting(\n        web: __DIR__.'/../routes/web.php',\n        commands: __DIR__.'/../routes/console.php',\n        health: '/up',\n    )\n    ->withMiddleware(function ($middleware) {\n        $middleware->alias(['reports.token' => EnsureTokenIsValid::class]);\n    })\n    ->withExceptions(function ($exceptions) {\n        //\n    })->create();\n\n// Then in routes/web.php: ->middleware(['auth', 'reports.token'])"
+    }
+   ]
+  },
+  {
+   "id": "auth",
+   "title": "Authentication",
+   "description": "Use the starter kit for the full flow, or drive sessions by hand:",
+   "snippets": [
+    {
+     "language": "bash",
+     "code": "# Blade starter kit: login, registration, reset, profile\ncomposer require laravel/breeze --dev\nphp artisan breeze:install blade\nphp artisan migrate\nnpm install\nnpm run build"
+    },
+    {
+     "language": "php",
+     "code": "use Illuminate\\Http\\RedirectResponse;\nuse Illuminate\\Http\\Request;\nuse Illuminate\\Support\\Facades\\Auth;\n\npublic function store(Request $request): RedirectResponse\n{\n    $credentials = $request->validate([\n        'email' => ['required', 'email'],\n        'password' => ['required', 'string'],\n    ]);\n\n    if (Auth::attempt($credentials, $request->boolean('remember'))) {\n        $request->session()->regenerate();\n\n        return redirect()->intended('/dashboard');\n    }\n\n    return back()\n        ->withErrors(['email' => 'The provided credentials do not match our records.'])\n        ->onlyInput('email');\n}"
+    },
+    {
+     "language": "php",
+     "code": "use Illuminate\\Support\\Facades\\Auth;\n\n// routes/web.php: signed-in users only\nRoute::middleware('auth')->group(function () {\n    Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');\n    Route::post('/logout', [SessionController::class, 'destroy'])->name('logout');\n});\n\n// Current user, or null when the session is empty\n$user = Auth::user();\n\n// Clear the session on logout\nAuth::logout();\nrequest()->session()->invalidate();\nrequest()->session()->regenerateToken();"
+    }
+   ]
+  },
+  {
+   "id": "queues",
+   "title": "Queues and Jobs",
+   "description": "Move slow work out of the request into a background worker:",
+   "snippets": [
+    {
+     "language": "bash",
+     "code": "# Jobs and failed_jobs tables for the database driver\nphp artisan make:queue-table\nphp artisan migrate\n\n# Worker: listen to two queues, retry three times, time out at 90s\nphp artisan queue:work --queue=emails,default --tries=3 --timeout=90\n\n# Inspect and replay failures\nphp artisan queue:failed\nphp artisan queue:retry all"
+    },
+    {
+     "language": "php",
+     "code": "<?php\n\nnamespace App\\Jobs;\n\nuse App\\Mail\\InvoiceReady;\nuse App\\Models\\Invoice;\nuse Illuminate\\Contracts\\Queue\\ShouldQueue;\nuse Illuminate\\Foundation\\Queue\\Queueable;\nuse Illuminate\\Support\\Facades\\Mail;\n\nclass SendInvoiceEmail implements ShouldQueue\n{\n    use Queueable;\n\n    public int $tries = 3;\n    public int $backoff = 30;\n\n    public function __construct(public Invoice $invoice)\n    {\n    }\n\n    public function handle(): void\n    {\n        Mail::to($this->invoice->email)->send(new InvoiceReady($this->invoice));\n    }\n}"
+    },
+    {
+     "language": "php",
+     "code": "use App\\Jobs\\SendInvoiceEmail;\n\n// Hand the job to the configured queue connection\nSendInvoiceEmail::dispatch($invoice);\n\n// Delay ten minutes and use the redis connection for this one\nSendInvoiceEmail::dispatch($invoice)\n    ->delay(now()->addMinutes(10))\n    ->onConnection('redis');"
+    }
+   ]
+  },
+  {
+   "id": "testing",
+   "title": "Testing",
+   "description": "Feature tests hit the HTTP layer; unit tests target one class:",
+   "snippets": [
+    {
+     "language": "bash",
+     "code": "# Whole suite, then a single class or method\nphp artisan test\nphp artisan test --filter=ProductTest\nphp artisan test tests/Feature/ProductTest.php"
+    },
+    {
+     "language": "php",
+     "code": "<?php\n\nnamespace Tests\\Feature;\n\nuse App\\Models\\User;\nuse Illuminate\\Foundation\\Testing\\RefreshDatabase;\nuse Tests\\TestCase;\n\nclass ProductTest extends TestCase\n{\n    use RefreshDatabase;\n\n    public function test_guest_is_redirected_to_login(): void\n    {\n        $this->post('/products', ['name' => 'Desk Lamp'])\n            ->assertRedirect('/login');\n    }\n\n    public function test_authenticated_user_can_create_a_product(): void\n    {\n        $user = User::factory()->create();\n\n        $this->actingAs($user)\n            ->post('/products', ['name' => 'Desk Lamp', 'price_cents' => 4590])\n            ->assertRedirect();\n\n        $this->assertDatabaseHas('products', ['name' => 'Desk Lamp']);\n    }\n}"
+    }
+   ]
+  }
+ ]
+}
