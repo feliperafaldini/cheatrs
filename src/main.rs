@@ -87,11 +87,23 @@ fn run(terminal: &mut DefaultTerminal, library: cheatrs::data::Library) -> std::
     let mut app = ui::App::new(library);
     while !app.quit {
         terminal.draw(|frame| app.draw(frame))?;
-        match event::read()? {
-            Event::Key(key) if key.kind == KeyEventKind::Press => app.on_key(key),
-            Event::Mouse(mouse) if app.mouse => app.on_mouse(mouse),
-            _ => {}
+        // A flash needs the clock to advance; everything else waits for a key.
+        let pending = app.flash_until.is_some();
+        if pending {
+            if event::poll(std::time::Duration::from_millis(40))? {
+                handle(&mut app, event::read()?);
+            }
+        } else {
+            handle(&mut app, event::read()?);
         }
     }
     Ok(())
+}
+
+fn handle(app: &mut ui::App, event: Event) {
+    match event {
+        Event::Key(key) if key.kind == KeyEventKind::Press => app.on_key(key),
+        Event::Mouse(mouse) if app.mouse => app.on_mouse(mouse),
+        _ => {}
+    }
 }

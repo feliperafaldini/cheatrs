@@ -221,10 +221,26 @@ pub fn draw(frame: &mut Frame, area: Rect, app: &mut App) {
     if !app.toc_focus {
         app.toc_index = section_at(&app.sections, app.scroll);
     }
-    frame.render_widget(
-        Paragraph::new(app.lines.clone()).scroll((app.scroll, 0)),
-        body,
-    );
+
+    let mut page_lines = app.lines.clone();
+    if let (Some(line), Some(until)) = (app.flash_line, app.flash_until) {
+        if std::time::Instant::now() < until {
+            if let Some(target) = page_lines.get_mut(line as usize) {
+                let mut patched = Line::default();
+                for span in target.spans.clone() {
+                    patched.push_span(Span::styled(
+                        span.content.clone(),
+                        span.style.bg(theme::surface()),
+                    ));
+                }
+                page_lines[line as usize] = patched;
+            }
+        } else {
+            app.flash_line = None;
+            app.flash_until = None;
+        }
+    }
+    frame.render_widget(Paragraph::new(page_lines).scroll((app.scroll, 0)), body);
 
     if show_toc {
         let toc = Rect {

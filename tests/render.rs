@@ -166,6 +166,52 @@ fn search_finds_a_command_inside_the_code() {
 }
 
 #[test]
+fn search_list_scrolls_with_the_cursor() {
+    let mut app = ui::App::new(data::load());
+    render(&mut app, 140, 30);
+    app.on_key(key(KeyCode::Char('/')));
+    for character in "pip".chars() {
+        app.on_key(key(KeyCode::Char(character)));
+    }
+    assert!(
+        app.results.len() > 14,
+        "need a long list, got {}",
+        app.results.len()
+    );
+
+    for _ in 0..15 {
+        app.on_key(key(KeyCode::Down));
+    }
+    let chosen = app.index.entries[app.results[app.cursor].entry]
+        .title
+        .clone();
+    let screen = render(&mut app, 140, 30);
+    assert!(
+        screen.contains(&chosen),
+        "the cursor sits on {chosen} and it must be visible: {screen}"
+    );
+}
+
+#[test]
+fn jumping_from_search_marks_the_landing_line() {
+    let mut app = ui::App::new(data::load());
+    render(&mut app, 140, 30);
+    app.on_key(key(KeyCode::Char('/')));
+    for character in "data types".chars() {
+        app.on_key(key(KeyCode::Char(character)));
+    }
+    app.on_key(key(KeyCode::Enter));
+
+    let line = app.flash_line.expect("a jump sets the landing line");
+    assert_eq!(
+        Some(line),
+        Some(app.scroll),
+        "the flash sits on the scroll target"
+    );
+    assert!(app.flash_until.is_some(), "and it has an expiry");
+}
+
+#[test]
 fn rust_topic_carries_the_sections_the_source_lacked() {
     let library = data::load();
     let rust = library

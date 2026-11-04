@@ -62,6 +62,9 @@ pub struct App {
     pub query: String,
     pub results: Vec<Hit>,
     pub cursor: usize,
+    /// The line to flash after jumping, and until when.
+    pub flash_line: Option<u16>,
+    pub flash_until: Option<std::time::Instant>,
 }
 
 impl App {
@@ -74,6 +77,8 @@ impl App {
             query: String::new(),
             results: Vec::new(),
             cursor: 0,
+            flash_line: None,
+            flash_until: None,
             focus: Focus::Groups,
             group: 0,
             topic: 0,
@@ -256,6 +261,10 @@ impl App {
         {
             self.scroll = *start;
             self.toc_index = section;
+            // One deliberate motion: the landing line announces itself, then fades.
+            self.flash_line = Some(*start);
+            self.flash_until =
+                Some(std::time::Instant::now() + std::time::Duration::from_millis(320));
         }
     }
 

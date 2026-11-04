@@ -53,11 +53,14 @@ pub fn draw(frame: &mut Frame, area: Rect, app: &App) {
     )]);
     frame.render_widget(Paragraph::new(count), shift(rows[1]));
 
+    // The list scrolls with the cursor: the cursor may sit far past the twelfth result.
+    let offset = app.cursor.saturating_sub(MAX_RESULTS - 1);
     let lines: Vec<Line> = app
         .results
         .iter()
-        .take(MAX_RESULTS)
         .enumerate()
+        .skip(offset)
+        .take(MAX_RESULTS)
         .map(|(position, hit)| {
             let entry = &app.index.entries[hit.entry];
             let selected = position == app.cursor;
