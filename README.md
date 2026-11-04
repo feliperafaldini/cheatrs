@@ -5,7 +5,7 @@
 [![licence](https://img.shields.io/github/license/feliperafaldini/cheatrs)](LICENSE)
 
 A terminal browser for programming cheatsheets: 52 topics, 773 sections, 1860
-snippets, one 3.1 MB binary that never touches the network.
+snippets, one 3 MB binary that never touches the network.
 
 It opens as a program, not as a command you pass a topic to. You land on a list of
 languages, frameworks, tools and databases, walk it with the keyboard, and read the
