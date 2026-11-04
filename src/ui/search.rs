@@ -28,7 +28,7 @@ pub fn draw(frame: &mut Frame, area: Rect, app: &App) {
         height,
     };
     frame.render_widget(Clear, panel);
-    frame.render_widget(Block::new().style(Style::new().bg(theme::SURFACE)), panel);
+    frame.render_widget(Block::new().style(Style::new().bg(theme::surface())), panel);
 
     let rows = Layout::vertical([
         Constraint::Length(1),
@@ -38,18 +38,18 @@ pub fn draw(frame: &mut Frame, area: Rect, app: &App) {
     .split(panel);
 
     let input = Line::from(vec![
-        Span::styled("› ", Style::new().fg(theme::FG_DIM)),
+        Span::styled("› ", Style::new().fg(theme::fg_dim())),
         Span::styled(
             app.query.clone(),
-            Style::new().fg(theme::FG).add_modifier(Modifier::BOLD),
+            Style::new().fg(theme::fg()).add_modifier(Modifier::BOLD),
         ),
-        Span::styled("▌", Style::new().fg(theme::FG_DIM)),
+        Span::styled("▌", Style::new().fg(theme::fg_dim())),
     ]);
     frame.render_widget(Paragraph::new(input), shift(rows[0]));
 
     let count = Line::from(vec![Span::styled(
         format!("{} results", app.results.len()),
-        Style::new().fg(theme::FG_FAINT),
+        Style::new().fg(theme::fg_faint()),
     )]);
     frame.render_widget(Paragraph::new(count), shift(rows[1]));
 
@@ -63,18 +63,18 @@ pub fn draw(frame: &mut Frame, area: Rect, app: &App) {
             let selected = position == app.cursor;
             let bar = if selected { "▌" } else { " " };
             let title_style = if selected {
-                Style::new().fg(theme::FG).add_modifier(Modifier::BOLD)
+                Style::new().fg(theme::fg()).add_modifier(Modifier::BOLD)
             } else {
-                Style::new().fg(theme::FG)
+                Style::new().fg(theme::fg())
             };
-            let context_style = Style::new().fg(theme::FG_FAINT);
+            let context_style = Style::new().fg(theme::fg_faint());
             let kind = if entry.section.is_some() {
                 format!("{} ›", entry.context)
             } else {
                 entry.context.clone()
             };
             let mut spans = vec![
-                Span::styled(bar, Style::new().fg(theme::FG)),
+                Span::styled(bar, Style::new().fg(theme::fg())),
                 Span::raw(" "),
                 Span::styled(truncate(&entry.title, 30), title_style),
                 Span::raw("  "),
@@ -84,7 +84,7 @@ pub fn draw(frame: &mut Frame, area: Rect, app: &App) {
                 spans.push(Span::raw("  "));
                 spans.push(Span::styled(
                     format!("⌁ {}", truncate(excerpt, 40)),
-                    Style::new().fg(theme::FG_DIM),
+                    Style::new().fg(theme::fg_dim()),
                 ));
             }
             Line::from(spans)
@@ -94,7 +94,7 @@ pub fn draw(frame: &mut Frame, area: Rect, app: &App) {
     if lines.is_empty() {
         let empty = Line::from(Span::styled(
             "nothing matches",
-            Style::new().fg(theme::FG_FAINT),
+            Style::new().fg(theme::fg_faint()),
         ));
         frame.render_widget(Paragraph::new(empty), shift(rows[2]));
     } else {

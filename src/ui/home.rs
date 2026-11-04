@@ -95,7 +95,7 @@ fn with_preview(frame: &mut Frame, area: Rect, app: &mut App) {
 
     let accent = app
         .current()
-        .map_or(theme::FG_DIM, |t| theme::accent(&t.color));
+        .map_or(theme::fg_dim(), |t| theme::accent(&t.color));
     let selected = crate::ui::reader::section_at(&app.preview_sections, app.preview_scroll);
     crate::ui::reader::contents(
         frame,
@@ -130,8 +130,8 @@ fn with_preview(frame: &mut Frame, area: Rect, app: &mut App) {
                 .end_symbol(None)
                 .track_symbol(Some("▏"))
                 .thumb_symbol("█")
-                .track_style(Style::new().fg(theme::RULE))
-                .thumb_style(Style::new().fg(theme::FG_DIM)),
+                .track_style(Style::new().fg(theme::rule()))
+                .thumb_style(Style::new().fg(theme::fg_dim())),
             rail,
             &mut state,
         );
@@ -142,7 +142,7 @@ fn rule(frame: &mut Frame, area: Rect) {
     frame.render_widget(
         Block::new()
             .borders(Borders::LEFT)
-            .border_style(Style::new().fg(theme::RULE)),
+            .border_style(Style::new().fg(theme::rule())),
         area,
     );
 }
@@ -151,7 +151,7 @@ fn header(frame: &mut Frame, area: Rect, app: &App) {
     let line = Line::from(vec![
         Span::styled(
             "cheatrs",
-            Style::new().fg(theme::FG).add_modifier(Modifier::BOLD),
+            Style::new().fg(theme::fg()).add_modifier(Modifier::BOLD),
         ),
         Span::raw("  "),
         Span::styled(
@@ -160,7 +160,7 @@ fn header(frame: &mut Frame, area: Rect, app: &App) {
                 app.lib.topics.len(),
                 app.lib.skipped
             ),
-            Style::new().fg(theme::FG_FAINT),
+            Style::new().fg(theme::fg_faint()),
         ),
     ]);
     frame.render_widget(Paragraph::new(line), area);
@@ -180,11 +180,11 @@ fn groups(frame: &mut Frame, area: Rect, app: &mut App) {
             let selected = index == app.group;
             let active = selected && app.focus == Focus::Groups;
             let bar = if active { "▌" } else { " " };
-            let bar_style = Style::new().fg(theme::FG);
+            let bar_style = Style::new().fg(theme::fg());
             let text_style = if selected {
-                Style::new().fg(theme::FG).add_modifier(Modifier::BOLD)
+                Style::new().fg(theme::fg()).add_modifier(Modifier::BOLD)
             } else {
-                Style::new().fg(theme::FG_DIM)
+                Style::new().fg(theme::fg_dim())
             };
             Line::from(vec![
                 Span::styled(bar, bar_style),
@@ -215,15 +215,15 @@ fn topics(frame: &mut Frame, area: Rect, app: &mut App) {
             let bar_style = if active {
                 Style::new().fg(accent)
             } else {
-                Style::new().fg(theme::FG_FAINT)
+                Style::new().fg(theme::fg_faint())
             };
             let mut name_style = if selected {
-                Style::new().fg(theme::FG).add_modifier(Modifier::BOLD)
+                Style::new().fg(theme::fg()).add_modifier(Modifier::BOLD)
             } else {
-                Style::new().fg(theme::FG)
+                Style::new().fg(theme::fg())
             };
             if selected {
-                name_style = name_style.bg(theme::SURFACE);
+                name_style = name_style.bg(theme::surface());
             }
             Line::from(vec![
                 Span::styled(bar, bar_style),
@@ -253,11 +253,11 @@ fn footer(frame: &mut Frame, area: Rect, app: &App) {
         }
     };
     let line = Line::from(vec![
-        Span::styled(keys, Style::new().fg(theme::FG_FAINT)),
+        Span::styled(keys, Style::new().fg(theme::fg_faint())),
         Span::raw("  "),
         Span::styled(
             format!("{}/{}", app.group + 1, app.lib.groups.len()),
-            Style::new().fg(theme::FG_FAINT),
+            Style::new().fg(theme::fg_faint()),
         ),
     ]);
     frame.render_widget(Paragraph::new(line), area);

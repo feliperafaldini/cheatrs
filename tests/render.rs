@@ -286,9 +286,51 @@ fn refused_below_eighty_by_twentyfour() {
 
 #[test]
 fn accent_normalizes_the_unreadable_blue() {
+    use cheatrs::theme::Depth;
     // #264de4 measures 2.92:1 on the dark ground; the rule pulls it to 4.80:1.
-    assert_eq!(theme::accent("#264de4"), Color::Rgb(0x62, 0x7b, 0xda));
-    assert_eq!(theme::accent("not a colour"), theme::FG_DIM);
+    assert_eq!(
+        theme::accent_at(Depth::True, "#264de4"),
+        Color::Rgb(0x62, 0x7b, 0xda)
+    );
+    assert_eq!(
+        theme::accent_at(Depth::True, "not a colour"),
+        Color::Rgb(0x8b, 0x94, 0x9a)
+    );
+}
+
+#[test]
+fn no_colour_drops_every_hue() {
+    use cheatrs::theme::{Depth, paint_with};
+    assert_eq!(
+        paint_with(Depth::Mono, Color::Rgb(0x62, 0x7b, 0xda)),
+        Color::Reset
+    );
+    assert_eq!(paint_with(Depth::Mono, theme::fg()), Color::Reset);
+    assert_eq!(
+        theme::accent_at(Depth::Mono, "#264de4"),
+        Color::Reset,
+        "a monochrome terminal gets no accent at all"
+    );
+}
+
+#[test]
+fn sixteen_colour_maps_to_ansi_and_never_to_rgb() {
+    use cheatrs::theme::Depth;
+    let mapped = theme::accent_at(Depth::Ansi16, "#264de4");
+    assert!(
+        !matches!(mapped, Color::Rgb(..)),
+        "16-colour terminals must not receive RGB, got {mapped:?}"
+    );
+}
+
+#[test]
+fn two_hundred_and_fifty_six_colour_uses_the_palette() {
+    use cheatrs::theme::Depth;
+    let mapped = theme::paint_with(Depth::Ansi256, Color::Rgb(0x62, 0x7b, 0xda));
+    assert!(
+        matches!(mapped, Color::Indexed(_)),
+        "256-colour terminals get an indexed colour, got {mapped:?}"
+    );
 }
 
 #[test]
@@ -301,12 +343,12 @@ fn reader_colours_the_code() {
     let buffer = terminal.backend().buffer();
 
     let palette = [
-        theme::FG,
-        theme::FG_DIM,
-        theme::FG_FAINT,
-        theme::BG,
-        theme::SURFACE,
-        theme::RULE,
+        theme::fg(),
+        theme::fg_dim(),
+        theme::fg_faint(),
+        theme::bg(),
+        theme::surface(),
+        theme::rule(),
         Color::Reset,
     ];
     let mut coloured = 0;

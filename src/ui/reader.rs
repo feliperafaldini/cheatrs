@@ -55,7 +55,7 @@ pub fn build_document(topic: &Topic, limit: usize, measure: usize) -> Document {
         for piece in wrap(&topic.desc, measure) {
             lines.push(Line::from(Span::styled(
                 piece,
-                Style::new().fg(theme::FG_DIM),
+                Style::new().fg(theme::fg_dim()),
             )));
         }
     }
@@ -70,13 +70,13 @@ pub fn build_document(topic: &Topic, limit: usize, measure: usize) -> Document {
 
         lines.push(Line::from(Span::styled(
             section.title.clone(),
-            Style::new().fg(theme::FG).add_modifier(Modifier::BOLD),
+            Style::new().fg(theme::fg()).add_modifier(Modifier::BOLD),
         )));
         if !section.description.is_empty() {
             for piece in wrap(&section.description, measure) {
                 lines.push(Line::from(Span::styled(
                     piece,
-                    Style::new().fg(theme::FG_DIM),
+                    Style::new().fg(theme::fg_dim()),
                 )));
             }
             // Breathing room between the prose and the code it introduces.
@@ -124,7 +124,7 @@ fn highlight(code: &str, language: &str) -> Vec<Vec<Span<'static>>> {
                     let colour = style.foreground;
                     Span::styled(
                         text.trim_end_matches('\n').to_string(),
-                        Style::new().fg(Color::Rgb(colour.r, colour.g, colour.b)),
+                        Style::new().fg(theme::paint_rgb(colour.r, colour.g, colour.b)),
                     )
                 })
                 .collect()
@@ -204,7 +204,7 @@ pub fn draw(frame: &mut Frame, area: Rect, app: &mut App) {
 
     let accent = app
         .current()
-        .map_or(theme::FG_DIM, |t| theme::accent(&t.color));
+        .map_or(theme::fg_dim(), |t| theme::accent(&t.color));
     let crumb = app.current().map_or_else(
         || "‹".to_string(),
         |t| format!("‹ {} / {}", t.group.to_uppercase(), t.title),
@@ -257,8 +257,8 @@ pub fn draw(frame: &mut Frame, area: Rect, app: &mut App) {
                 .end_symbol(None)
                 .track_symbol(Some("▏"))
                 .thumb_symbol("█")
-                .track_style(Style::new().fg(theme::RULE))
-                .thumb_style(Style::new().fg(theme::FG_FAINT)),
+                .track_style(Style::new().fg(theme::rule()))
+                .thumb_style(Style::new().fg(theme::fg_faint())),
             rail,
             &mut state,
         );
@@ -269,7 +269,7 @@ pub fn draw(frame: &mut Frame, area: Rect, app: &mut App) {
     } else {
         "↑↓ scroll · g/G top/bottom · q back"
     };
-    let footer_line = Line::from(vec![Span::styled(keys, Style::new().fg(theme::FG_FAINT))]);
+    let footer_line = Line::from(vec![Span::styled(keys, Style::new().fg(theme::fg_faint()))]);
     frame.render_widget(Paragraph::new(footer_line), footer);
 }
 
@@ -292,11 +292,11 @@ pub fn contents(
             let is_selected = index == selected;
             let active = is_selected && focused;
             let bar = if is_selected { "▌" } else { " " };
-            let bar_style = Style::new().fg(if active { accent } else { theme::FG_FAINT });
+            let bar_style = Style::new().fg(if active { accent } else { theme::fg_faint() });
             let text_style = if is_selected {
-                Style::new().fg(theme::FG)
+                Style::new().fg(theme::fg())
             } else {
-                Style::new().fg(theme::FG_FAINT)
+                Style::new().fg(theme::fg_faint())
             };
             Line::from(vec![
                 Span::styled(bar, bar_style),
