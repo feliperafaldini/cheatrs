@@ -115,7 +115,20 @@ pub fn load() -> Library {
     }
 }
 
+/// The topic format this binary understands. A file may declare `schema` and a
+/// higher number is refused instead of half-read: silent partial parsing is how a
+/// user loses a topic without noticing.
+pub const SCHEMA_VERSION: u32 = 1;
+
+fn declared_schema(bytes: &[u8]) -> Option<u32> {
+    let value: serde_json::Value = serde_json::from_slice(bytes).ok()?;
+    value.get("schema")?.as_u64().map(|number| number as u32)
+}
+
 fn parse(bytes: &[u8]) -> Option<(Topic, usize)> {
+    if declared_schema(bytes).is_some_and(|schema| schema > SCHEMA_VERSION) {
+        return None;
+    }
     let mut topic: Topic = serde_json::from_slice(bytes).ok()?;
     let dropped = topic.normalize();
     if topic.sections.is_empty() {
@@ -127,6 +140,14 @@ fn parse(bytes: &[u8]) -> Option<(Topic, usize)> {
 /// Same rules the loader applies, but it says what is wrong instead of skipping.
 pub fn validate_file(path: &std::path::Path) -> Result<(Topic, usize), String> {
     let bytes = std::fs::read(path).map_err(|error| format!("{}: {error}", path.display()))?;
+    if let Some(schema) = declared_schema(&bytes)
+        && schema > SCHEMA_VERSION
+    {
+        return Err(format!(
+            "{}: written for schema {schema}, this binary understands {SCHEMA_VERSION}",
+            path.display()
+        ));
+    }
     let mut topic: Topic =
         serde_json::from_slice(&bytes).map_err(|error| format!("{}: {error}", path.display()))?;
     if topic.slug.trim().is_empty() {

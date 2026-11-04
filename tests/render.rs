@@ -962,3 +962,24 @@ fn an_exact_prefix_still_beats_a_loose_subsequence() {
     let slug = &app.lib.topics[top.topic].slug;
     assert_eq!(slug, "postgresql", "prefix wins, got {}", top.title);
 }
+
+#[test]
+fn a_topic_from_the_future_is_refused_with_a_reason() {
+    let dir = std::env::temp_dir().join(format!("cheatrs-schema-{}", std::process::id()));
+    std::fs::create_dir_all(&dir).unwrap();
+    let path = dir.join("future.json");
+    std::fs::write(
+        &path,
+        r##"{"schema":2,"slug":"future","title":"F","label":"F","group":"Tool","color":"#ffffff",
+             "desc":"d","sections":[{"id":"a","title":"A","description":"d",
+             "snippets":[{"language":"bash","code":"echo hi"}]}]}"##,
+    )
+    .unwrap();
+
+    let error = cheatrs::data::validate_file(&path).expect_err("schema 2 must be refused");
+    assert!(
+        error.contains("schema 2") && error.contains("understands 1"),
+        "the message must name both versions: {error}"
+    );
+    std::fs::remove_dir_all(&dir).ok();
+}
