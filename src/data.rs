@@ -107,6 +107,67 @@ fn parse(bytes: &[u8]) -> Option<(Topic, usize)> {
     Some((topic, dropped))
 }
 
+/// Same rules the loader applies, but it says what is wrong instead of skipping.
+pub fn validate_file(path: &std::path::Path) -> Result<(Topic, usize), String> {
+    let bytes = std::fs::read(path).map_err(|error| format!("{}: {error}", path.display()))?;
+    let mut topic: Topic =
+        serde_json::from_slice(&bytes).map_err(|error| format!("{}: {error}", path.display()))?;
+    if topic.slug.trim().is_empty() {
+        return Err(format!("{}: slug is empty", path.display()));
+    }
+    let dropped = topic.normalize();
+    if topic.sections.is_empty() {
+        return Err(format!(
+            "{}: no section carries a snippet, the topic would never show",
+            path.display()
+        ));
+    }
+    Ok((topic, dropped))
+}
+
+/// Everything the binary can see, with one line per problem.
+pub fn validate_all() -> (usize, Vec<String>) {
+    let mut checked = 0;
+    let mut problems = Vec::new();
+
+    for file in EMBEDDED.files() {
+        if file.path().extension().and_then(|e| e.to_str()) != Some("json") {
+            continue;
+        }
+        checked += 1;
+        let name = file.path().display().to_string();
+        match serde_json::from_slice::<Topic>(file.contents()) {
+            Ok(mut topic) => {
+                let dropped = topic.normalize();
+                if topic.sections.is_empty() {
+                    problems.push(format!("{name}: no section carries a snippet"));
+                }
+                if dropped > 0 {
+                    problems.push(format!("{name}: {dropped} section(s) dropped as empty"));
+                }
+            }
+            Err(error) => problems.push(format!("{name}: {error}")),
+        }
+    }
+
+    if let Some(dir) = user_dir().filter(|d| d.is_dir())
+        && let Ok(entries) = std::fs::read_dir(&dir)
+    {
+        for entry in entries.flatten() {
+            let path = entry.path();
+            if path.extension().and_then(|e| e.to_str()) != Some("json") {
+                continue;
+            }
+            checked += 1;
+            if let Err(problem) = validate_file(&path) {
+                problems.push(problem);
+            }
+        }
+    }
+
+    (checked, problems)
+}
+
 fn user_dir() -> Option<PathBuf> {
     let base = std::env::var_os("XDG_DATA_HOME")
         .map(PathBuf::from)

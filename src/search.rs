@@ -1,7 +1,28 @@
 //! One index over topics, sections and the code inside them.
 //! Title matches answer "where is this"; code matches answer "which flag was that".
 
+use std::collections::BTreeMap;
+use std::sync::OnceLock;
+
 use crate::data::Library;
+
+/// Hand-written aliases: the word people type, the words the titles use.
+static ALIASES: OnceLock<BTreeMap<String, String>> = OnceLock::new();
+
+fn aliases() -> &'static BTreeMap<String, String> {
+    ALIASES.get_or_init(|| {
+        serde_json::from_str(include_str!("../data/aliases.json")).unwrap_or_default()
+    })
+}
+
+/// A single word that is a known alias becomes the words the data actually spells.
+fn expand(query: &str) -> String {
+    let needle = query.trim().to_lowercase();
+    if needle.is_empty() || needle.contains(char::is_whitespace) {
+        return needle;
+    }
+    aliases().get(&needle).cloned().unwrap_or(needle)
+}
 
 pub struct Entry {
     /// Index into `Library::topics`.
@@ -67,7 +88,7 @@ impl Index {
 
     /// Title first, then code. Anything that matches both is listed once.
     pub fn query(&self, query: &str) -> Vec<Hit> {
-        let needle = query.trim().to_lowercase();
+        let needle = expand(query);
         if needle.is_empty() {
             return Vec::new();
         }

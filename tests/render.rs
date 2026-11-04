@@ -166,6 +166,72 @@ fn search_finds_a_command_inside_the_code() {
 }
 
 #[test]
+fn the_shipped_data_validates_clean() {
+    let (checked, problems) = cheatrs::data::validate_all();
+    assert!(
+        checked >= 48,
+        "the 48 embedded topics must be checked, got {checked}"
+    );
+    assert!(problems.is_empty(), "{problems:?}");
+}
+
+#[test]
+fn validation_points_at_the_broken_section() {
+    let dir = std::path::Path::new(env!("CARGO_TARGET_TMPDIR"));
+    let good = dir.join("ok.json");
+    std::fs::write(&good, include_str!("../data/template.json")).unwrap();
+    let (topic, _) = cheatrs::data::validate_file(&good).expect("the template is valid");
+    assert_eq!(topic.slug, "my-topic");
+
+    let broken = dir.join("broken.json");
+    std::fs::write(
+        &broken,
+        r##"{"slug":"x","title":"X","label":"X","group":"Tool","color":"#fff",
+            "sections":[{"id":"a","title":"A","description":"","snippets":[]}]}"##,
+    )
+    .unwrap();
+    let problem = cheatrs::data::validate_file(&broken).expect_err("empty section is invalid");
+    assert!(
+        problem.contains("no section carries a snippet"),
+        "the message must say what is wrong: {problem}"
+    );
+}
+
+#[test]
+fn aliases_land_on_the_topic_people_mean() {
+    let index = cheatrs::search::Index::build(&data::load());
+
+    let psql = index.query("psql");
+    assert!(!psql.is_empty(), "psql must resolve to something");
+    assert_eq!(
+        index.entries[psql[0].entry].title, "PostgreSQL",
+        "psql resolves to the PostgreSQL topic"
+    );
+
+    for (alias, expected) in [("ts", "TypeScript"), ("py", "Python"), ("nvim", "Vim")] {
+        let hits = index.query(alias);
+        assert!(!hits.is_empty(), "{alias} must resolve");
+        assert_eq!(
+            index.entries[hits[0].entry].title, expected,
+            "{alias} should point at {expected}"
+        );
+    }
+}
+
+#[test]
+fn unknown_words_are_searched_as_typed() {
+    let index = cheatrs::search::Index::build(&data::load());
+    assert!(
+        index.query("zzzznotaword").is_empty(),
+        "an unknown word finds nothing instead of everything"
+    );
+    assert!(
+        !index.query("c++").is_empty(),
+        "symbols survive the alias lookup"
+    );
+}
+
+#[test]
 fn code_search_stays_under_a_keystroke() {
     let index = cheatrs::search::Index::build(&data::load());
     let started = std::time::Instant::now();

@@ -1,0 +1,32 @@
+{
+  "slug": "my-topic",
+  "title": "My Topic",
+  "label": "My Topic",
+  "group": "Tool",
+  "color": "#3776AB",
+  "desc": "One line saying what this topic is.",
+  "sections": [
+    {
+      "id": "basic-syntax",
+      "title": "Basic Syntax",
+      "description": "Shown under the section title, dim.",
+      "snippets": [
+        {
+          "language": "bash",
+          "code": "my-command --flag value  # the comment travels with the line"
+        }
+      ]
+    },
+    {
+      "id": "no-description",
+      "title": "A Section Without Description",
+      "description": "",
+      "snippets": [
+        {
+          "language": "text",
+          "code": "a block with no syntax highlight"
+        }
+      ]
+    }
+  ]
+}
