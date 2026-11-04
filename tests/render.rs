@@ -741,3 +741,79 @@ fn contents_column_lists_sections_and_jumps() {
         "scroll lands on the section start"
     );
 }
+
+#[test]
+fn four_columns_are_reached_in_order_and_left_in_reverse() {
+    let mut app = ui::App::new(data::load());
+    render(&mut app, 140, 30);
+    assert_eq!(app.focus, ui::Focus::Groups);
+
+    app.on_key(key(KeyCode::Right));
+    assert_eq!(app.focus, ui::Focus::Topics);
+    app.on_key(key(KeyCode::Right));
+    assert_eq!(app.focus, ui::Focus::Preview, "third column: the text");
+    app.on_key(key(KeyCode::Right));
+    assert_eq!(app.focus, ui::Focus::Contents, "fourth column: the index");
+    app.on_key(key(KeyCode::Right));
+    assert_eq!(app.focus, ui::Focus::Contents, "and it is the last one");
+
+    app.on_key(key(KeyCode::Char('h')));
+    assert_eq!(app.focus, ui::Focus::Preview);
+    app.on_key(key(KeyCode::Char('h')));
+    assert_eq!(app.focus, ui::Focus::Topics);
+    app.on_key(key(KeyCode::Char('h')));
+    assert_eq!(app.focus, ui::Focus::Groups);
+}
+
+#[test]
+fn j_in_the_contents_column_jumps_a_section_in_the_preview() {
+    let mut app = ui::App::new(data::load());
+    render(&mut app, 140, 30);
+    for _ in 0..3 {
+        app.on_key(key(KeyCode::Right));
+    }
+    assert_eq!(app.focus, ui::Focus::Contents);
+    // The preview opens at the top, above the first section heading.
+    assert_eq!(app.preview_scroll, 0);
+
+    let before = app.preview_scroll;
+    app.on_key(key(KeyCode::Char('j')));
+    assert_eq!(
+        app.preview_scroll, app.preview_sections[1].1,
+        "a section jump, not a one-line scroll"
+    );
+    assert!(
+        app.preview_scroll > before,
+        "and it moved forward: {} > {before}",
+        app.preview_scroll
+    );
+
+    app.on_key(key(KeyCode::Char('k')));
+    assert_eq!(
+        app.preview_scroll, app.preview_sections[0].1,
+        "k walks back a section"
+    );
+}
+
+#[test]
+fn enter_on_the_contents_column_opens_the_reader_at_that_section() {
+    let mut app = ui::App::new(data::load());
+    render(&mut app, 140, 30);
+    for _ in 0..3 {
+        app.on_key(key(KeyCode::Right));
+    }
+    app.on_key(key(KeyCode::Char('j')));
+    app.on_key(key(KeyCode::Char('j')));
+
+    app.on_key(key(KeyCode::Enter));
+    assert_eq!(app.screen, ui::Screen::Reader);
+    assert_eq!(
+        app.scroll, app.sections[app.toc_index].1,
+        "the reader lands on the section the preview had selected"
+    );
+    assert!(
+        app.toc_index >= 2,
+        "third section or later, got {}",
+        app.toc_index
+    );
+}

@@ -102,9 +102,9 @@ thing properly, not grep for one flag.
 | Key | Does |
 |---|---|
 | `j` `k` or `↓` `↑` | move in the focused column; scroll the document |
-| `l` `→` `Tab` | next column: groups → topics → preview |
+| `l` `→` `Tab` | next column: groups → topics → text → section index |
 | `h` `←` `Esc` | previous column, on the home screen |
-| `Enter` | in groups: step into the list; in topics and preview: open the document |
+| `Enter` | in groups: step into the list; in topics, text and index: open the document at the selection |
 | `→` `Tab` | inside the reader: focus the section list, on the right of the text |
 | `←` `Enter` `Esc` | inside the section list: hand the focus back to the text |
 | `g` `G` | first and last line, inside the reader |
@@ -113,6 +113,10 @@ thing properly, not grep for one flag.
 | `q` `←` `Esc` | inside the reader: back to the home screen; `q` on the home screen quits |
 
 Mouse is off by default: every screen is reachable from the keyboard alone.
+
+The four columns are the same idea on both screens: groups, topics, the document
+itself, and the section index. In the document column `j`/`k` scroll a line at a
+time; in the index column they jump a whole section, and the document follows.
 
 ## Search
 

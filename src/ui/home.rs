@@ -26,6 +26,9 @@ pub fn draw(frame: &mut Frame, area: Rect, app: &mut App) {
     if !app.preview_visible && app.focus == Focus::Preview {
         app.focus = Focus::Topics;
     }
+    if !app.contents_visible() && app.focus == Focus::Contents {
+        app.focus = Focus::Preview;
+    }
     header(frame, rows[0], app);
     if app.preview_visible {
         with_preview(frame, rows[1], app);
@@ -102,7 +105,7 @@ fn with_preview(frame: &mut Frame, area: Rect, app: &mut App) {
         contents_rect,
         &app.preview_sections,
         selected,
-        app.focus == Focus::Preview,
+        app.focus == Focus::Contents,
         accent,
     );
 
@@ -246,8 +249,11 @@ fn footer(frame: &mut Frame, area: Rect, app: &App) {
             "hjkl/←→↑↓ move · ⇥/l column · ↵ open list · / search · M mouse {mouse} · q quit"
         ),
         Focus::Preview => format!(
-            "hjkl/←→↑↓ scroll preview · ⇥/h back · ↵ read · / search · M mouse {mouse} · q quit"
+            "hjkl/←→↑↓ scroll preview · ⇥/l sections · ↵ read · / search · M mouse {mouse} · q quit"
         ),
+        Focus::Contents => {
+            format!("↑↓ section · ↵ read · ⇥/h text · / search · M mouse {mouse} · q quit")
+        }
         Focus::Topics => {
             format!("hjkl/←→↑↓ move · ⇥/l preview · ↵ read · / search · M mouse {mouse} · q quit")
         }

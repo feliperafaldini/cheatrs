@@ -21,6 +21,8 @@ pub enum Focus {
     Groups,
     Topics,
     Preview,
+    /// The section index that lives inside the preview: `j`/`k` jump by section.
+    Contents,
 }
 
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
@@ -159,6 +161,15 @@ impl App {
                     // Enter picks the group and steps into its list, so the arrows walk topics next.
                     Focus::Groups => self.focus = Focus::Topics,
                     Focus::Topics | Focus::Preview => self.open(),
+                    Focus::Contents => {
+                        let section =
+                            reader::section_at(&self.preview_sections, self.preview_scroll);
+                        self.open();
+                        if let Some((_, start)) = self.sections.get(section) {
+                            self.scroll = *start;
+                            self.toc_index = section;
+                        }
+                    }
                 },
                 KeyCode::Char('M') => self.toggle_mouse(),
                 KeyCode::Char('/') => self.start_search(),
@@ -314,7 +325,14 @@ impl App {
                     }
                 } else if self.preview_visible && inside(self.preview_rect, event.column, event.row)
                 {
-                    self.focus = Focus::Preview;
+                    // The index owns the right edge of the preview column.
+                    let index_edge = self.preview_rect.x + self.preview_rect.width
+                        - crate::ui::layout::PREVIEW_CONTENTS;
+                    self.focus = if event.column >= index_edge && self.contents_visible() {
+                        Focus::Contents
+                    } else {
+                        Focus::Preview
+                    };
                 }
             }
             _ => {}
@@ -335,6 +353,7 @@ impl App {
                 }
             }
             Focus::Preview => self.preview_scroll = self.preview_scroll.saturating_add(1),
+            Focus::Contents => self.step_preview_section(1),
         }
     }
 
@@ -350,6 +369,7 @@ impl App {
                 self.topic = self.topic.saturating_sub(1);
             }
             Focus::Preview => self.preview_scroll = self.preview_scroll.saturating_sub(1),
+            Focus::Contents => self.step_preview_section(-1),
         }
     }
 
@@ -358,7 +378,8 @@ impl App {
         self.focus = match self.focus {
             Focus::Groups => Focus::Topics,
             Focus::Topics if self.preview_visible => Focus::Preview,
-            Focus::Topics | Focus::Preview => self.focus,
+            Focus::Preview if self.contents_visible() => Focus::Contents,
+            other => other,
         };
     }
 
@@ -367,7 +388,24 @@ impl App {
             Focus::Groups => Focus::Groups,
             Focus::Topics => Focus::Groups,
             Focus::Preview => Focus::Topics,
+            Focus::Contents => Focus::Preview,
         };
+    }
+
+    /// The index inside the preview only exists when the column exists and the topic has sections.
+    pub fn contents_visible(&self) -> bool {
+        self.preview_visible && !self.preview_sections.is_empty()
+    }
+
+    /// Move the preview's contents selection and take the preview with it.
+    fn step_preview_section(&mut self, delta: isize) {
+        if self.preview_sections.is_empty() {
+            return;
+        }
+        let last = self.preview_sections.len() - 1;
+        let current = reader::section_at(&self.preview_sections, self.preview_scroll);
+        let next = (current as isize + delta).clamp(0, last as isize) as usize;
+        self.preview_scroll = self.preview_sections[next].1;
     }
 
     /// Move the contents selection and take the document with it.
