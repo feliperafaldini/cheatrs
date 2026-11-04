@@ -1,0 +1,190 @@
+{
+ "slug": "testing-js",
+ "title": "testing-js",
+ "label": "JEST",
+ "group": "Library",
+ "color": "#C21325",
+ "desc": "Jest and Vitest: write, mock, and run JavaScript tests from the CLI.",
+ "sections": [
+  {
+   "id": "setup",
+   "title": "Setup",
+   "description": "Install the runner and initialize a project config.",
+   "snippets": [
+    {
+     "language": "bash",
+     "code": "# Jest: zero-config for plain JavaScript projects\nnpm install --save-dev jest\nnpx jest --init\n\n# Vitest: reuses the Vite config and transform pipeline\nnpm install --save-dev vitest"
+    },
+    {
+     "language": "bash",
+     "code": "# Run a single file, a single test by name, or stay in watch mode\nnpx jest src/cart.test.js\nnpx jest -t \"applies discount\"\nnpx jest --watch"
+    }
+   ]
+  },
+  {
+   "id": "first-test",
+   "title": "First Test",
+   "description": "A test file is plain JavaScript that calls test and expect.",
+   "snippets": [
+    {
+     "language": "javascript",
+     "code": "// src/sum.test.js\nconst { sum } = require('./sum');\n\ntest('adds two numbers', () => {\n  expect(sum(2, 3)).toBe(5);\n});\n\ndescribe('sum', () => {\n  it('handles negative values', () => {\n    expect(sum(-2, -3)).toBe(-5);\n  });\n});"
+    },
+    {
+     "language": "javascript",
+     "code": "// Arrange, act, assert keeps each test readable\nconst { createCart } = require('./cart');\n\ntest('adds a product to the cart', () => {\n  const cart = createCart();             // arrange\n  cart.add({ id: 1, price: 2500 });      // act\n  expect(cart.total()).toBe(2500);       // assert\n});"
+    }
+   ]
+  },
+  {
+   "id": "assertions",
+   "title": "Assertions",
+   "description": "Pick the matcher that matches the comparison you actually mean.",
+   "snippets": [
+    {
+     "language": "javascript",
+     "code": "expect(value).toBe(5);                 // Object.is, no coercion\nexpect(obj).toEqual({ a: 1 });         // deep equality\nexpect(obj).toStrictEqual({ a: 1 });   // also checks undefined keys and class\nexpect(value).toBeNull();\nexpect(value).toBeDefined();\nexpect(0.1 + 0.2).toBeCloseTo(0.3);"
+    },
+    {
+     "language": "javascript",
+     "code": "// Negation, ranges and string matching\nexpect(list).not.toContain('archived');\nexpect(total).toBeGreaterThan(999);\nexpect(total).toBeLessThanOrEqual(5000);\nexpect(name).toMatch(/^cart-/i);\nexpect(handler).toHaveBeenCalledTimes(2);"
+    }
+   ]
+  },
+  {
+   "id": "mocking",
+   "title": "Mocking",
+   "description": "Replace modules, stub return values, and spy on calls.",
+   "snippets": [
+    {
+     "language": "javascript",
+     "code": "// Replace a module for the whole file\njest.mock('./mailer');\nconst { sendReceipt } = require('./mailer');\nconst { checkout } = require('./checkout');\n\ntest('sends a receipt after checkout', async () => {\n  sendReceipt.mockResolvedValue({ ok: true });\n  await checkout({ id: 7, email: 'ana@example.com' });\n  expect(sendReceipt).toHaveBeenCalledWith('ana@example.com', 7);\n});"
+    },
+    {
+     "language": "javascript",
+     "code": "const { createUser } = require('./users');\n\ntest('calls the repository once', () => {\n  const repo = { save: jest.fn().mockReturnValue({ id: 42 }) };\n  const user = createUser(repo, { name: 'Ana' });\n  expect(repo.save).toHaveBeenCalledTimes(1);\n  expect(user.id).toBe(42);\n});\n\ntest('spies without replacing the implementation', () => {\n  const spy = jest.spyOn(console, 'warn').mockImplementation(() => {});\n  console.warn('deprecated');\n  expect(spy).toHaveBeenCalledWith('deprecated');\n  spy.mockRestore();\n});"
+    }
+   ]
+  },
+  {
+   "id": "async",
+   "title": "Async",
+   "description": "Await promises in the test body or assert on them with resolves and rejects.",
+   "snippets": [
+    {
+     "language": "javascript",
+     "code": "test('resolves with the created order', async () => {\n  await expect(createOrder({ sku: 'KB-01' }))\n    .resolves.toMatchObject({ sku: 'KB-01' });\n});\n\ntest('rejects when stock is empty', async () => {\n  await expect(createOrder({ sku: 'MISSING' }))\n    .rejects.toThrow('out of stock');\n});"
+    },
+    {
+     "language": "javascript",
+     "code": "const { fetchRates } = require('./rates');\n\ntest('awaits inside the test body', async () => {\n  const rates = await fetchRates('BRL');\n  expect(rates.base).toBe('BRL');\n});\n\ntest('uses the done callback for callback-style APIs', (done) => {\n  setTimeout(() => {\n    expect(1 + 1).toBe(2);\n    done();\n  }, 10);\n});"
+    }
+   ]
+  },
+  {
+   "id": "lifecycle",
+   "title": "Lifecycle",
+   "description": "Shared setup runs beforeAll, per-test setup runs beforeEach.",
+   "snippets": [
+    {
+     "language": "javascript",
+     "code": "// Order: beforeAll -> beforeEach -> test -> afterEach -> afterAll\nlet db;\n\nbeforeAll(async () => {\n  db = await connect('mongodb://localhost:27017/test');\n});\n\nafterEach(async () => {\n  await db.collection('orders').deleteMany({});\n});\n\nafterAll(async () => {\n  await db.close();\n});"
+    },
+    {
+     "language": "javascript",
+     "code": "describe('cart totals', () => {\n  let cart;\n\n  // Scoped to this describe block only\n  beforeEach(() => {\n    cart = createCart({ currency: 'BRL' });\n  });\n\n  test('starts empty', () => {\n    expect(cart.items).toHaveLength(0);\n  });\n});"
+    }
+   ]
+  },
+  {
+   "id": "snapshots",
+   "title": "Snapshots",
+   "description": "Store rendered output once and fail when it changes unexpectedly.",
+   "snippets": [
+    {
+     "language": "javascript",
+     "code": "const { formatInvoice } = require('./invoice');\n\ntest('matches the invoice layout', () => {\n  expect(formatInvoice({ id: 12, total: 2500 })).toMatchSnapshot();\n});\n\n// Update every stored snapshot after an intentional change: npx jest -u"
+    },
+    {
+     "language": "javascript",
+     "code": "test('serialises the error payload', () => {\n  expect(buildError('invalid_cpf')).toMatchInlineSnapshot(`\n    {\n      \"code\": \"invalid_cpf\",\n      \"status\": 422,\n    }\n  `);\n});"
+    }
+   ]
+  },
+  {
+   "id": "matchers",
+   "title": "Matchers",
+   "description": "Structural matchers and table-driven cases cover most assertions.",
+   "snippets": [
+    {
+     "language": "javascript",
+     "code": "expect(user).toMatchObject({ name: 'Ana', role: 'admin' });\nexpect(ids).toEqual(expect.arrayContaining([3, 1]));\nexpect(payload).toEqual({\n  id: expect.any(Number),\n  createdAt: expect.any(String),\n});\nexpect(load).toThrow(/not found/);"
+    },
+    {
+     "language": "javascript",
+     "code": "// test.each runs the same body for every row\ntest.each([\n  [0, 0, 0],\n  [2, 3, 5],\n  [-2, -3, -5],\n])('sum(%i, %i) = %i', (a, b, expected) => {\n  expect(sum(a, b)).toBe(expected);\n});"
+    }
+   ]
+  },
+  {
+   "id": "coverage",
+   "title": "Coverage",
+   "description": "Report coverage locally and enforce a threshold in CI.",
+   "snippets": [
+    {
+     "language": "bash",
+     "code": "# Text summary plus an HTML report under coverage/lcov-report\nnpx jest --coverage\nnpx jest --coverage --collectCoverageFrom='src/**/*.js'"
+    },
+    {
+     "language": "bash",
+     "code": "# CI: fail the build when coverage drops below the threshold\nnpx jest --ci --coverage --coverageThreshold='{\"global\":{\"lines\":80,\"branches\":70}}'"
+    }
+   ]
+  },
+  {
+   "id": "config",
+   "title": "Configuration",
+   "description": "One config file pins the environment, test pattern, and setup files.",
+   "snippets": [
+    {
+     "language": "javascript",
+     "code": "// jest.config.js\nmodule.exports = {\n  testEnvironment: 'node',\n  testMatch: ['**/*.test.js'],\n  setupFilesAfterEnv: ['./test/setup.js'],\n  clearMocks: true,\n  coverageDirectory: 'coverage',\n};"
+    },
+    {
+     "language": "bash",
+     "code": "npx jest --config jest.config.js\nnpx jest --runInBand          # serial run, easier to debug\nnpx jest --detectOpenHandles  # find handles that keep the process alive"
+    }
+   ]
+  },
+  {
+   "id": "vitest",
+   "title": "Vitest Differences",
+   "description": "Same assertions, explicit imports and a Vite-based runner.",
+   "snippets": [
+    {
+     "language": "javascript",
+     "code": "// Vitest imports its API instead of relying on globals\nimport { describe, it, expect, vi, beforeEach } from 'vitest';\nimport { createCart } from '../src/cart';\n\ndescribe('cart', () => {\n  beforeEach(() => {\n    vi.restoreAllMocks();\n  });\n\n  it('totals items', () => {\n    const cart = createCart();\n    cart.add({ price: 2500 });\n    expect(cart.total()).toBe(2500);\n  });\n});"
+    },
+    {
+     "language": "bash",
+     "code": "# Same assertions, different runner\nnpx vitest run                 # single pass, no watch\nnpx vitest --coverage\nnpx vitest -u                  # update snapshots\n\n# API mapping: jest.fn() -> vi.fn(), jest.mock() -> vi.mock()"
+    }
+   ]
+  },
+  {
+   "id": "common-errors",
+   "title": "Common Errors",
+   "description": "Messages you will hit first, and the fix for each.",
+   "snippets": [
+    {
+     "language": "javascript",
+     "code": "// \"Cannot find module './sum'\"       path is resolved from the test file\n// \"jest is not defined\" in Vitest   import { test, expect } from 'vitest'\n// \"A worker process has failed to exit\"  run with --detectOpenHandles\n// \"Received: serializes to the same string\"  compare plain data, not instances\n\ntest('compares plain data', () => {\n  class Money {\n    constructor(cents) {\n      this.cents = cents;\n    }\n  }\n  expect(new Money(100)).toEqual({ cents: 100 });\n});"
+    },
+    {
+     "language": "bash",
+     "code": "# Clear the transform cache after changing Babel or TypeScript config\nnpx jest --clearCache\n\n# Run one failing test with full output\nnpx jest src/cart.test.js -t \"applies discount\" --verbose"
+    }
+   ]
+  }
+ ]
+}

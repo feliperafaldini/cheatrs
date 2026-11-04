@@ -1,0 +1,209 @@
+{
+ "slug": "flutter",
+ "title": "Flutter",
+ "label": "FL",
+ "group": "Framework",
+ "color": "#02569B",
+ "desc": "Cross-platform UI toolkit that compiles Dart to native code for mobile, web, and desktop.",
+ "sections": [
+  {
+   "id": "setup",
+   "title": "Setup",
+   "description": "Install the SDK, check the toolchain, scaffold an app, and run it on a device",
+   "snippets": [
+    {
+     "language": "bash",
+     "code": "# Print the Flutter and Dart versions on the PATH\nflutter --version\n\n# Check the Android, iOS, web, and desktop toolchains\nflutter doctor -v\n\n# Scaffold an app with a concrete organisation id\nflutter create --org com.example --platforms android,ios,web counter\ncd counter\n\n# List the devices and emulators the tool can target\nflutter devices\n\n# Run a debug build on one device id\nflutter run -d emulator-5554"
+    },
+    {
+     "language": "dart",
+     "code": "import 'package:flutter/material.dart';\n\nvoid main() {\n  runApp(const MaterialApp(\n    home: Scaffold(body: Center(child: Text('Hello, Flutter'))),\n  ));\n}"
+    }
+   ]
+  },
+  {
+   "id": "project",
+   "title": "Project Structure",
+   "description": "One folder per feature, shared code under core, and the generated platform runners",
+   "snippets": [
+    {
+     "language": "bash",
+     "code": "# The generated layout: lib/ holds Dart code, test/ mirrors it\nfind lib test -type f | sort\n\n# Grow the app by feature, not by file type\n# lib/main.dart              entry point, runApp\n# lib/app.dart               MaterialApp, theme, routes\n# lib/core/theme/app_theme.dart\n# lib/features/counter/counter_page.dart\n# lib/features/counter/counter_controller.dart\nmkdir -p lib/core/theme lib/features/counter\n\n# Re-resolve packages after editing pubspec.yaml\nflutter pub get"
+    }
+   ]
+  },
+  {
+   "id": "widgets",
+   "title": "Widgets",
+   "description": "Stateless widgets, const constructors, and composition instead of inheritance",
+   "snippets": [
+    {
+     "language": "dart",
+     "code": "import 'package:flutter/material.dart';\n\nclass PriceTag extends StatelessWidget {\n  const PriceTag({super.key, required this.amount, this.currency = 'BRL'});\n\n  final double amount;\n  final String currency;\n\n  @override\n  Widget build(BuildContext context) {\n    final style = Theme.of(context).textTheme.titleMedium;\n    return Text('$currency ${amount.toStringAsFixed(2)}', style: style);\n  }\n}\n\n// const is allowed because every field is final and known at compile time\n// const PriceTag(amount: 129.9)"
+    },
+    {
+     "language": "dart",
+     "code": "import 'package:flutter/material.dart';\n\nclass ProductTile extends StatelessWidget {\n  const ProductTile({super.key, required this.onAdd});\n\n  final VoidCallback onAdd;\n\n  @override\n  Widget build(BuildContext context) {\n    return Card(\n      child: ListTile(\n        leading: const Icon(Icons.inventory_2_outlined),\n        title: const Text('Espresso beans'),\n        subtitle: const Text('250 g'),\n        trailing: IconButton(\n          icon: const Icon(Icons.add_shopping_cart),\n          tooltip: 'Add to cart',\n          onPressed: onAdd,\n        ),\n      ),\n    );\n  }\n}"
+    }
+   ]
+  },
+  {
+   "id": "layout",
+   "title": "Layout",
+   "description": "Rows, columns, flex, padding, and layouts that adapt to the window size",
+   "snippets": [
+    {
+     "language": "dart",
+     "code": "import 'package:flutter/material.dart';\n\nclass SummaryRow extends StatelessWidget {\n  const SummaryRow({super.key});\n\n  @override\n  Widget build(BuildContext context) {\n    return Padding(\n      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),\n      child: Row(\n        children: [\n          const Icon(Icons.shopping_bag_outlined),\n          const SizedBox(width: 12),\n          // Expanded takes the leftover space, so the text can wrap\n          const Expanded(child: Text('Three items waiting in the cart')),\n          const SizedBox(width: 12),\n          Text('BRL 240.90', style: Theme.of(context).textTheme.titleSmall),\n        ],\n      ),\n    );\n  }\n}"
+    },
+    {
+     "language": "dart",
+     "code": "import 'package:flutter/material.dart';\n\nclass CoverPhoto extends StatelessWidget {\n  const CoverPhoto({super.key});\n\n  @override\n  Widget build(BuildContext context) {\n    return AspectRatio(\n      aspectRatio: 16 / 9,\n      child: Stack(\n        fit: StackFit.expand,\n        children: [\n          Image.network('https://picsum.photos/id/1015/1600/900', fit: BoxFit.cover),\n          const Positioned(\n            left: 12,\n            bottom: 12,\n            child: Chip(label: Text('Serra do Rio do Rastro')),\n          ),\n        ],\n      ),\n    );\n  }\n}"
+    },
+    {
+     "language": "dart",
+     "code": "import 'package:flutter/material.dart';\n\nclass ResponsiveGrid extends StatelessWidget {\n  const ResponsiveGrid({super.key});\n\n  @override\n  Widget build(BuildContext context) {\n    return LayoutBuilder(\n      builder: (context, constraints) {\n        // Two columns on a phone, four on a wide window\n        final columns = constraints.maxWidth >= 900 ? 4 : 2;\n        return GridView.count(\n          crossAxisCount: columns,\n          mainAxisSpacing: 8,\n          crossAxisSpacing: 8,\n          children: List.generate(8, (i) => Card(child: Center(child: Text('Card $i')))),\n        );\n      },\n    );\n  }\n}"
+    }
+   ]
+  },
+  {
+   "id": "state",
+   "title": "State",
+   "description": "setState for local state, ChangeNotifier for state shared across widgets",
+   "snippets": [
+    {
+     "language": "dart",
+     "code": "import 'package:flutter/material.dart';\n\nclass CounterPage extends StatefulWidget {\n  const CounterPage({super.key});\n\n  @override\n  State<CounterPage> createState() => _CounterPageState();\n}\n\nclass _CounterPageState extends State<CounterPage> {\n  int _count = 0;\n\n  void _increment() {\n    setState(() => _count++);\n  }\n\n  @override\n  Widget build(BuildContext context) {\n    return Scaffold(\n      body: Center(child: Text('$_count', style: Theme.of(context).textTheme.displayMedium)),\n      floatingActionButton: FloatingActionButton(\n        onPressed: _increment,\n        tooltip: 'Increment',\n        child: const Icon(Icons.add),\n      ),\n    );\n  }\n}"
+    },
+    {
+     "language": "dart",
+     "code": "import 'package:flutter/material.dart';\n\nclass CartModel extends ChangeNotifier {\n  final List<String> _items = [];\n\n  List<String> get items => List.unmodifiable(_items);\n\n  void add(String sku) {\n    _items.add(sku);\n    notifyListeners();\n  }\n}\n\nclass CartBadge extends StatelessWidget {\n  const CartBadge({super.key, required this.model});\n\n  final CartModel model;\n\n  @override\n  Widget build(BuildContext context) {\n    return ListenableBuilder(\n      listenable: model,\n      builder: (context, child) => Badge(\n        label: Text('${model.items.length}'),\n        child: const Icon(Icons.shopping_cart_outlined),\n      ),\n    );\n  }\n}\n\n// Own the model in a State and call model.dispose() in dispose()"
+    }
+   ]
+  },
+  {
+   "id": "navigation",
+   "title": "Navigation",
+   "description": "Push a route and read its result, or register named routes on MaterialApp",
+   "snippets": [
+    {
+     "language": "dart",
+     "code": "import 'package:flutter/material.dart';\n\nFuture<void> openDetails(BuildContext context) async {\n  final result = await Navigator.of(context).push<String>(\n    MaterialPageRoute(builder: (_) => const DetailsPage()),\n  );\n\n  // The widget can be gone by the time the awaited route returns\n  if (result != null && context.mounted) {\n    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Saved: $result')));\n  }\n}\n\nclass DetailsPage extends StatelessWidget {\n  const DetailsPage({super.key});\n\n  @override\n  Widget build(BuildContext context) {\n    return Scaffold(\n      appBar: AppBar(title: const Text('Details')),\n      body: TextButton(\n        onPressed: () => Navigator.of(context).pop('draft-42'),\n        child: const Text('Save and go back'),\n      ),\n    );\n  }\n}"
+    },
+    {
+     "language": "dart",
+     "code": "import 'package:flutter/material.dart';\n\nclass App extends StatelessWidget {\n  const App({super.key});\n\n  @override\n  Widget build(BuildContext context) {\n    return MaterialApp(\n      initialRoute: '/',\n      routes: {\n        '/': (context) => const HomePage(),\n        '/settings': (context) => const SettingsPage(),\n      },\n    );\n  }\n}\n\n// From any widget below MaterialApp\n// Navigator.of(context).pushNamed('/settings');\n// Navigator.of(context).popUntil((route) => route.isFirst);"
+    }
+   ]
+  },
+  {
+   "id": "lists",
+   "title": "Lists",
+   "description": "Builder constructors keep long lists cheap because only visible rows are built",
+   "snippets": [
+    {
+     "language": "dart",
+     "code": "import 'package:flutter/material.dart';\n\nclass OrderList extends StatelessWidget {\n  const OrderList({super.key, required this.orders});\n\n  final List<String> orders;\n\n  @override\n  Widget build(BuildContext context) {\n    return ListView.builder(\n      itemCount: orders.length,\n      itemBuilder: (context, index) => ListTile(\n        leading: CircleAvatar(child: Text('${index + 1}')),\n        title: Text(orders[index]),\n      ),\n    );\n  }\n}"
+    },
+    {
+     "language": "dart",
+     "code": "import 'package:flutter/material.dart';\n\nclass CatalogGrid extends StatelessWidget {\n  const CatalogGrid({super.key});\n\n  @override\n  Widget build(BuildContext context) {\n    return GridView.builder(\n      padding: const EdgeInsets.all(12),\n      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(\n        crossAxisCount: 2,\n        mainAxisSpacing: 12,\n        crossAxisSpacing: 12,\n        childAspectRatio: 0.8,\n      ),\n      itemCount: 40,\n      itemBuilder: (context, index) => Card(\n        child: Center(child: Text('Item $index')),\n      ),\n    );\n  }\n}"
+    }
+   ]
+  },
+  {
+   "id": "forms",
+   "title": "Forms",
+   "description": "Form, TextFormField, validators, and controllers that must be disposed",
+   "snippets": [
+    {
+     "language": "dart",
+     "code": "import 'package:flutter/material.dart';\n\nclass SignupForm extends StatefulWidget {\n  const SignupForm({super.key});\n\n  @override\n  State<SignupForm> createState() => _SignupFormState();\n}\n\nclass _SignupFormState extends State<SignupForm> {\n  final _formKey = GlobalKey<FormState>();\n  final _email = TextEditingController();\n\n  @override\n  void dispose() {\n    _email.dispose();\n    super.dispose();\n  }\n\n  void _submit() {\n    if (_formKey.currentState!.validate()) {\n      ScaffoldMessenger.of(context).showSnackBar(\n        SnackBar(content: Text('Signing up ${_email.text}')),\n      );\n    }\n  }\n\n  @override\n  Widget build(BuildContext context) {\n    return Form(\n      key: _formKey,\n      child: Column(\n        children: [\n          TextFormField(\n            controller: _email,\n            keyboardType: TextInputType.emailAddress,\n            autofillHints: const [AutofillHints.email],\n            decoration: const InputDecoration(labelText: 'Email'),\n            validator: (value) {\n              if (value == null || !value.contains('@')) return 'Enter a valid email';\n              return null;\n            },\n          ),\n          const SizedBox(height: 16),\n          FilledButton(onPressed: _submit, child: const Text('Create account')),\n        ],\n      ),\n    );\n  }\n}"
+    },
+    {
+     "language": "dart",
+     "code": "import 'package:flutter/material.dart';\n\nclass SearchField extends StatefulWidget {\n  const SearchField({super.key, required this.onChanged});\n\n  final ValueChanged<String> onChanged;\n\n  @override\n  State<SearchField> createState() => _SearchFieldState();\n}\n\nclass _SearchFieldState extends State<SearchField> {\n  final _controller = TextEditingController();\n\n  @override\n  void dispose() {\n    _controller.dispose();\n    super.dispose();\n  }\n\n  @override\n  Widget build(BuildContext context) {\n    return TextField(\n      controller: _controller,\n      textInputAction: TextInputAction.search,\n      onSubmitted: widget.onChanged,\n      decoration: InputDecoration(\n        hintText: 'Search orders',\n        prefixIcon: const Icon(Icons.search),\n        suffixIcon: IconButton(\n          icon: const Icon(Icons.clear),\n          tooltip: 'Clear',\n          onPressed: () {\n            _controller.clear();\n            widget.onChanged('');\n          },\n        ),\n      ),\n    );\n  }\n}"
+    }
+   ]
+  },
+  {
+   "id": "http",
+   "title": "HTTP and JSON",
+   "description": "Fetch and decode JSON with the http package, then render it with FutureBuilder",
+   "snippets": [
+    {
+     "language": "dart",
+     "code": "import 'dart:convert';\n\nimport 'package:http/http.dart' as http;\n\nFuture<Map<String, dynamic>> fetchRepo(String name) async {\n  final uri = Uri.parse('https://api.github.com/repos/flutter/$name');\n  final response = await http.get(uri, headers: {'Accept': 'application/vnd.github+json'});\n\n  if (response.statusCode != 200) {\n    throw Exception('GitHub answered ${response.statusCode}');\n  }\n  return jsonDecode(response.body) as Map<String, dynamic>;\n}"
+    },
+    {
+     "language": "dart",
+     "code": "import 'package:flutter/material.dart';\n\nclass RepoStars extends StatelessWidget {\n  const RepoStars({super.key});\n\n  @override\n  Widget build(BuildContext context) {\n    return FutureBuilder<Map<String, dynamic>>(\n      future: fetchRepo('flutter'),\n      builder: (context, snapshot) {\n        if (snapshot.connectionState != ConnectionState.done) {\n          return const Center(child: CircularProgressIndicator());\n        }\n        if (snapshot.hasError) {\n          return Text('Failed: ${snapshot.error}');\n        }\n        return Text('Stars: ${snapshot.data!['stargazers_count']}');\n      },\n    );\n  }\n}"
+    },
+    {
+     "language": "dart",
+     "code": "import 'dart:convert';\n\nimport 'package:http/http.dart' as http;\n\nFuture<void> createIssue(String title) async {\n  final response = await http.post(\n    Uri.parse('https://api.github.com/repos/flutter/flutter/issues'),\n    headers: {\n      'Accept': 'application/vnd.github+json',\n      'Content-Type': 'application/json',\n    },\n    body: jsonEncode({'title': title}),\n  );\n\n  if (response.statusCode != 201) {\n    throw Exception('Create failed: ${response.statusCode} ${response.body}');\n  }\n}"
+    }
+   ]
+  },
+  {
+   "id": "assets",
+   "title": "Assets",
+   "description": "Bundle images and text files declared in pubspec.yaml, then load them by path",
+   "snippets": [
+    {
+     "language": "dart",
+     "code": "import 'package:flutter/material.dart';\nimport 'package:flutter/services.dart';\n\nclass BrandHeader extends StatelessWidget {\n  const BrandHeader({super.key});\n\n  @override\n  Widget build(BuildContext context) {\n    // pubspec.yaml must list the folder, the trailing slash includes every file\n    // flutter:\n    //   assets:\n    //     - assets/images/\n    //     - assets/data/quotes.json\n    return Image.asset('assets/images/logo.png', width: 96, height: 96);\n  }\n}\n\nFuture<String> loadQuotes() => rootBundle.loadString('assets/data/quotes.json');"
+    },
+    {
+     "language": "bash",
+     "code": "# Create the folders that pubspec.yaml points at\nmkdir -p assets/images assets/data\ncp ~/Downloads/logo.png assets/images/logo.png\n\n# Fetch packages and rebuild the asset bundle\nflutter pub get\n\n# A renamed or deleted asset needs a clean build to disappear\nflutter clean\nflutter pub get"
+    }
+   ]
+  },
+  {
+   "id": "theming",
+   "title": "Theming",
+   "description": "One seed colour feeds a full ColorScheme, with light and dark variants",
+   "snippets": [
+    {
+     "language": "dart",
+     "code": "import 'package:flutter/material.dart';\n\nfinal _seed = ColorScheme.fromSeed(seedColor: const Color(0xFF02569B));\n\nfinal lightTheme = ThemeData(colorScheme: _seed);\n\nfinal darkTheme = ThemeData(\n  colorScheme: ColorScheme.fromSeed(\n    seedColor: const Color(0xFF02569B),\n    brightness: Brightness.dark,\n  ),\n);\n\nclass App extends StatelessWidget {\n  const App({super.key});\n\n  @override\n  Widget build(BuildContext context) {\n    return MaterialApp(\n      theme: lightTheme,\n      darkTheme: darkTheme,\n      themeMode: ThemeMode.system,\n      home: const HomePage(),\n    );\n  }\n}"
+    },
+    {
+     "language": "dart",
+     "code": "import 'package:flutter/material.dart';\n\nclass StatusCard extends StatelessWidget {\n  const StatusCard({super.key});\n\n  @override\n  Widget build(BuildContext context) {\n    final colors = Theme.of(context).colorScheme;\n    final text = Theme.of(context).textTheme;\n\n    return Container(\n      padding: const EdgeInsets.all(16),\n      decoration: BoxDecoration(\n        // withValues replaces the deprecated withOpacity\n        color: colors.primary.withValues(alpha: 0.12),\n        borderRadius: BorderRadius.circular(12),\n        border: Border.all(color: colors.outlineVariant),\n      ),\n      child: Text(\n        'All systems normal',\n        style: text.bodyLarge?.copyWith(color: colors.onSurface, fontWeight: FontWeight.w600),\n      ),\n    );\n  }\n}"
+    }
+   ]
+  },
+  {
+   "id": "testing",
+   "title": "Testing",
+   "description": "Widget tests pump the real widget tree and assert on what the user sees",
+   "snippets": [
+    {
+     "language": "dart",
+     "code": "import 'package:counter/main.dart';\nimport 'package:flutter/material.dart';\nimport 'package:flutter_test/flutter_test.dart';\n\nvoid main() {\n  testWidgets('the counter increments on tap', (tester) async {\n    await tester.pumpWidget(const CounterApp());\n\n    expect(find.text('0'), findsOneWidget);\n\n    await tester.tap(find.byIcon(Icons.add));\n    await tester.pump();\n\n    expect(find.text('1'), findsOneWidget);\n    expect(find.text('0'), findsNothing);\n  });\n}"
+    },
+    {
+     "language": "bash",
+     "code": "# Run every test under test/\nflutter test\n\n# Run one file, or filter by test name\nflutter test test/widget_test.dart\nflutter test test/widget_test.dart --name 'increments'\n\n# Write coverage/lcov.info for the CI report\nflutter test --coverage"
+    }
+   ]
+  },
+  {
+   "id": "build",
+   "title": "Build and Release",
+   "description": "Split per ABI for size, define API URLs at compile time, and keep debug symbols",
+   "snippets": [
+    {
+     "language": "bash",
+     "code": "# One APK per CPU architecture keeps the download small\nflutter build apk --release --split-per-abi\n\n# App bundle for the Play Store\nflutter build appbundle --release\n\n# Inject configuration without editing source\nflutter build appbundle --release --dart-define=API_URL=https://api.example.com\n\n# Keep symbols so crash reports stay readable\nflutter build appbundle --release --obfuscate --split-debug-info=build/symbols"
+    },
+    {
+     "language": "bash",
+     "code": "# Web bundle goes to build/web\nflutter build web --release --base-href /app/\n\n# iOS archive for TestFlight, needs macOS and Xcode signing\nflutter build ipa --release\n\n# macOS and Windows desktop builds\nflutter build macos --release\nflutter build windows --release"
+    }
+   ]
+  }
+ ]
+}

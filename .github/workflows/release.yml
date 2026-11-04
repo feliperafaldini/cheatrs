@@ -1,15 +1,18 @@
 name: release
 
-# Builds the static binary and attaches it to the release that triggered this.
-# musl, not glibc: a gnu build only runs on distributions at least as new as the
-# runner, and this project is meant to run on whatever Linux the reader has.
+# Builds the binaries and attaches them to the release that triggered this.
+# Every job is independent: one platform failing must not stop the others from
+# publishing, and the log of each target stays readable on its own.
+#
+# Linux is musl, not glibc: a gnu build only runs on distributions at least as new
+# as the runner, and this project is meant to run on whatever Linux the reader has.
 on:
   release:
     types: [published]
   workflow_dispatch:
     inputs:
       tag:
-        description: Existing release tag to attach the binary to
+        description: Existing release tag to attach the binaries to
         required: true
 
 permissions:
@@ -18,6 +21,8 @@ permissions:
 jobs:
   linux-x86_64:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     steps:
       - uses: actions/checkout@v4
         with:
@@ -67,3 +72,137 @@ jobs:
           TAG: ${{ github.event.release.tag_name || inputs.tag }}
         run: |
           gh release upload "$TAG" cheatrs-linux-x86_64 cheatrs-linux-x86_64.sha256 --clobber
+
+  macos-arm64:
+    # macos-15 runs on Apple silicon, so aarch64-apple-darwin is the native target.
+    runs-on: macos-15
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.release.tag_name || inputs.tag }}
+
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: aarch64-apple-darwin
+
+      - uses: Swatinem/rust-cache@v2
+        with:
+          key: macos-arm64
+
+      - name: Build
+        run: cargo build --release --locked --target aarch64-apple-darwin
+
+      - name: Package
+        run: |
+          set -euo pipefail
+          asset="cheatrs-macos-arm64"
+          cp "target/aarch64-apple-darwin/release/cheatrs" "$asset"
+          strip "$asset"
+          # shasum ships with macOS; sha256sum does not. Same "hash  file" shape.
+          shasum -a 256 "$asset" > "$asset.sha256"
+          file "$asset"
+          cat "$asset.sha256"
+
+      - name: Check the binary
+        run: |
+          set -euo pipefail
+          arch -arm64 ./cheatrs-macos-arm64 --validate
+
+      - name: Attach to the release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG: ${{ github.event.release.tag_name || inputs.tag }}
+        run: |
+          gh release upload "$TAG" cheatrs-macos-arm64 cheatrs-macos-arm64.sha256 --clobber
+
+  macos-x86_64:
+    # macos-15-intel is the x86 runner; GitHub keeps arm and intel apart on purpose.
+    runs-on: macos-15-intel
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.release.tag_name || inputs.tag }}
+
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: x86_64-apple-darwin
+
+      - uses: Swatinem/rust-cache@v2
+        with:
+          key: macos-x86_64
+
+      - name: Build
+        run: cargo build --release --locked --target x86_64-apple-darwin
+
+      - name: Package
+        run: |
+          set -euo pipefail
+          asset="cheatrs-macos-x86_64"
+          cp "target/x86_64-apple-darwin/release/cheatrs" "$asset"
+          strip "$asset"
+          shasum -a 256 "$asset" > "$asset.sha256"
+          file "$asset"
+          cat "$asset.sha256"
+
+      - name: Check the binary
+        run: |
+          set -euo pipefail
+          arch -x86_64 ./cheatrs-macos-x86_64 --validate
+
+      - name: Attach to the release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG: ${{ github.event.release.tag_name || inputs.tag }}
+        run: |
+          gh release upload "$TAG" cheatrs-macos-x86_64 cheatrs-macos-x86_64.sha256 --clobber
+
+  windows-x86_64:
+    # MSVC, not gnueabi: the default toolchain on windows-latest, no extra linker.
+    runs-on: windows-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.release.tag_name || inputs.tag }}
+
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: x86_64-pc-windows-msvc
+
+      - uses: Swatinem/rust-cache@v2
+        with:
+          key: windows-x86_64
+
+      - name: Build
+        run: cargo build --release --locked --target x86_64-pc-windows-msvc
+
+      # Git Bash is on windows-latest: it gives sha256sum, strip and the archive
+      # naming the other jobs use, without a PowerShell equivalent of each.
+      - name: Package
+        shell: bash
+        run: |
+          set -euo pipefail
+          asset="cheatrs-windows-x86_64.exe"
+          cp "target/x86_64-pc-windows-msvc/release/cheatrs.exe" "$asset"
+          sha256sum "$asset" > "$asset.sha256"
+          file "$asset" || true
+          cat "$asset.sha256"
+
+      - name: Check the binary
+        shell: bash
+        run: |
+          set -euo pipefail
+          ./cheatrs-windows-x86_64.exe --validate
+
+      - name: Attach to the release
+        shell: bash
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG: ${{ github.event.release.tag_name || inputs.tag }}
+        run: |
+          gh release upload "$TAG" cheatrs-windows-x86_64.exe cheatrs-windows-x86_64.exe.sha256 --clobber

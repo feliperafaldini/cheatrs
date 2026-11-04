@@ -58,15 +58,24 @@ Check the shell, its version and how a script starts.                           
 
 ## Install
 
-No Rust needed — the release ships a static x86-64 binary that runs on any Linux:
+No Rust needed — every supported platform has a prebuilt binary in the release:
+
+| Platform | Asset | Install |
+|---|---|---|
+| Linux x86_64 | `cheatrs-linux-x86_64` | `install.sh`, static musl, runs on any distro |
+| macOS arm64 (Apple silicon) | `cheatrs-macos-arm64` | `install.sh` |
+| macOS x86_64 (Intel) | `cheatrs-macos-x86_64` | `install.sh` |
+| Windows x86_64 | `cheatrs-windows-x86_64.exe` | download from the release and put it on the `PATH`; no installer script yet |
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/feliperafaldini/cheatrs/main/install.sh | bash
 ```
 
-The script downloads the binary from the latest release, verifies its sha256 and
-installs it to `~/.local/bin`. `INSTALL_DIR` changes the destination, `VERSION=0.1.1`
-pins a release instead of the latest.
+The script reads `uname -s` and `uname -m`, picks the matching asset above,
+downloads it from the latest release, verifies its sha256 against the `.sha256`
+published beside it, and installs it to `~/.local/bin`. Anything else — Windows,
+Linux arm64 — is refused with a message naming the platform. `INSTALL_DIR` changes
+the destination, `VERSION=0.1.1` pins a release instead of the latest.
 
 If you already have Rust, the source path works too:
 

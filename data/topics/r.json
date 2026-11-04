@@ -1,0 +1,239 @@
+{
+ "slug": "r",
+ "title": "R",
+ "label": "R",
+ "group": "Language",
+ "color": "#276DC3",
+ "desc": "Statistical language built around vectors, data frames, and the tidyverse.",
+ "sections": [
+  {
+   "id": "setup",
+   "title": "Setup",
+   "description": "Check the interpreter, install the packages used below, and run a script",
+   "snippets": [
+    {
+     "language": "bash",
+     "code": "# Version of the interpreter on the PATH\nR --version\n\n# Install packages from CRAN once per R version\nRscript -e 'install.packages(c(\"tidyverse\", \"readxl\"), repos = \"https://cloud.r-project.org\")'\n\n# Run a script non-interactively\nRscript analysis.R\n\n# Open the interactive REPL\nR"
+    },
+    {
+     "language": "r",
+     "code": "# Load the tidyverse: dplyr, tidyr, ggplot2, readr, purrr\nlibrary(tidyverse)\n\n# R version, platform, and every attached package\nsessionInfo()\n\n# Working directory and R version as a string\ngetwd()\nR.version.string"
+    }
+   ]
+  },
+  {
+   "id": "syntax",
+   "title": "Syntax",
+   "description": "Arrow assignment, vectors as the base type, string building, and namespaces",
+   "snippets": [
+    {
+     "language": "r",
+     "code": "# Assignment uses the arrow, = only binds function arguments\nx <- 42\nname <- \"Ada\"\nratio <- 0.75\nflag <- TRUE\n\n# Everything is a vector, even a single value\nlength(x)    # 1\nclass(ratio) # \"numeric\"\n\n# Strings: paste0 joins without a separator, sprintf formats\npaste0(\"id-\", x)                       # \"id-42\"\nsprintf(\"%s scored %.1f\", name, ratio) # \"Ada scored 0.8\"\n\n# Comments run to the end of the line"
+    },
+    {
+     "language": "r",
+     "code": "# Indexing starts at 1, negative indices drop elements\nvalues <- c(10, 20, 30, 40)\nvalues[1]       # 10\nvalues[-2]      # 10 30 40\nvalues[c(2, 4)] # 20 40\n\n# A double colon reaches an export without attaching the package\nmtcars |> dplyr::filter(cyl == 4) |> nrow() # 11"
+    }
+   ]
+  },
+  {
+   "id": "vectors",
+   "title": "Vectors",
+   "description": "c(), sequences, recycling, names, and logical indexing",
+   "snippets": [
+    {
+     "language": "r",
+     "code": "# c() builds a vector, all elements share one type\nnumbers <- c(4, 8, 15, 16, 23, 42)\nmixed <- c(1, \"two\", TRUE) # coerced to character\nmixed\n# [1] \"1\"   \"two\" \"TRUE\"\n\n# Sequences and repeats\nseq(0, 1, by = 0.25)        # 0.00 0.25 0.50 0.75 1.00\nrep(c(\"a\", \"b\"), times = 3) # \"a\" \"b\" \"a\" \"b\" \"a\" \"b\"\n\n# Arithmetic recycles the shorter vector\nc(1, 2, 3) * 2 # 2 4 6"
+    },
+    {
+     "language": "r",
+     "code": "scores <- c(ana = 91, bruno = 78, carla = 85)\n\n# Names travel with the vector\nnames(scores)   # \"ana\" \"bruno\" \"carla\"\nscores[\"carla\"] # carla 85\n\n# Logical indexing keeps the matching positions\nscores[scores >= 85]\nscores[names(scores) == \"bruno\"]\n\n# Summary helpers ignore names, na.rm drops missing values\nmean(scores)      # 84.66667\nmax(scores)       # 91\nsum(is.na(scores)) # 0"
+    }
+   ]
+  },
+  {
+   "id": "data-frames",
+   "title": "Data Frames",
+   "description": "Column access, row filters, and the bracket versus dollar distinction",
+   "snippets": [
+    {
+     "language": "r",
+     "code": "# A data frame is a list of equal-length vectors\norders <- data.frame(\n  id = 1:4,\n  customer = c(\"ana\", \"bruno\", \"carla\", \"diego\"),\n  total = c(120.5, 80, 240.9, 15),\n  paid = c(TRUE, TRUE, FALSE, TRUE)\n)\n\nstr(orders)\nnrow(orders) # 4\nncol(orders) # 4\n\n# $ pulls a vector, [\"col\"] keeps a one-column data frame\norders$total\norders[, \"total\"]\norders[\"total\"]"
+    },
+    {
+     "language": "r",
+     "code": "# Row filter and column selection in one bracket call\nunpaid <- orders[!orders$paid, c(\"id\", \"customer\")]\nunpaid\n#   id customer\n# 3  3    carla\n\n# Add a computed column\norders$total_with_fee <- orders$total * 1.1\nhead(orders, 2)\n\n# order() returns the permutation that sorts the rows\norders[order(-orders$total), ]"
+    }
+   ]
+  },
+  {
+   "id": "lists",
+   "title": "Lists",
+   "description": "Heterogeneous containers, single versus double brackets, and nested access",
+   "snippets": [
+    {
+     "language": "r",
+     "code": "# A list holds anything, including other lists\nreport <- list(\n  title = \"March revenue\",\n  total = 41250.75,\n  months = c(\"jan\", \"feb\", \"mar\"),\n  owner = list(name = \"ana\", team = \"finance\")\n)\n\nreport$total        # 41250.75\nreport[[\"months\"]]  # \"jan\" \"feb\" \"mar\"\nreport$owner$name   # \"ana\"\nlength(report)      # 4"
+    },
+    {
+     "language": "r",
+     "code": "# Single brackets keep a sub-list, double brackets extract the element\nreport[\"total\"]          # list(total = 41250.75)\nreport[[\"total\"]]        # 41250.75\nclass(report[\"total\"])   # \"list\"\nclass(report[[\"total\"]]) # \"numeric\"\n\n# Add and remove entries\nreport$quarter <- \"Q1\"\nreport$owner <- NULL\nnames(report) # \"title\" \"total\" \"months\" \"quarter\""
+    }
+   ]
+  },
+  {
+   "id": "factors",
+   "title": "Factors",
+   "description": "Categorical data with fixed levels, ordering, and counts per level",
+   "snippets": [
+    {
+     "language": "r",
+     "code": "# Factors store categories with a fixed set of levels\nsizes <- factor(c(\"M\", \"S\", \"L\", \"M\", \"XL\"), levels = c(\"S\", \"M\", \"L\", \"XL\"))\nsizes\n# [1] M  S  L  M  XL\n# Levels: S M L XL\n\nlevels(sizes)     # \"S\" \"M\" \"L\" \"XL\"\nas.integer(sizes) # 2 1 3 2 4, the level codes\ntable(sizes)      # counts per level"
+    },
+    {
+     "language": "r",
+     "code": "# Ordered factors compare with < and >\nrating <- factor(c(\"low\", \"high\", \"medium\", \"high\"),\n                 levels = c(\"low\", \"medium\", \"high\"), ordered = TRUE)\nrating[1] < rating[2] # TRUE\n\n# relevel moves a reference level, useful before modelling\nlevels(relevel(sizes, ref = \"M\")) # \"M\" \"S\" \"L\" \"XL\"\n\n# Drop levels that no row uses any more\ndroplevels(factor(c(\"S\", \"S\"), levels = c(\"S\", \"M\", \"L\")))"
+    }
+   ]
+  },
+  {
+   "id": "control-flow",
+   "title": "Control Flow",
+   "description": "if/else, the vectorised ifelse, switch, and loops with next and break",
+   "snippets": [
+    {
+     "language": "r",
+     "code": "score <- 87\n\nif (score >= 90) {\n  grade <- \"A\"\n} else if (score >= 80) {\n  grade <- \"B\"\n} else {\n  grade <- \"C\"\n}\ngrade # \"B\"\n\n# ifelse is vectorised, if/else is not\nifelse(c(72, 91, 64) >= 80, \"pass\", \"fail\") # \"fail\" \"pass\" \"fail\"\n\n# switch picks a branch by name\nswitch(\"b\", a = 1, b = 2, c = 3) # 2"
+    },
+    {
+     "language": "r",
+     "code": "for (month in c(\"jan\", \"feb\", \"mar\")) {\n  cat(\"processing\", month, \"\n\")\n}\n\n# while needs its own guard against an endless loop\nattempts <- 0\nwhile (attempts < 3) {\n  attempts <- attempts + 1\n}\nattempts # 3\n\n# next skips one iteration, break leaves the loop\nfor (n in 1:10) {\n  if (n %% 2 == 0) next\n  if (n > 7) break\n  cat(n, \" \")\n}\n# 1 3 5 7"
+    }
+   ]
+  },
+  {
+   "id": "functions",
+   "title": "Functions",
+   "description": "Default arguments, early returns, functions as values, and error handling",
+   "snippets": [
+    {
+     "language": "r",
+     "code": "# Defaults make the common call short\ncompound <- function(principal, rate, years = 1, times = 12) {\n  principal * (1 + rate / times) ^ (times * years)\n}\n\ncompound(1000, 0.12)             # 1126.825\ncompound(1000, 0.12, years = 5)  # 1816.697\n\n# return() exits early with an explicit value\nsafe_div <- function(a, b) {\n  if (b == 0) {\n    return(NA_real_)\n  }\n  a / b\n}\nsafe_div(10, 0) # NA"
+    },
+    {
+     "language": "r",
+     "code": "# Functions are values, so they can be passed and stored\napply_twice <- function(f, x) f(f(x))\napply_twice(sqrt, 256) # 4\n\n# stopifnot fails fast on bad input\nratio <- function(part, whole) {\n  stopifnot(whole > 0, part >= 0)\n  part / whole\n}\nratio(3, 4) # 0.75\n\n# tryCatch turns an error into a value\ntryCatch(ratio(1, 0), error = function(e) NA_real_) # NA"
+    }
+   ]
+  },
+  {
+   "id": "apply",
+   "title": "The apply Family",
+   "description": "apply over margins, lapply and sapply over lists, mapply and tapply over groups",
+   "snippets": [
+    {
+     "language": "r",
+     "code": "m <- matrix(1:6, nrow = 2)\nm\n#      [,1] [,2] [,3]\n# [1,]    1    3    5\n# [2,]    2    4    6\n\napply(m, 1, sum)  # 9 12, by row\napply(m, 2, mean) # 1.5 3.5 5.5, by column"
+    },
+    {
+     "language": "r",
+     "code": "values <- list(a = 1:3, b = 4:6, c = 7:9)\n\n# lapply always returns a list, sapply simplifies when it can\nlapply(values, mean) # $a 2, $b 5, $c 8\nsapply(values, mean) # a b c / 2 5 8\n\n# vapply states the return type, so a surprise fails loudly\nvapply(values, mean, numeric(1))\n\n# mapply walks several vectors in parallel\nmapply(function(x, y) x^y, c(2, 3), c(3, 2)) # 8 9\n\n# tapply splits one vector by a grouping vector\ntapply(mtcars$mpg, mtcars$cyl, mean)\n#        4        6        8\n# 26.66364 19.74286 15.10000"
+    }
+   ]
+  },
+  {
+   "id": "dplyr",
+   "title": "dplyr",
+   "description": "filter, select, mutate, grouped summaries with .by, joins, and across",
+   "snippets": [
+    {
+     "language": "r",
+     "code": "library(dplyr)\n\nsales <- tibble::tibble(\n  region = c(\"sul\", \"sul\", \"norte\", \"norte\", \"sul\"),\n  month = c(\"jan\", \"feb\", \"jan\", \"feb\", \"mar\"),\n  revenue = c(1200, 1500, 900, 1100, 1800),\n  orders = c(40, 52, 30, 35, 61)\n)\n\nsales |>\n  filter(revenue > 1000) |>\n  select(region, month, revenue) |>\n  arrange(desc(revenue))"
+    },
+    {
+     "language": "r",
+     "code": "# mutate adds columns, summarise collapses rows\nsales |>\n  mutate(ticket = revenue / orders) |>\n  summarise(\n    revenue = sum(revenue),\n    ticket = mean(ticket),\n    .by = region\n  )"
+    },
+    {
+     "language": "r",
+     "code": "targets <- tibble::tibble(region = c(\"norte\", \"sul\"), goal = c(2500, 5000))\n\n# Joins keep the left rows and add the matching columns\nsales |>\n  summarise(revenue = sum(revenue), .by = region) |>\n  left_join(targets, by = \"region\") |>\n  mutate(gap = goal - revenue, hit = revenue >= goal)\n\n# across applies one function to several columns\nsales |>\n  summarise(across(c(revenue, orders), mean, .names = \"{.col}_avg\"), .by = region)"
+    }
+   ]
+  },
+  {
+   "id": "tidyr",
+   "title": "tidyr and Pipes",
+   "description": "Reshape wide and long data, split columns, and chain steps with the native pipe",
+   "snippets": [
+    {
+     "language": "r",
+     "code": "wide <- tibble::tibble(\n  store = c(\"centro\", \"shopping\"),\n  q1 = c(120, 90),\n  q2 = c(150, 110)\n)\n\n# Wide to long: one row per store and quarter\nwide |>\n  pivot_longer(cols = starts_with(\"q\"), names_to = \"quarter\", values_to = \"revenue\")\n# store    quarter revenue\n# centro   q1        120\n# centro   q2        150\n# shopping q1         90"
+    },
+    {
+     "language": "r",
+     "code": "long <- tibble::tibble(\n  store = c(\"centro\", \"centro\", \"shopping\"),\n  quarter = c(\"q1\", \"q2\", \"q1\"),\n  revenue = c(120, 150, 90)\n)\n\n# Long to wide, filling gaps with a real value\nlong |> pivot_wider(names_from = quarter, values_from = revenue, values_fill = 0)\n\n# Native pipe, R 4.1 and later\nlong |> dplyr::filter(revenue > 100) |> nrow() # 2\n\n# Split one character column into several\ncodes <- tibble::tibble(code = c(\"sul-01\", \"norte-07\"))\ncodes |> separate_wider_delim(code, delim = \"-\", names = c(\"region\", \"id\"))"
+    }
+   ]
+  },
+  {
+   "id": "ggplot2",
+   "title": "ggplot2",
+   "description": "Build a plot in layers, map aesthetics, facet, and save at a fixed size",
+   "snippets": [
+    {
+     "language": "r",
+     "code": "library(ggplot2)\n\nmonthly <- tibble::tibble(\n  month = factor(c(\"jan\", \"feb\", \"mar\", \"apr\"), levels = c(\"jan\", \"feb\", \"mar\", \"apr\")),\n  revenue = c(1200, 1500, 1800, 1400),\n  channel = c(\"loja\", \"loja\", \"online\", \"online\")\n)\n\nggplot(monthly, aes(x = month, y = revenue)) +\n  geom_col(fill = \"#276DC3\") +\n  labs(title = \"Revenue by month\", x = NULL, y = \"BRL\") +\n  theme_minimal()"
+    },
+    {
+     "language": "r",
+     "code": "# Layers stack with +, each geom inherits the mapping from ggplot()\nggplot(monthly, aes(x = month, y = revenue, group = channel, color = channel)) +\n  geom_line(linewidth = 1) +\n  geom_point(size = 3) +\n  scale_y_continuous(labels = scales::label_number(big.mark = \".\")) +\n  facet_wrap(~channel) +\n  theme_minimal(base_size = 12)\n\n# ggsave uses the device implied by the extension\nggsave(\"revenue.png\", width = 7, height = 4, dpi = 150)"
+    }
+   ]
+  },
+  {
+   "id": "reading",
+   "title": "Reading and Writing",
+   "description": "CSV with base R and readr, Excel sheets, JSON, and R's own binary format",
+   "snippets": [
+    {
+     "language": "r",
+     "code": "# Base R needs no package\norders <- read.csv(\"data/orders.csv\", stringsAsFactors = FALSE, na.strings = c(\"\", \"NA\"))\nstr(orders)\n\n# readr is faster, guesses types, and never makes factors on its own\nlibrary(readr)\norders <- read_csv(\"data/orders.csv\", show_col_types = FALSE)\n\nwrite_csv(orders, \"data/orders_clean.csv\")\n\n# RDS keeps types and factors exactly, no parsing on the way back\nsaveRDS(orders, \"data/orders.rds\")\norders <- readRDS(\"data/orders.rds\")"
+    },
+    {
+     "language": "r",
+     "code": "# Excel: first sheet by default, skip rows above the header\nreadxl::read_excel(\"data/report.xlsx\", sheet = \"March\", skip = 2)\n\n# JSON becomes a nested list, simplifyVector makes data frames where it can\njsonlite::fromJSON(\"data/orders.json\", simplifyVector = TRUE)"
+    }
+   ]
+  },
+  {
+   "id": "stats",
+   "title": "Statistics",
+   "description": "Descriptives, grouped means, linear models, and the common hypothesis tests",
+   "snippets": [
+    {
+     "language": "r",
+     "code": "# Descriptives\nmean(mtcars$mpg)   # 20.09062\nmedian(mtcars$mpg) # 19.2\nsd(mtcars$mpg)     # 6.026948\nquantile(mtcars$mpg, c(0.25, 0.5, 0.75))\n\n# Grouped means without extra packages\naggregate(mpg ~ cyl, data = mtcars, FUN = mean)"
+    },
+    {
+     "language": "r",
+     "code": "# Linear model: mpg explained by weight and cylinder count\nfit <- lm(mpg ~ wt + factor(cyl), data = mtcars)\nsummary(fit)\nconfint(fit)\n\n# Predictions for new rows\npredict(fit, newdata = data.frame(wt = c(2.5, 3.5), cyl = c(4, 6)))\n\n# Tests\nt.test(mtcars$mpg[mtcars$am == 1], mtcars$mpg[mtcars$am == 0])\ncor.test(mtcars$wt, mtcars$mpg, method = \"pearson\") # r = -0.8676594\nchisq.test(table(mtcars$cyl, mtcars$gear))"
+    }
+   ]
+  },
+  {
+   "id": "common-errors",
+   "title": "Common Errors",
+   "description": "The messages that stop a session, and the one-line fix for each",
+   "snippets": [
+    {
+     "language": "r",
+     "code": "# object not found: the name was never assigned here\nmean(revenue)\n# Error in mean(revenue): object 'revenue' not found\nmean(sales$revenue) # refer to the column explicitly\n\n# $ is invalid on an atomic vector\nnumbers <- c(10, 20, 30)\nnumbers$value\n# Error: $ operator is invalid for atomic vectors\nnumbers[1] # use indexing instead"
+    },
+    {
+     "language": "r",
+     "code": "# if() needs one TRUE or FALSE, NA stops it\nx <- NA\nif (x > 0) print(\"positive\")\n# Error in if (x > 0) print(\"positive\"): missing value where TRUE/FALSE needed\nif (isTRUE(x > 0)) print(\"positive\") else print(\"not positive\")\n\n# Numbers that arrived as text\ndf <- data.frame(amount = c(\"10\", \"20\"))\nmean(df$amount)\n# Error in mean.default(df$amount): argument is not numeric or logical\nmean(as.numeric(df$amount)) # 15\n\n# Replacement length must match the row count\ndf$flag <- c(TRUE, FALSE, TRUE)\n# Error: replacement has 3 rows, data has 2"
+    }
+   ]
+  }
+ ]
+}

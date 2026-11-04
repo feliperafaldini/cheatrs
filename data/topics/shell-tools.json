@@ -1,0 +1,175 @@
+{
+ "slug": "shell-tools",
+ "title": "shell-tools",
+ "label": "CLI",
+ "group": "Tool",
+ "color": "#4EAA25",
+ "desc": "jq, fzf, ripgrep, fd, bat, xargs, find and sed/awk for everyday shell work.",
+ "sections": [
+  {
+   "id": "jq",
+   "title": "JSON with jq",
+   "description": "Read, filter and reshape JSON from files or stdin.",
+   "snippets": [
+    {
+     "language": "bash",
+     "code": "# Pretty-print, read a field, list keys\njq '.' package.json\njq -r '.name' package.json\njq '.dependencies | keys[]' package.json\njq -c '.scripts' package.json            # compact, one line"
+    },
+    {
+     "language": "bash",
+     "code": "# Build a new object and format fields into text\ncurl -s https://api.github.com/repos/jqlang/jq | jq '{name, stars: .stargazers_count, lang: .language}'\njq -r '.items[] | \"\\(.id)\\t\\(.title)\"' feed.json"
+    }
+   ]
+  },
+  {
+   "id": "jq-recipes",
+   "title": "jq Recipes",
+   "description": "Grouping, filtering, merging and defaults for real payloads.",
+   "snippets": [
+    {
+     "language": "bash",
+     "code": "# Count by status, filter, then take the top three\njq -r 'group_by(.status)[] | \"\\(.[0].status): \\(length)\"' orders.json\njq '[.[] | select(.total > 1000)] | length' orders.json\njq 'sort_by(-.total) | .[0:3] | .[] | {id, total}' orders.json"
+    },
+    {
+     "language": "bash",
+     "code": "# Deep merge, drop secrets, apply defaults, inject a variable\njq -s '.[0] * .[1]' base.json override.json\njq 'del(.password, .token)' user.json\njq '.retries // 3' config.json\njq --arg env production '.env = $env' config.json"
+    }
+   ]
+  },
+  {
+   "id": "fzf",
+   "title": "Fuzzy Finding",
+   "description": "Fuzzy-pick from any list, with a live preview of the selection.",
+   "snippets": [
+    {
+     "language": "bash",
+     "code": "# Pipe any list into fzf and read the pick on stdout\ngit branch --format='%(refname:short)' | fzf --height 40% --reverse\nls *.log | fzf --preview 'tail -n 20 {}'"
+    },
+    {
+     "language": "bash",
+     "code": "# Defaults apply to every fzf invocation\nexport FZF_DEFAULT_COMMAND='fd --type f --hidden --exclude .git'\nexport FZF_DEFAULT_OPTS='--height 40% --layout=reverse --border'\n\n# Rebuild the list on a key press\nfd --type f | fzf --query '.rs$' --bind 'ctrl-r:reload(fd --type f)'"
+    }
+   ]
+  },
+  {
+   "id": "rg",
+   "title": "Ripgrep",
+   "description": "Recursive search that respects .gitignore and is fast by default.",
+   "snippets": [
+    {
+     "language": "bash",
+     "code": "rg -n 'TODO|FIXME' src/            # line numbers, recursive by default\nrg -i 'timeout' --type rust        # case-insensitive, by file type\nrg -l 'deprecated' .               # file names only\nrg -C 2 'fn main' src/main.rs      # two lines of context"
+    },
+    {
+     "language": "bash",
+     "code": "rg --files -g '*.json'                    # list files, skip content search\nrg -w 'test' -g '!target' -g '!node_modules'\nrg -U --multiline-dotall 'struct \\w+ \\{[^}]+\\}' src/\nrg 'localhost' -r '127.0.0.1' --passthru  # preview a replacement"
+    }
+   ]
+  },
+  {
+   "id": "fd",
+   "title": "fd",
+   "description": "A find replacement with saner defaults and parallel command execution.",
+   "snippets": [
+    {
+     "language": "bash",
+     "code": "fd 'test'                        # case-insensitive substring on file names\nfd -e rs -x wc -l                # one command per result\nfd -e png -X file                # one command with every result appended\nfd -H -I -t f -d 2 '^\\.env'      # hidden, no ignore rules, files, depth 2"
+    },
+    {
+     "language": "bash",
+     "code": "fd -t d '^src$' --max-results 1\nfd -e md --changed-within 7d\nfd -0 -e json | xargs -0 jq -r '.name'"
+    }
+   ]
+  },
+  {
+   "id": "bat",
+   "title": "bat",
+   "description": "cat with syntax highlighting, line numbers and git markers.",
+   "snippets": [
+    {
+     "language": "bash",
+     "code": "bat src/main.rs          # highlight plus header and line numbers\nbat -n src/main.rs       # line numbers only\nbat -p src/main.rs       # plain output, no decorations\nbat --diff src/main.rs   # show uncommitted changes in the gutter"
+    },
+    {
+     "language": "bash",
+     "code": "bat -l json config.json                # force a syntax when the name is unclear\nbat -r 40:60 src/main.rs               # print a line range\nbat --theme='Monokai Extended' --style=numbers,changes src/main.rs\nbat --list-themes | fzf --preview 'bat --theme={} --color=always src/main.rs'"
+    }
+   ]
+  },
+  {
+   "id": "xargs",
+   "title": "xargs",
+   "description": "Turn stdin into arguments, in batches or in parallel.",
+   "snippets": [
+    {
+     "language": "bash",
+     "code": "printf '%s\\n' a b c | xargs -n 1 echo      # one argument per invocation\nfd -e jpg -0 | xargs -0 -P 4 -n 1 gzip     # four parallel jobs\ncat urls.txt | xargs -I{} curl -sO {}      # substitute instead of appending"
+    },
+    {
+     "language": "bash",
+     "code": "# -t echoes the command, -r skips execution on empty input\nfd -e log | xargs -t -n 1 rm\nfd -e log | xargs -r rm"
+    }
+   ]
+  },
+  {
+   "id": "find",
+   "title": "Find",
+   "description": "Portable traversal for age, size and exec conditions.",
+   "snippets": [
+    {
+     "language": "bash",
+     "code": "find . -name '*.log' -mtime +7 -delete\nfind src -type f -name '*.rs' -newer Cargo.toml\nfind . -type d -name node_modules -prune -o -name '*.ts' -print\nfind . -maxdepth 1 -type f -size +10M -printf '%s\\t%p\\n' | sort -rn"
+    },
+    {
+     "language": "bash",
+     "code": "find . -name '*.tmp' -exec rm {} +\nfind . -type f -name '*.sh' -exec chmod +x {} \\;\nfind . -type f -empty -print"
+    }
+   ]
+  },
+  {
+   "id": "sed-awk",
+   "title": "sed and awk",
+   "description": "Line-range edits with sed, column math and filtering with awk.",
+   "snippets": [
+    {
+     "language": "bash",
+     "code": "sed -n '10,20p' access.log                       # print a line range\nsed -i.bak 's/localhost/127.0.0.1/g' config.yml  # in place, keeps a backup\nsed '/^#/d; /^$/d' config.yml                    # drop comments and blanks"
+    },
+    {
+     "language": "bash",
+     "code": "awk -F, '{ sum += $3 } END { print sum }' sales.csv\nawk '$9 == 500 { print $7 }' access.log | sort | uniq -c | sort -rn | head\nawk 'NR > 1 { print $1, $NF }' report.txt        # skip the header row"
+    }
+   ]
+  },
+  {
+   "id": "pipes",
+   "title": "Pipelines",
+   "description": "Compose the tools, and check each stage before trusting the chain.",
+   "snippets": [
+    {
+     "language": "bash",
+     "code": "# Most frequent errors in a log\nrg -o 'ERROR \\w+' app.log | awk '{ print $2 }' | sort | uniq -c | sort -rn | head -10\n# Largest files in the current tree\ndu -ah . | sort -rh | head -20"
+    },
+    {
+     "language": "bash",
+     "code": "# Build a pipeline one stage at a time\nrg --files -g '*.rs' | head -5\nrg --files -g '*.rs' | wc -l\nrg --files -g '*.rs' | xargs wc -l | tail -1"
+    }
+   ]
+  },
+  {
+   "id": "common-errors",
+   "title": "Common Errors",
+   "description": "The failure modes that waste the most time, and the one-flag fix.",
+   "snippets": [
+    {
+     "language": "bash",
+     "code": "# jq \"Cannot index string with number\": check the type before indexing\necho '{\"id\":1}' | jq 'type'\n# rg \"regex parse error\": search literally instead of escaping meta characters\nrg -F 'a.b(' src/ || echo 'no literal match'\n# fd finds nothing because .gitignore hides the path\nfd -I -H -e env --max-results 3"
+    },
+    {
+     "language": "bash",
+     "code": "# bat writes escape codes into a pipe: decorate off when piping\nbat --style=plain --color=never file.md | head -5\n# sed -i needs an explicit backup suffix on macOS\nsed -i '' 's/foo/bar/g' file.txt"
+    }
+   ]
+  }
+ ]
+}
