@@ -4,7 +4,7 @@
 [![release](https://img.shields.io/github/v/release/feliperafaldini/cheatrs)](https://github.com/feliperafaldini/cheatrs/releases)
 [![licence](https://img.shields.io/github/license/feliperafaldini/cheatrs)](LICENSE)
 
-A terminal browser for programming cheatsheets: 52 topics, 773 sections, 1860
+A terminal browser for programming cheatsheets: 52 topics, 773 sections, 1861
 snippets, one 3 MB binary that never touches the network.
 
 It opens as a program, not as a command you pass a topic to. You land on a list of
@@ -12,25 +12,23 @@ languages, frameworks, tools and databases, walk it with the keyboard, and read 
 chosen topic full screen with syntax highlighting.
 
 ```
-cheatrs  52 topics · 0 skipped
-▌ LANGUAGES           │▌ SH Bash
-  FRAMEWORKS          │   C C
-  LIBRARIES           │  C# C#
-  TOOLS               │ C++ C++
-  DATABASES           │ CSS CSS
-  RUNTIMES            │  DT Dart
-                      │  GO Go
-                      │  HT HTML
-                      │  JV Java
-                      │  JS JavaScript
-                      │  KT Kotlin
-                      │ LUA Lua
-                      │ PHP PHP
-                      │  PY Python
-                      │  RB Ruby
-                      │  RS Rust
-                      │  SW Swift
-                      │  TS TypeScript
+▌ cheatrs 0.1.1 ─────────────────────────────────────────────────────────────── 52 topics · 773 sections · 1861 snippets
+▌ LANGUAGES  │▌ SH Bash             │Bash                                                         ▌ Setup
+  FRAMEWORKS │   C C                │The Bourne Again Shell: interactive command line and           Basic Syntax
+  LIBRARIES  │  C# C#               │scripting language.                                            Variables
+  TOOLS      │ C++ C++              │                                                               Quoting and Escaping
+  DATABASES  │ CSS CSS              │Setup                                                          Parameter Expansion
+  RUNTIMES   │  DT Dart             │Check the shell, its version and how a script starts.          Conditionals
+             │  GO Go               │                                                               Loops
+             │  HT HTML             │  # Check which Bash is in use and its version                 Functions
+             │  JV Java             │  bash --version | head -n 1                                   Arrays
+             │  JS JavaScript       │  echo "$BASH_VERSION"                                         Reading Input
+             │  KT Kotlin           │                                                               Output and Echo
+             │ LUA Lua              │  # Start a login shell or a plain interactive subshell        Redirection
+             │ PHP PHP              │  bash -l                                                      Pipes and Filters
+             │  PY Python           │  bash --norc --noprofile                                      Text Processing
+             │  RB Ruby             │                                                               Files and Directori…
+             │  RS Rust             │  # Run one command without loading startup files
 hjkl/←→↑↓ move · ⇥/l column · ↵ open list · / search · M mouse off · q quit  1/6
 ```
 
@@ -39,21 +37,23 @@ highlighted on the right.
 
 ```
 ‹ LANGUAGE / Bash
-Bash                                                                                               █
-The Bourne Again Shell: interactive command line and scripting language.                           ▏
-                                                                                                   ▏
-Setup                                                                                              ▏
-Check the shell, its version and how a script starts.                                              ▏
-                                                                                                   ▏
-  # Check which Bash is in use and its version                                                     ▏
-  bash --version | head -n 1                                                                       ▏
-  echo "$BASH_VERSION"                                                                             ▏
-                                                                                                   ▏
-  # Start a login shell or a plain interactive subshell                                            ▏
-  bash -l                                                                                          ▏
-  bash --norc --noprofile                                                                          ▏
-                                                                                                   ▏
-↑↓ scroll · g/G top/bottom · q back
+Bash                                                                                              █ ▌ Setup
+The Bourne Again Shell: interactive command line and scripting language.                          ▏   Basic Syntax
+                                                                                                  ▏   Variables
+Setup                                                                                             ▏   Quoting and Escap…
+Check the shell, its version and how a script starts.                                             ▏   Parameter Expansi…
+                                                                                                  ▏   Conditionals
+  # Check which Bash is in use and its version                                                    ▏   Loops
+  bash --version | head -n 1                                                                      ▏   Functions
+  echo "$BASH_VERSION"                                                                            ▏   Arrays
+                                                                                                  ▏   Reading Input
+  # Start a login shell or a plain interactive subshell                                           ▏   Output and Echo
+  bash -l                                                                                         ▏   Redirection
+  bash --norc --noprofile                                                                         ▏   Pipes and Filters
+                                                                                                  ▏   Text Processing
+  # Run one command without loading startup files                                                 ▏   Files and Directo…
+  bash --noprofile --norc -c 'echo "$BASH_VERSION"'                                               ▏   Permissions
+↑↓ scroll · ⇥/→ sections · g/G top/bottom · q back
 ```
 
 ## Install

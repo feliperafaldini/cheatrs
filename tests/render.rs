@@ -817,3 +817,36 @@ fn enter_on_the_contents_column_opens_the_reader_at_that_section() {
         app.toc_index
     );
 }
+
+#[test]
+fn header_carries_the_version_and_the_library_size() {
+    let mut app = ui::App::new(data::load());
+    let screen = render(&mut app, 140, 30);
+    assert!(
+        screen.contains(env!("CARGO_PKG_VERSION")),
+        "the header shows the version: {screen}"
+    );
+    assert!(
+        screen.contains("52 topics") && screen.contains("snippets"),
+        "and the size of the library"
+    );
+}
+
+#[test]
+fn the_two_fixed_columns_are_measured_not_assumed() {
+    let app = ui::App::new(data::load());
+    assert!(
+        app.group_width <= 16,
+        "groups column wider than the longest label needs: {}",
+        app.group_width
+    );
+    assert!(
+        app.topics_width <= 28,
+        "topics column wider than the longest title needs: {}",
+        app.topics_width
+    );
+    assert!(
+        app.group_width >= 12 && app.topics_width >= 22,
+        "and never cramped"
+    );
+}

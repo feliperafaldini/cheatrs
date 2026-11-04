@@ -21,6 +21,9 @@ pub struct Library {
     pub topics: Vec<Topic>,
     pub groups: Vec<Group>,
     pub skipped: usize,
+    /// Counted once at load so the header never walks the library per frame.
+    pub sections: usize,
+    pub snippets: usize,
 }
 
 pub struct Group {
@@ -91,10 +94,24 @@ pub fn load() -> Library {
     }
     groups.retain(|g| !g.topics.is_empty());
 
+    let sections = topics.iter().map(|topic| topic.sections.len()).sum();
+    let snippets = topics
+        .iter()
+        .map(|topic| {
+            topic
+                .sections
+                .iter()
+                .map(|s| s.snippets.len())
+                .sum::<usize>()
+        })
+        .sum();
+
     Library {
         topics,
         groups,
         skipped,
+        sections,
+        snippets,
     }
 }
 

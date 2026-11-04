@@ -67,14 +67,39 @@ pub struct App {
     /// The line to flash after jumping, and until when.
     pub flash_line: Option<u16>,
     pub flash_until: Option<std::time::Instant>,
+    /// Column widths measured from the library at startup, not guessed.
+    pub group_width: u16,
+    pub topics_width: u16,
+    /// Width of the contents list inside the preview, recomputed per frame.
+    pub preview_contents: u16,
 }
 
 impl App {
     pub fn new(lib: Library) -> Self {
         let index = SearchIndex::build(&lib);
+        // Measure once: the widest label and the widest title decide the two
+        // fixed columns, so the text column keeps everything that is left over.
+        let group_width = lib
+            .groups
+            .iter()
+            .map(|group| crate::data::group_label(&group.name).chars().count() as u16 + 3)
+            .max()
+            .unwrap_or(layout::GROUP_COLUMN_MIN)
+            .clamp(layout::GROUP_COLUMN_MIN, layout::GROUP_COLUMN_MAX);
+        let topics_width = lib
+            .topics
+            .iter()
+            // One bar cell, the four of `{:>3} `, then the title.
+            .map(|topic| 5 + topic.title.chars().count() as u16)
+            .max()
+            .unwrap_or(layout::TOPICS_COLUMN_MIN)
+            .clamp(layout::TOPICS_COLUMN_MIN, layout::TOPICS_COLUMN_MAX);
         Self {
             lib,
             index,
+            group_width,
+            topics_width,
+            preview_contents: layout::PREVIEW_CONTENTS_MIN,
             searching: false,
             query: String::new(),
             results: Vec::new(),
@@ -326,8 +351,8 @@ impl App {
                 } else if self.preview_visible && inside(self.preview_rect, event.column, event.row)
                 {
                     // The index owns the right edge of the preview column.
-                    let index_edge = self.preview_rect.x + self.preview_rect.width
-                        - crate::ui::layout::PREVIEW_CONTENTS;
+                    let index_edge =
+                        self.preview_rect.x + self.preview_rect.width - self.preview_contents;
                     self.focus = if event.column >= index_edge && self.contents_visible() {
                         Focus::Contents
                     } else {

@@ -19,7 +19,8 @@ pub fn draw(frame: &mut Frame, area: Rect, app: &mut App) {
     ])
     .split(area);
 
-    let measure = preview_measure(area.width);
+    let measure = preview_measure(app, area.width);
+    app.preview_contents = contents_width(app, area.width);
     app.preview_visible = area.width >= layout::PREVIEW_THRESHOLD;
     app.sync_preview(measure);
     app.preview_visible = app.preview_visible && !app.preview.is_empty();
@@ -34,7 +35,7 @@ pub fn draw(frame: &mut Frame, area: Rect, app: &mut App) {
         with_preview(frame, rows[1], app);
     } else {
         let cols = Layout::horizontal([
-            Constraint::Length(layout::GROUP_COLUMN),
+            Constraint::Length(app.group_width),
             Constraint::Length(layout::GUTTER),
             Constraint::Min(layout::MIN_TOPICS),
         ])
@@ -51,23 +52,31 @@ pub fn draw(frame: &mut Frame, area: Rect, app: &mut App) {
 }
 
 /// Text measure available to the preview, once the other columns and its contents have taken theirs.
-fn preview_measure(width: u16) -> usize {
-    let taken = layout::GROUP_COLUMN
+fn preview_measure(app: &App, width: u16) -> usize {
+    let taken = app.group_width
         + layout::GUTTER
-        + layout::TOPICS_COLUMN
+        + app.topics_width
         + layout::GUTTER
-        + layout::PREVIEW_CONTENTS
+        + app.preview_contents
         + layout::GUTTER;
     width.saturating_sub(taken).saturating_sub(1) as usize
+}
+
+/// The contents list takes three tenths of the preview column, inside bounds.
+fn contents_width(app: &App, width: u16) -> u16 {
+    let preview =
+        width.saturating_sub(app.group_width + layout::GUTTER + app.topics_width + layout::GUTTER);
+    (preview * layout::PREVIEW_CONTENTS_SHARE / 10)
+        .clamp(layout::PREVIEW_CONTENTS_MIN, layout::PREVIEW_CONTENTS_MAX)
 }
 
 /// The preview is a fourth surface, not a decoration: it appears only when the width pays for it.
 /// Inside it, the same document the reader shows on the left, contents on the right.
 fn with_preview(frame: &mut Frame, area: Rect, app: &mut App) {
     let cols = Layout::horizontal([
-        Constraint::Length(layout::GROUP_COLUMN),
+        Constraint::Length(app.group_width),
         Constraint::Length(layout::GUTTER),
-        Constraint::Length(layout::TOPICS_COLUMN),
+        Constraint::Length(app.topics_width),
         Constraint::Length(layout::GUTTER),
         Constraint::Min(layout::PREVIEW_COLUMN),
     ])
@@ -84,7 +93,7 @@ fn with_preview(frame: &mut Frame, area: Rect, app: &mut App) {
     let inner = Layout::horizontal([
         Constraint::Min(20),
         Constraint::Length(layout::GUTTER),
-        Constraint::Length(layout::PREVIEW_CONTENTS),
+        Constraint::Length(app.preview_contents),
     ])
     .split(cols[4]);
 
@@ -151,22 +160,54 @@ fn rule(frame: &mut Frame, area: Rect) {
 }
 
 fn header(frame: &mut Frame, area: Rect, app: &App) {
-    let line = Line::from(vec![
+    // The mark is the same cell that marks a selection everywhere else in the app,
+    // tinted with the colour of the topic under the cursor: the header points at
+    // what you are looking at instead of labelling the window.
+    let accent = app
+        .current()
+        .map_or(theme::fg_dim(), |topic| theme::accent(&topic.color));
+    let version = env!("CARGO_PKG_VERSION");
+    let meta = format!(
+        "{} topics · {} sections · {} snippets",
+        app.lib.topics.len(),
+        app.lib.sections,
+        app.lib.snippets
+    );
+    let short = format!("{} topics", app.lib.topics.len());
+
+    let left_width = 2 + "cheatrs".len() as u16 + 1 + version.len() as u16;
+    let mut spans = vec![
+        Span::styled("▌ ", Style::new().fg(accent)),
         Span::styled(
             "cheatrs",
             Style::new().fg(theme::fg()).add_modifier(Modifier::BOLD),
         ),
-        Span::raw("  "),
-        Span::styled(
-            format!(
-                "{} topics · {} skipped",
-                app.lib.topics.len(),
-                app.lib.skipped
-            ),
-            Style::new().fg(theme::fg_faint()),
-        ),
-    ]);
-    frame.render_widget(Paragraph::new(line), area);
+        Span::raw(" "),
+        Span::styled(version, Style::new().fg(theme::fg_faint())),
+    ];
+
+    let right = if area.width as usize > (left_width as usize + meta.chars().count() + 6) {
+        meta
+    } else if area.width as usize > (left_width as usize + short.len() + 4) {
+        short
+    } else {
+        String::new()
+    };
+
+    if !right.is_empty() {
+        let rule = area
+            .width
+            .saturating_sub(left_width + right.chars().count() as u16 + 2);
+        spans.push(Span::raw(" "));
+        spans.push(Span::styled(
+            "─".repeat(rule as usize),
+            Style::new().fg(theme::rule()),
+        ));
+        spans.push(Span::raw(" "));
+        spans.push(Span::styled(right, Style::new().fg(theme::fg_faint())));
+    }
+
+    frame.render_widget(Paragraph::new(Line::from(spans)), area);
 }
 
 fn groups(frame: &mut Frame, area: Rect, app: &mut App) {
