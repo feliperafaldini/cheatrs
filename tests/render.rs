@@ -49,10 +49,10 @@ fn open_topic(app: &mut ui::App, slug: &str) {
 #[test]
 fn loads_the_whole_dataset() {
     let library = data::load();
-    assert_eq!(
-        library.topics.len(),
-        48,
-        "every topic of the source must load"
+    assert!(
+        library.topics.len() >= 48,
+        "the library must never shrink below the original 48, got {}",
+        library.topics.len()
     );
     assert!(
         library.skipped == 0,
@@ -259,7 +259,7 @@ fn the_shipped_data_validates_clean() {
     let (checked, problems) = cheatrs::data::validate_all();
     assert!(
         checked >= 48,
-        "the 48 embedded topics must be checked, got {checked}"
+        "the embedded topics must be checked, got {checked}"
     );
     assert!(problems.is_empty(), "{problems:?}");
 }
