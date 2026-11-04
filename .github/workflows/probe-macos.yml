@@ -1,0 +1,15 @@
+name: probe-macos
+
+# Temporary: does this account get a macOS runner at all, and which label?
+on:
+  workflow_dispatch:
+
+jobs:
+  arm:
+    runs-on: macos-14
+    steps:
+      - run: uname -a && sw_vers
+  intel:
+    runs-on: macos-15-intel
+    steps:
+      - run: uname -a && sw_vers
