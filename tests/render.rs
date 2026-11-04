@@ -22,32 +22,66 @@ fn key(code: KeyCode) -> KeyEvent {
     KeyEvent::new(code, KeyModifiers::NONE)
 }
 
+/// Put the selection on a known topic, whatever the alphabetical order does with it.
+fn select_topic(app: &mut ui::App, slug: &str) {
+    let index = app
+        .lib
+        .topics
+        .iter()
+        .position(|topic| topic.slug == slug)
+        .unwrap_or_else(|| panic!("topic {slug} must exist"));
+    for (group_index, group) in app.lib.groups.iter().enumerate() {
+        if let Some(position) = group.topics.iter().position(|topic| *topic == index) {
+            app.group = group_index;
+            app.topic = position;
+            return;
+        }
+    }
+    panic!("topic {slug} is not listed under any group");
+}
+
+fn open_topic(app: &mut ui::App, slug: &str) {
+    select_topic(app, slug);
+    app.on_key(key(KeyCode::Tab)); // into the topic list
+    app.on_key(key(KeyCode::Enter)); // open
+}
+
 #[test]
-fn loads_the_four_real_topics() {
+fn loads_the_whole_dataset() {
     let library = data::load();
-    assert_eq!(library.topics.len(), 4, "four converted topics must load");
+    assert_eq!(
+        library.topics.len(),
+        48,
+        "every topic of the source must load"
+    );
     assert!(
         library.skipped == 0,
         "nothing should be skipped: {}",
         library.skipped
     );
     let total: usize = library.topics.iter().map(|t| t.snippet_count()).sum();
-    assert_eq!(
-        total, 111,
-        "110 snippets of the 4 topics plus one flat-shape section"
-    );
+    assert_eq!(total, 1158, "snippet count of the converted data");
+    assert_eq!(library.groups.len(), 6, "six groups carry topics");
 }
 
 #[test]
 fn home_shows_groups_and_topics() {
     let mut app = ui::App::new(data::load());
+    let first = app
+        .current()
+        .expect("a topic under the first group")
+        .title
+        .clone();
     let screen = render(&mut app, 120, 30);
     assert!(screen.contains("LANGUAGES"), "{screen}");
     assert!(
         screen.contains("DATABASES") || screen.contains("DATABASE"),
         "{screen}"
     );
-    assert!(screen.contains("Python"), "{screen}");
+    assert!(
+        screen.contains(&first),
+        "the topic list shows {first}: {screen}"
+    );
     assert!(
         screen.contains("move"),
         "footer must carry the keys: {screen}"
@@ -74,7 +108,10 @@ fn search_finds_a_topic_and_opens_it() {
         ui::Screen::Reader,
         "a topic result opens the reader"
     );
-    assert!(app.sections.len() > 5);
+    assert_eq!(
+        app.current().map(|topic| topic.slug.as_str()),
+        Some("docker")
+    );
 }
 
 #[test]
@@ -122,7 +159,7 @@ fn enter_on_a_group_steps_into_its_topics() {
     render(&mut app, 140, 30);
     assert_eq!(app.focus, ui::Focus::Groups);
 
-    // Move to TOOLS, which carries more than one topic, then step into its list.
+    // FRAMEWORKS carries several topics; step into its list.
     app.on_key(key(KeyCode::Down));
     app.on_key(key(KeyCode::Enter));
     assert_eq!(
@@ -158,25 +195,20 @@ fn arrow_right_from_the_topics_reaches_the_document() {
 #[test]
 fn enter_opens_the_reader_with_code() {
     let mut app = ui::App::new(data::load());
-    app.on_key(key(KeyCode::Tab));
-    app.on_key(key(KeyCode::Enter));
+    open_topic(&mut app, "python");
     let screen = render(&mut app, 120, 30);
     assert!(
         screen.contains("‹ LANGUAGE / Python"),
         "breadcrumb: {screen}"
     );
-    assert!(screen.contains("Basic Syntax"), "first section: {screen}");
-    assert!(
-        screen.contains("print("),
-        "code block must render: {screen}"
-    );
+    assert!(app.sections.len() > 10, "sections must be indexed");
+    assert!(app.lines.len() > 100, "the document must have a body");
 }
 
 #[test]
 fn scroll_moves_and_clamps_at_the_end() {
     let mut app = ui::App::new(data::load());
-    app.on_key(key(KeyCode::Enter));
-    app.on_key(key(KeyCode::Enter));
+    open_topic(&mut app, "python");
     app.on_key(key(KeyCode::Char('G')));
     render(&mut app, 120, 30);
     let max = app.scroll;
@@ -190,8 +222,7 @@ fn scroll_moves_and_clamps_at_the_end() {
 #[test]
 fn q_goes_back_to_home() {
     let mut app = ui::App::new(data::load());
-    app.on_key(key(KeyCode::Enter));
-    app.on_key(key(KeyCode::Enter));
+    open_topic(&mut app, "python");
     app.on_key(key(KeyCode::Char('q')));
     assert!(!app.quit, "q inside the reader must not quit the app");
     let screen = render(&mut app, 120, 30);
@@ -215,8 +246,7 @@ fn accent_normalizes_the_unreadable_blue() {
 #[test]
 fn reader_colours_the_code() {
     let mut app = ui::App::new(data::load());
-    app.on_key(key(KeyCode::Tab));
-    app.on_key(key(KeyCode::Enter));
+    open_topic(&mut app, "python");
 
     let mut terminal = Terminal::new(TestBackend::new(120, 30)).unwrap();
     terminal.draw(|frame| app.draw(frame)).unwrap();
@@ -234,8 +264,7 @@ fn reader_colours_the_code() {
     let mut coloured = 0;
     for y in 0..buffer.area.height {
         for x in 0..buffer.area.width {
-            let fg = buffer[(x, y)].fg;
-            if !palette.contains(&fg) {
+            if !palette.contains(&buffer[(x, y)].fg) {
                 coloured += 1;
             }
         }
@@ -249,20 +278,22 @@ fn reader_colours_the_code() {
 #[test]
 fn preview_appears_only_when_the_width_pays_for_it() {
     let mut app = ui::App::new(data::load());
+    select_topic(&mut app, "docker");
     let wide = render(&mut app, 140, 30);
     assert!(
-        wide.contains("pip install"),
-        "preview must show the topic: {wide}"
+        wide.contains("docker --version"),
+        "preview must show the selected topic: {wide}"
     );
 
     let mut narrow = ui::App::new(data::load());
+    select_topic(&mut narrow, "docker");
     let narrow_screen = render(&mut narrow, 100, 30);
     assert!(
-        !narrow_screen.contains("pip install"),
+        !narrow_screen.contains("docker --version"),
         "no preview column under the threshold: {narrow_screen}"
     );
     assert!(
-        narrow_screen.contains("Python"),
+        narrow_screen.contains("Docker"),
         "the list stays: {narrow_screen}"
     );
 }
@@ -270,25 +301,23 @@ fn preview_appears_only_when_the_width_pays_for_it() {
 #[test]
 fn preview_follows_the_selection_without_the_reader() {
     let mut app = ui::App::new(data::load());
-    render(&mut app, 140, 30);
-    app.on_key(key(KeyCode::Down)); // TOOLS
-    app.on_key(key(KeyCode::Tab));
-    let screen = render(&mut app, 140, 30);
+    select_topic(&mut app, "docker");
+    let before = render(&mut app, 140, 30);
+    assert!(before.contains("docker --version"), "{before}");
+
+    select_topic(&mut app, "python");
+    let after = render(&mut app, 140, 30);
+    assert!(after.contains("pip install"), "preview follows: {after}");
     assert!(
-        screen.contains("Docker"),
-        "preview follows the topic: {screen}"
-    );
-    assert!(
-        !screen.contains("pip install"),
-        "previous preview must be gone: {screen}"
+        !after.contains("docker --version"),
+        "the previous preview must be gone: {after}"
     );
 }
 
 #[test]
 fn reading_measure_stays_under_a_hundred_columns() {
     let mut app = ui::App::new(data::load());
-    app.on_key(key(KeyCode::Tab));
-    app.on_key(key(KeyCode::Enter));
+    open_topic(&mut app, "python");
 
     // 200 columns wide: text stops at the measure and the contents column fits beside it.
     let mut terminal = Terminal::new(TestBackend::new(200, 30)).unwrap();
@@ -316,15 +345,13 @@ fn reading_measure_stays_under_a_hundred_columns() {
 #[test]
 fn contents_sits_left_of_the_text() {
     let mut app = ui::App::new(data::load());
-    app.on_key(key(KeyCode::Tab));
-    app.on_key(key(KeyCode::Enter));
+    open_topic(&mut app, "python");
+    let heading = app.sections[0].0.clone();
 
     let screen = render(&mut app, 140, 30);
-    let first = screen.find("Package Management").expect("contents entry");
-    let heading = screen
-        .rfind("Package Management")
-        .expect("document heading");
-    assert!(first < heading, "contents must come before the text");
+    let first = screen.find(&heading).expect("contents entry");
+    let body = screen.rfind(&heading).expect("document heading");
+    assert!(first < body, "contents must come before the text");
 
     let line_start = screen[..first].rfind('\n').map(|i| i + 1).unwrap_or(0);
     assert!(
@@ -381,17 +408,17 @@ fn preview_focus_is_skipped_when_the_column_is_hidden() {
 #[test]
 fn contents_column_lists_sections_and_jumps() {
     let mut app = ui::App::new(data::load());
-    app.on_key(key(KeyCode::Tab));
-    app.on_key(key(KeyCode::Enter));
+    open_topic(&mut app, "python");
 
     let screen = render(&mut app, 140, 30);
+    let first_section = app.sections[0].0.clone();
     assert!(
-        screen.contains("Basic Syntax"),
+        screen.contains(&first_section),
         "contents lists sections: {screen}"
     );
     assert!(
         app.sections.len() > 10,
-        "python has 23 sections, got {}",
+        "python has many sections, got {}",
         app.sections.len()
     );
 
