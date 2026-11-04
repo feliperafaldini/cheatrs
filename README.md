@@ -1,5 +1,6 @@
 # cheatrs
 
+[![ci](https://github.com/feliperafaldini/cheatrs/actions/workflows/ci.yml/badge.svg)](https://github.com/feliperafaldini/cheatrs/actions/workflows/ci.yml)
 [![release](https://img.shields.io/github/v/release/feliperafaldini/cheatrs)](https://github.com/feliperafaldini/cheatrs/releases)
 [![licence](https://img.shields.io/github/license/feliperafaldini/cheatrs)](LICENSE)
 
@@ -57,16 +58,27 @@ Check the shell, its version and how a script starts.                           
 
 ## Install
 
+No Rust needed — the release ships a static x86-64 binary that runs on any Linux:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/feliperafaldini/cheatrs/main/install.sh | bash
+```
+
+The script downloads the binary from the latest release, verifies its sha256 and
+installs it to `~/.local/bin`. `INSTALL_DIR` changes the destination, `VERSION=0.1.1`
+pins a release instead of the latest.
+
+If you already have Rust, the source path works too:
+
 ```bash
 cargo install --path .
 cheatrs
 ```
 
-Verified from a clean `--root`: installs a single binary, no data files, no service,
-no network at runtime. Requires a stable Rust toolchain and a terminal of at least
-80x24 — below that it prints the size it found and exits instead of drawing a broken
-screen. The preview column appears from 110 columns; the section list inside the
-reader from 120.
+Both were verified from a clean state: a single binary, no data files, no service, no
+network at runtime. The terminal must be at least 80x24 — below that it prints the
+size it found and exits instead of drawing a broken screen. The preview column
+appears from 110 columns; the section list inside the reader from 120.
 
 ## Why not tldr, navi or cheat.sh
 
