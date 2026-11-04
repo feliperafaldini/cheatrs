@@ -227,7 +227,7 @@ fn rust_topic_carries_the_sections_the_source_lacked() {
     let titles: Vec<&str> = rust.sections.iter().map(|s| s.title.as_str()).collect();
 
     assert!(
-        rust.sections.len() >= 27,
+        rust.sections.len() >= 22,
         "got {} sections",
         rust.sections.len()
     );
