@@ -9,7 +9,7 @@ use ratatui::widgets::{
 use crate::data::{group_label, monogram};
 use crate::theme;
 
-use super::{App, Focus, Header, layout};
+use super::{App, Focus, layout};
 
 pub fn draw(frame: &mut Frame, area: Rect, app: &mut App) {
     let rows = Layout::vertical([
@@ -174,73 +174,39 @@ fn header(frame: &mut Frame, area: Rect, app: &App) {
         app.lib.snippets
     );
     let short = format!("{} topics", app.lib.topics.len());
-    let wordmark = |style: Style| Span::styled("cheatrs", style.add_modifier(Modifier::BOLD));
 
-    let spans = match app.header {
-        Header::Docket => {
-            let left = 2 + "cheatrs".len() as u16 + 1 + version.len() as u16;
-            let mut spans = vec![
-                Span::styled("▌ ", Style::new().fg(accent)),
-                wordmark(Style::new().fg(theme::fg())),
-                Span::raw(" "),
-                Span::styled(version, Style::new().fg(theme::fg_faint())),
-            ];
-            let right = if area.width > left + meta.chars().count() as u16 + 6 {
-                Some(meta)
-            } else if area.width > left + short.len() as u16 + 4 {
-                Some(short)
-            } else {
-                None
-            };
-            if let Some(right) = right {
-                let rule = area
-                    .width
-                    .saturating_sub(left + right.chars().count() as u16 + 2);
-                spans.push(Span::raw(" "));
-                spans.push(Span::styled(
-                    "─".repeat(rule as usize),
-                    Style::new().fg(theme::rule()),
-                ));
-                spans.push(Span::raw(" "));
-                spans.push(Span::styled(right, Style::new().fg(theme::fg_faint())));
-            }
-            spans
-        }
-        Header::Stamp => {
-            // A stamped label: the wordmark sits on a surface block and the numbers
-            // hang off the right edge, with nothing joining the two halves.
-            let left = 1 + "cheatrs".len() as u16 + 1 + version.len() as u16;
-            let mut spans = vec![
-                Span::styled("▌", Style::new().fg(accent)),
-                wordmark(Style::new().fg(theme::fg()).bg(theme::surface())),
-                Span::raw(" "),
-                Span::styled(version, Style::new().fg(theme::fg_faint())),
-            ];
-            let right = if area.width > left + meta.chars().count() as u16 + 3 {
-                Some(meta)
-            } else if area.width > left + short.len() as u16 + 3 {
-                Some(short)
-            } else {
-                None
-            };
-            if let Some(right) = right {
-                let pad = area
-                    .width
-                    .saturating_sub(left + right.chars().count() as u16);
-                spans.push(Span::raw(" ".repeat(pad as usize)));
-                spans.push(Span::styled(right, Style::new().fg(theme::fg_faint())));
-            }
-            spans
-        }
-        Header::Plain => vec![
-            wordmark(Style::new().fg(theme::fg())),
-            Span::raw(" "),
-            Span::styled(
-                "─".repeat(area.width.saturating_sub("cheatrs".len() as u16 + 1) as usize),
-                Style::new().fg(theme::rule()),
-            ),
-        ],
+    // Bar, wordmark, version: 2 + 7 + 1 + len(version).
+    let left = 2 + "cheatrs".len() as u16 + 1 + version.len() as u16;
+    let mut spans = vec![
+        Span::styled("▌ ", Style::new().fg(accent)),
+        Span::styled(
+            "cheatrs",
+            Style::new().fg(theme::fg()).add_modifier(Modifier::BOLD),
+        ),
+        Span::raw(" "),
+        Span::styled(version, Style::new().fg(theme::fg_faint())),
+    ];
+
+    // The rule only exists when it can fit between the two halves without crowding them.
+    let right = if area.width > left + meta.chars().count() as u16 + 6 {
+        Some(meta)
+    } else if area.width > left + short.len() as u16 + 4 {
+        Some(short)
+    } else {
+        None
     };
+    if let Some(right) = right {
+        let rule = area
+            .width
+            .saturating_sub(left + right.chars().count() as u16 + 2);
+        spans.push(Span::raw(" "));
+        spans.push(Span::styled(
+            "─".repeat(rule as usize),
+            Style::new().fg(theme::rule()),
+        ));
+        spans.push(Span::raw(" "));
+        spans.push(Span::styled(right, Style::new().fg(theme::fg_faint())));
+    }
 
     frame.render_widget(Paragraph::new(Line::from(spans)), area);
 }

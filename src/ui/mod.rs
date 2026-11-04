@@ -31,21 +31,8 @@ pub enum Screen {
     Reader,
 }
 
-/// How the top line introduces the program. Temporary: the environment variable
-/// exists so the three can be seen side by side before one is chosen.
-#[derive(Clone, Copy, PartialEq, Eq, Debug)]
-pub enum Header {
-    /// Mark, version, rule, and the size of the library on the right.
-    Docket,
-    /// Mark on a surface block, version, metrics pushed to the right edge.
-    Stamp,
-    /// The wordmark and a rule, nothing else.
-    Plain,
-}
-
 pub struct App {
     pub lib: Library,
-    pub header: Header,
     pub focus: Focus,
     pub group: usize,
     pub topic: usize,
@@ -110,11 +97,6 @@ impl App {
         Self {
             lib,
             index,
-            header: match std::env::var("CHEATRS_HEADER").as_deref() {
-                Ok("stamp") => Header::Stamp,
-                Ok("plain") => Header::Plain,
-                _ => Header::Docket,
-            },
             group_width,
             topics_width,
             preview_contents: layout::PREVIEW_CONTENTS_MIN,
